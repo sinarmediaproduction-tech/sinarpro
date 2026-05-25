@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Bank Vivi - Cloud Edition</title>
+    <title>Bank Vivi - Cloud Sync</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -75,9 +75,8 @@
         .log-action-import{background:#fef3c7;color:#92400e}
         .log-detail{color:#666;font-size:.7rem;margin-top:4px;margin-left:152px}
         
-        .login-container{max-width:400px;margin:100px auto;text-align:center}
-        .login-container input{padding:10px;margin:10px;width:80%;border:1px solid #ccc;border-radius:4px}
         .sync-status{font-size:.6rem;color:#10b981;margin-left:10px}
+        .loading{text-align:center;padding:20px;color:#666}
         
         @media print{
             body{padding:0;margin:0}
@@ -89,38 +88,18 @@
     </style>
 </head>
 <body>
-<div class="container" id="appContainer">
+<div class="container">
     <div class="header">
         <div><h1>🏦 BANK VIVI</h1><p>Laporan Arus Kas <span id="syncStatus" class="sync-status">☁️ Cloud Sync</span></p></div>
-        <div><button class="btn" id="logoutBtn" onclick="logout()" style="display:none">🚪 Logout</button></div>
+        <div><span class="btn" id="lastUpdate" style="background:#fafafa">-</span></div>
     </div>
     
-    <!-- Login Form -->
-    <div id="loginForm" class="login-container">
-        <h3>🔐 Login ke Akun</h3>
-        <input type="email" id="email" placeholder="Email" autocomplete="email">
-        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-        <button class="btn btn-primary" onclick="login()">Login</button>
-        <button class="btn" onclick="showRegister()">Daftar Akun Baru</button>
-    </div>
-    
-    <!-- Register Form -->
-    <div id="registerForm" style="display:none" class="login-container">
-        <h3>📝 Daftar Akun Baru</h3>
-        <input type="email" id="regEmail" placeholder="Email">
-        <input type="password" id="regPassword" placeholder="Password">
-        <button class="btn btn-primary" onclick="register()">Daftar</button>
-        <button class="btn" onclick="showLogin()">Kembali ke Login</button>
-    </div>
-    
-    <!-- Main App (hidden until login) -->
-    <div id="mainApp" style="display:none">
+    <div id="mainApp">
         <div class="toolbar">
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="openModalTambah('Pemasukan')">+ Pemasukan</button>
                 <button class="btn" onclick="openModalTambah('Pengeluaran')">- Pengeluaran</button>
             </div>
-            <div><span class="btn" id="lastUpdate" style="background:#fafafa">-</span></div>
         </div>
         
         <div class="stats-grid">
@@ -139,7 +118,7 @@
         
         <div class="table-wrapper">
             <div class="table-header"><span class="table-title">DAFTAR TRANSAKSI</span><span id="transactionCount" style="font-size:.65rem;color:#999">0 transaksi</span></div>
-            <table><thead><tr><th style="width:5%">No</th><th style="width:12%">Tanggal</th><th style="width:38%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:15%" class="text-right">Saldo</th><th style="width:5%" class="text-center">Aksi</th></tr></thead><tbody id="transactionTableBody"><tr><td colspan="7" class="empty-row">Loading data...</td</tr></tbody></table>
+            <table><thead><tr><th style="width:5%">No</th><th style="width:12%">Tanggal</th><th style="width:38%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:15%" class="text-right">Saldo</th><th style="width:5%" class="text-center">Aksi</th></tr></thead><tbody id="transactionTableBody"><td><td colspan="7" class="loading">Memuat data...</td></tr></tbody></table>
         </div>
         
         <div class="footer-tools">
@@ -152,8 +131,8 @@
     </div>
 </div>
 
-<!-- MODALS (same as before) -->
-<div id="modalLog" class="modal"><div class="modal-content log-modal"><h3>📋 Log Aktivitas</h3><p style="font-size:.65rem;color:#666;margin-bottom:12px">Semua perubahan data tercatat di sini. Log tidak dapat dihapus.</p><div id="logList" class="log-list"></div><div class="modal-buttons" style="margin-top:16px;justify-content:center"><button class="btn btn-primary" onclick="closeModal('modalLog')">Tutup</button></div></div></div>
+<!-- MODALS -->
+<div id="modalLog" class="modal"><div class="modal-content log-modal"><h3>📋 Log Aktivitas</h3><p style="font-size:.65rem;color:#666;margin-bottom:12px">Semua perubahan data tercatat di sini.</p><div id="logList" class="log-list"></div><div class="modal-buttons" style="margin-top:16px;justify-content:center"><button class="btn btn-primary" onclick="closeModal('modalLog')">Tutup</button></div></div></div>
 <div id="modalTambah" class="modal"><div class="modal-content"><h3>Tambah Transaksi</h3><form id="txForm" onsubmit="handleSubmit(event)"><input type="hidden" id="txType"><div class="form-group"><label>Tanggal</label><input type="date" id="txDate" required></div><div class="form-group"><label>Keterangan</label><input type="text" id="txDesc" maxlength="100" required></div><div class="form-group"><label>Nominal (Rp)</label><input type="number" id="txAmount" min="1" max="9999999999" required></div><div class="modal-buttons"><button type="button" class="btn" onclick="closeModalTambah()">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div></form></div></div>
 <div id="modalEdit" class="modal"><div class="modal-content"><h3>Edit Transaksi</h3><form id="editForm" onsubmit="handleEditSubmit(event)"><input type="hidden" id="editId"><div class="form-group"><label>Jenis</label><select id="editJenis"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div><div class="form-group"><label>Tanggal</label><input type="date" id="editTanggal" required></div><div class="form-group"><label>Keterangan</label><input type="text" id="editDeskripsi" maxlength="100" required></div><div class="form-group"><label>Nominal (Rp)</label><input type="number" id="editJumlah" min="1" max="9999999999" required></div><div class="modal-buttons"><button type="button" class="btn" onclick="closeModalEdit()">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div></form></div></div>
 <div id="modalActionMenu" class="modal"><div class="modal-content action-modal"><h3>Pilih Aksi</h3><p id="actionTransactionInfo" style="font-size:.75rem">Memuat...</p><div class="action-buttons"><button class="btn btn-primary" id="actionEditBtn">Edit</button><button class="btn" id="actionDeleteBtn" style="border-color:#dc2626;color:#dc2626">Hapus</button></div><div class="modal-buttons" style="margin-top:12px;justify-content:center"><button class="btn" onclick="closeModalActionMenu()">Batal</button></div></div></div>
@@ -162,13 +141,15 @@
 
 <script>
 // ==================== SUPABASE CONFIG ====================
-// GANTI DENGAN URL DAN ANON KEY DARI SUPABASE ANDA!
-const SUPABASE_URL = 'sb_publishable_bGAUgJMdqyeZUx7FQWDtyg_dWLovYDZ';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYnVub3B6dGljbW5xY3V5aWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTI0MjUsImV4cCI6MjA5NTI4ODQyNX0.B0dqzYLzpRXw_h1oyv7K4Uv785Wx7Ilh1i5rQLOKaW4';
+// 🔴 GANTI DENGAN DATA DARI SUPABASE ANDA! 🔴
+const SUPABASE_URL = 'sb_publishable_bGAUgJMdqyeZUx7FQWDtyg_dWLovYDZ';  // Ganti ini!
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYnVub3B6dGljbW5xY3V5aWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTI0MjUsImV4cCI6MjA5NTI4ODQyNX0.B0dqzYLzpRXw_h1oyv7K4Uv785Wx7Ilh1i5rQLOKaW4';  // Ganti ini!
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let currentUser = null;
+// Gunakan ID tetap untuk semua pengguna (1 akun global)
+const FIXED_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 let transactions = [];
 let activityLog = [];
 let currentFilter = 'all';
@@ -176,59 +157,22 @@ let timer = null;
 let actionId = null;
 const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-// ==================== AUTH FUNCTIONS ====================
-async function login() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { toast('Login gagal: ' + error.message, true); return; }
-    currentUser = data.user;
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('logoutBtn').style.display = 'block';
-    document.getElementById('syncStatus').innerHTML = '☁️ Online - ' + currentUser.email;
-    await loadData();
-}
-
-async function register() {
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) { toast('Daftar gagal: ' + error.message, true); return; }
-    toast('Pendaftaran berhasil! Silakan login.');
-    showLogin();
-}
-
-function logout() {
-    supabase.auth.signOut();
-    currentUser = null;
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('logoutBtn').style.display = 'none';
-    transactions = [];
-    render();
-}
-
-function showRegister() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-}
-
-function showLogin() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-}
-
 // ==================== CRUD with Supabase ====================
 async function loadData() {
-    if (!currentUser) return;
+    document.getElementById('syncStatus').innerHTML = '☁️ Loading...';
     const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', FIXED_USER_ID)
         .order('date', { ascending: false });
-    if (error) { toast('Gagal load data: ' + error.message, true); return; }
+    
+    if (error) {
+        console.error('Load error:', error);
+        document.getElementById('syncStatus').innerHTML = '⚠️ Gagal sync';
+        toast('Gagal load data: ' + error.message, true);
+        return;
+    }
+    
     transactions = data.map(t => ({
         id: t.id,
         date: t.date,
@@ -240,12 +184,19 @@ async function loadData() {
     recalcBalances();
     render();
     updateTime();
+    document.getElementById('syncStatus').innerHTML = '☁️ Cloud Sync ✅';
 }
 
 async function addTransaction(type, date, desc, amount) {
     const { error } = await supabase
         .from('transactions')
-        .insert([{ date, description: desc, type, amount, user_id: currentUser.id }]);
+        .insert([{ 
+            user_id: FIXED_USER_ID,
+            date, 
+            description: desc, 
+            type, 
+            amount 
+        }]);
     if (error) { toast('Gagal simpan: ' + error.message, true); return false; }
     await addLog('TAMBAH', `"${desc}" - ${rp(amount)} - ${type==='income'?'Pemasukan':'Pengeluaran'}`);
     return true;
@@ -255,35 +206,46 @@ async function updateTransaction(id, type, date, desc, amount) {
     const { error } = await supabase
         .from('transactions')
         .update({ date, description: desc, type, amount })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', FIXED_USER_ID);
     if (error) { toast('Gagal update: ' + error.message, true); return false; }
     return true;
 }
 
 async function deleteTransaction(id) {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', FIXED_USER_ID);
     if (error) { toast('Gagal hapus: ' + error.message, true); return false; }
     return true;
 }
 
 async function deleteAllTransactions() {
-    const { error } = await supabase.from('transactions').delete().neq('id', 0);
+    const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', FIXED_USER_ID);
     if (error) { toast('Gagal hapus semua: ' + error.message, true); return false; }
     return true;
 }
 
 async function addLog(action, detail, oldData = null, newData = null) {
-    if (!currentUser) return;
     await supabase.from('activity_logs').insert([{
-        action, detail, old_data: oldData, new_data: newData, user_id: currentUser.id
+        user_id: FIXED_USER_ID,
+        action, 
+        detail, 
+        old_data: oldData, 
+        new_data: newData
     }]);
 }
 
 async function loadLogs() {
-    if (!currentUser) return;
     const { data, error } = await supabase
         .from('activity_logs')
         .select('*')
+        .eq('user_id', FIXED_USER_ID)
         .order('created_at', { ascending: false })
         .limit(500);
     if (error) return;
@@ -302,7 +264,7 @@ function escape(s) { return s ? String(s).replace(/[&<>]/g, m => m==='&'?'&amp;'
 function validAmount(n) { let v = Number(n); return !isNaN(v) && v > 0 && v <= 9999999999 && Number.isInteger(v); }
 function rp(n) { return 'Rp ' + ((n||0).toLocaleString('id-ID')); }
 function fmtDate(d) { if (!d) return '-'; let p = d.split('-'); return p.length===3 ? `${parseInt(p[2])} ${monthNames[parseInt(p[1])-1]} ${p[0]}` : d; }
-function toast(msg) { let t = document.getElementById('toast'); if(t){ t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); } }
+function toast(msg, isError = false) { let t = document.getElementById('toast'); if(t){ t.innerText = msg; t.style.background = isError ? '#dc2626' : '#1a1a1a'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); } }
 function updateTime() { let e = document.getElementById('lastUpdate'); if(e) e.innerText = new Date().toLocaleDateString('id-ID', {hour:'2-digit', minute:'2-digit'}); }
 
 function recalcBalances() {
@@ -342,14 +304,18 @@ function render() {
             let tb = document.getElementById('transactionTableBody');
             let cnt = document.getElementById('transactionCount');
             if(cnt) cnt.innerText = data.length + ' transaksi';
-            if(!data.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data</td</tr>'; return; }
+            if(!data.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data</td</td>'; return; }
             tb.innerHTML = data.map((t,i) => {
                 let isInc = t.type === 'income';
-                return `<tr><td class="text-center">${i+1}</td><td>${escape(fmtDate(t.date))}</td><td>${escape(t.desc)}</td>
-                <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
-                <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
-                <td class="text-right">${rp(t.balance)}</td>
-                <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋮</button></td></td>`;
+                return `<tr>
+                    <td class="text-center">${i+1}</td>
+                    <td>${escape(fmtDate(t.date))}</td>
+                    <td>${escape(t.desc)}</td>
+                    <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right">${rp(t.balance)}</td>
+                    <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋮</button></td>
+                </tr>`;
             }).join('');
         } catch(e) { console.error(e); }
     }, 10);
@@ -404,8 +370,8 @@ window.handleSubmit = async function(e) {
     let date = document.getElementById('txDate').value;
     let desc = document.getElementById('txDesc').value.trim().slice(0,100);
     let amt = parseInt(document.getElementById('txAmount').value, 10);
-    if(!desc) { toast('Keterangan harus diisi'); return; }
-    if(!validAmount(amt)) { toast('Nominal harus >0'); return; }
+    if(!desc) { toast('Keterangan harus diisi', true); return; }
+    if(!validAmount(amt)) { toast('Nominal harus >0', true); return; }
     if(await addTransaction(type, date, desc, amt)) {
         closeModalTambah();
         await loadData();
@@ -421,8 +387,8 @@ window.handleEditSubmit = async function(e) {
     let newDate = document.getElementById('editTanggal').value;
     let newDesc = document.getElementById('editDeskripsi').value.trim().slice(0,100);
     let newAmt = parseInt(document.getElementById('editJumlah').value, 10);
-    if(!newDesc) { toast('Keterangan harus diisi'); return; }
-    if(!validAmount(newAmt)) { toast('Nominal harus >0'); return; }
+    if(!newDesc) { toast('Keterangan harus diisi', true); return; }
+    if(!validAmount(newAmt)) { toast('Nominal harus >0', true); return; }
     let oldData = transactions.find(t => t.id === id);
     if(oldData) await addLog('EDIT', `"${newDesc}" diubah`, `"${oldData.desc}" - ${rp(oldData.amount)}`, `"${newDesc}" - ${rp(newAmt)}`);
     if(await updateTransaction(id, newType, newDate, newDesc, newAmt)) {
@@ -464,7 +430,7 @@ window.printReport = function() {
     let totalExp = data.reduce((s,t)=>s+(t.type==='expense'?t.amount:0),0);
     let curBal = data.length ? data[0].balance : 0;
     let printDate = new Date().toLocaleString('id-ID');
-    let rows = data.map((t,i) => { let isInc = t.type==='income'; return `<tr><td style="padding:8px;border:1px solid #ccc;text-align:center">${i+1}</td><td style="padding:8px;border:1px solid #ccc">${fmtDate(t.date)}</td><td style="padding:8px;border:1px solid #ccc">${escape(t.desc)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc?rp(t.amount):'-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc?rp(t.amount):'-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td></tr>`; }).join('');
+    let rows = data.map((t,i) => { let isInc = t.type==='income'; return `<tr><td style="padding:8px;border:1px solid #ccc;text-align:center">${i+1}</td><td style="padding:8px;border:1px solid #ccc">${fmtDate(t.date)}</td><td style="padding:8px;border:1px solid #ccc">${escape(t.desc)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc?rp(t.amount):'-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc?rp(t.amount):'-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td>`; }).join('');
     win.document.write(`<!DOCTYPE html><html><head><title>Laporan Bank Vivi</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px}th{background:#f5f5f5}</style></head><body><h1>BANK VIVI</h1><p>Laporan Transaksi - ${filterText} | Dicetak: ${printDate}</p><table><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500)}<\/script></body></html>`);
     win.document.close();
 };
@@ -486,13 +452,8 @@ function closeModal(id) { document.getElementById(id).classList.remove('show'); 
 document.getElementById('actionEditBtn').onclick = () => window.editFromActionMenu();
 document.getElementById('actionDeleteBtn').onclick = () => window.deleteFromActionMenu();
 
-document.addEventListener('keydown', e => {
-    if(e.key === 'Enter' && document.getElementById('modalTambah').classList.contains('show')) { e.preventDefault(); handleSubmit(e); }
-    if(e.key === 'Escape' && document.getElementById('modalTambah').classList.contains('show')) { closeModalTambah(); }
-});
-
-document.getElementById('logoutBtn').style.display = 'none';
-document.getElementById('loginForm').style.display = 'block';
+// ==================== INIT ====================
+loadData();
 </script>
 </body>
 </html>

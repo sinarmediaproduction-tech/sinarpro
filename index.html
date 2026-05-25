@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Bank Vivi - Laporan Keuangan (Supabase Cloud)</title>
+    <title>Bank Vivi - Laporan Keuangan (Cloud Sync)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;padding:24px}
@@ -15,14 +14,15 @@
         .header h1{font-size:1.4rem;font-weight:600}
         .header p{font-size:.7rem;color:#666;margin-top:4px}
         
+        .sync-status{display:inline-block;margin-left:12px;font-size:.6rem;padding:2px 8px;border-radius:20px;background:#e6f7e6;color:#2e7d32}
+        .sync-status.syncing{background:#fff3e0;color:#e65100}
+        .sync-status.error{background:#ffebee;color:#c62828}
+        
         .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid #e0e0e0}
         .btn-group{display:flex;gap:8px;flex-wrap:wrap}
         .btn{padding:6px 14px;font-size:.7rem;font-weight:500;border:1px solid #ccc;background:#fff;cursor:pointer;border-radius:4px}
         .btn:hover{background:#f5f5f5}
         .btn-primary{background:#1a1a1a;color:#fff}
-        .sync-status{font-size:.65rem;padding:4px 8px;border-radius:20px;background:#e6f7e6;color:#2e7d32}
-        .sync-status.syncing{background:#fff3e0;color:#e65100}
-        .sync-status.error{background:#ffebee;color:#c62828}
         
         .filter-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
         .filter-chip{padding:4px 12px;font-size:.7rem;border:1px solid #ccc;background:#fff;cursor:pointer;border-radius:20px}
@@ -87,15 +87,15 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>BANK VIVI</h1>
-        <p>Laporan Arus Kas <span id="syncStatus" class="sync-status">🔄 Menyambung...</span></p>
+        <h1>BANK VIVI <span id="syncStatus" class="sync-status">☁️ Cloud Sync</span></h1>
+        <p>Laporan Arus Kas - Data tersimpan di Google Spreadsheet</p>
     </div>
     
     <div class="toolbar">
         <div class="btn-group">
             <button class="btn btn-primary" onclick="openModalTambah('Pemasukan')">+ Pemasukan</button>
             <button class="btn" onclick="openModalTambah('Pengeluaran')">- Pengeluaran</button>
-            <button class="btn" onclick="syncFromCloud()" title="Sinkronkan dari cloud">☁️ Sinkron</button>
+            <button class="btn" onclick="syncWithCloud()" id="syncBtn">🔄 Sinkronisasi</button>
         </div>
         <div><span class="btn" id="lastUpdate" style="background:#fafafa">-</span></div>
     </div>
@@ -120,7 +120,8 @@
             <thead>
                 <tr><th style="width:5%">No</th><th style="width:12%">Tanggal</th><th style="width:38%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:15%" class="text-right">Saldo</th><th style="width:5%" class="text-center">Aksi</th></tr>
             </thead>
-            <tbody id="transactionTableBody"><tr><td colspan="7" class="empty-row">Memuat data dari cloud......</td></tr>
+            <tbody id="transactionTableBody">
+                <tr><td colspan="7" class="empty-row">Loading data dari cloud...</td></tr>
             </tbody>
         </table>
     </div>
@@ -128,293 +129,171 @@
     <div class="footer-tools">
         <button class="btn-small" onclick="printReport()">🖨️ Cetak</button>
         <button class="btn-small" onclick="exportToJSON()">📎 Ekspor</button>
-        <button class="btn-small" onclick="openImportJSONModal()">📂 Import</button>
         <button class="btn-small" onclick="openDeleteAllModal()">🗑️ Hapus Semua</button>
-        <button class="btn-small" onclick="openLogModal()">📋 Log</button>
     </div>
-    <div class="footer">2026 Bank Vivi | Data tersimpan di cloud Supabase</div>
+    <div class="footer">Bank Vivi - Data tersimpan di Google Spreadsheet</div>
 </div>
 
-<!-- MODALS -->
-<div id="modalLog" class="modal"><div class="modal-content log-modal"><h3>📋 Log Aktivitas</h3><p style="font-size:.65rem;color:#666;margin-bottom:12px">Semua perubahan data tercatat di sini.</p><div id="logList" class="log-list"></div><div class="modal-buttons" style="margin-top:16px;justify-content:center"><button class="btn btn-primary" onclick="closeModal('modalLog')">Tutup</button></div></div></div>
-
+<!-- MODAL TAMBAH -->
 <div id="modalTambah" class="modal"><div class="modal-content"><h3>Tambah Transaksi</h3><form id="txForm" onsubmit="handleSubmit(event)"><input type="hidden" id="txType"><div class="form-group"><label>Tanggal</label><input type="date" id="txDate" required></div><div class="form-group"><label>Keterangan</label><input type="text" id="txDesc" maxlength="100" required></div><div class="form-group"><label>Nominal (Rp)</label><input type="number" id="txAmount" min="1" max="9999999999" required></div><div class="modal-buttons"><button type="button" class="btn" onclick="closeModalTambah()">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div></form></div></div>
 
+<!-- MODAL EDIT -->
 <div id="modalEdit" class="modal"><div class="modal-content"><h3>Edit Transaksi</h3><form id="editForm" onsubmit="handleEditSubmit(event)"><input type="hidden" id="editId"><div class="form-group"><label>Jenis</label><select id="editJenis"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div><div class="form-group"><label>Tanggal</label><input type="date" id="editTanggal" required></div><div class="form-group"><label>Keterangan</label><input type="text" id="editDeskripsi" maxlength="100" required></div><div class="form-group"><label>Nominal (Rp)</label><input type="number" id="editJumlah" min="1" max="9999999999" required></div><div class="modal-buttons"><button type="button" class="btn" onclick="closeModalEdit()">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div></form></div></div>
 
+<!-- MODAL ACTION MENU -->
 <div id="modalActionMenu" class="modal"><div class="modal-content action-modal"><h3>Pilih Aksi</h3><p id="actionTransactionInfo" style="font-size:.75rem">Memuat...</p><div class="action-buttons"><button class="btn btn-primary" id="actionEditBtn">Edit</button><button class="btn" id="actionDeleteBtn" style="border-color:#dc2626;color:#dc2626">Hapus</button></div><div class="modal-buttons" style="margin-top:12px;justify-content:center"><button class="btn" onclick="closeModalActionMenu()">Batal</button></div></div></div>
 
+<!-- MODAL DELETE ALL -->
 <div id="modalDeleteAll" class="modal"><div class="modal-content"><h3>Konfirmasi Hapus</h3><p>Semua data akan dihapus permanen dari cloud.</p><div class="modal-buttons"><button class="btn" onclick="closeDeleteAllModal()">Batal</button><button class="btn btn-primary" onclick="confirmDeleteAll()">Hapus Semua</button></div></div></div>
-
-<div id="modalImportJSON" class="modal"><div class="modal-content"><h3>Import Data JSON</h3><div class="form-group"><label>Pilih File</label><input type="file" id="jsonFileInput" accept=".json"></div><div id="jsonPreviewArea" style="display:none;margin-top:12px"><table style="width:100%;font-size:.7rem;border:1px solid #e0e0e0" id="jsonPreviewTable"></table></div><div id="jsonLoadingArea" style="display:none;text-align:center;padding:16px">Memproses...</div><div class="modal-buttons"><button class="btn" onclick="closeImportJSONModal()">Batal</button><button class="btn btn-primary" id="confirmJSONImportBtn">Import</button></div></div></div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-// ============ KONFIGURASI SUPABASE ============
-// 🔴 GANTI DENGAN CREDENTIAL SUPABASE ANDA! 🔴
-const SUPABASE_URL = 'https://zvtskbhopgezwdddesbd.supabase.co';  // GANTI!
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2dHNrYmhvcGdlendkZGRlc2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTU0NDQsImV4cCI6MjA5NTI5MTQ0NH0.gmGIfImn6_cPFRshWjfypT6jvGhkcGIh0VnDHeLCEt4';               // GANTI!
+// ============ KONFIGURASI ============
+// GANTI DENGAN URL APPS SCRIPT ANDA!
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEVo4XPUxpsAd1TR81VE1I-OK473M4PpvdWRbZGiUQxXc0NChpGs342gSXljLEeAHJ/exec';
 
-// ============ INISIALISASI ============
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+// ============ GLOBAL VARIABLES ============
 let txs = [];
-let filter = 'all';
 let actionId = null;
-let activityLog = [];
+let filter = 'all';
+let timer = null;
+let isSyncing = false;
+
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-function updateSyncStatus(status, message) {
-    const el = document.getElementById('syncStatus');
-    if (!el) return;
-    el.className = 'sync-status';
+// ============ FUNGSI SYNC KE GOOGLE SHEET ============
+function setSyncStatus(status, message) {
+    const statusEl = document.getElementById('syncStatus');
+    if (!statusEl) return;
+    
     if (status === 'syncing') {
-        el.className = 'sync-status syncing';
-        el.innerHTML = '⏳ ' + message;
+        statusEl.textContent = '🔄 Sync...';
+        statusEl.className = 'sync-status syncing';
     } else if (status === 'error') {
-        el.className = 'sync-status error';
-        el.innerHTML = '❌ ' + message;
+        statusEl.textContent = '⚠️ ' + message;
+        statusEl.className = 'sync-status error';
+        setTimeout(() => {
+            if (statusEl.textContent === '⚠️ ' + message) {
+                statusEl.textContent = '☁️ Cloud Sync';
+                statusEl.className = 'sync-status';
+            }
+        }, 3000);
     } else {
-        el.innerHTML = '✅ ' + message;
+        statusEl.textContent = '☁️ Cloud Sync';
+        statusEl.className = 'sync-status';
     }
 }
+
+async function loadFromCloud() {
+    setSyncStatus('syncing');
+    try {
+        const response = await fetch(APPS_SCRIPT_URL);
+        const data = await response.json();
+        
+        if (data.success && data.transactions) {
+            txs = data.transactions.sort((a,b) => b.id - a.id);
+            saveToLocalBackup();
+            setSyncStatus('success');
+            return true;
+        } else {
+            throw new Error('Invalid response');
+        }
+    } catch (error) {
+        console.error('Gagal load dari cloud:', error);
+        setSyncStatus('error', 'Offline');
+        // Fallback ke localStorage
+        loadFromLocalBackup();
+        return false;
+    }
+}
+
+async function syncToCloud(transaction, action, id = null) {
+    let payload = { action: action };
+    
+    if (action === 'add') {
+        payload.transaction = transaction;
+    } else if (action === 'update') {
+        payload.id = id;
+        payload.transaction = transaction;
+    } else if (action === 'delete') {
+        payload.id = id;
+    } else if (action === 'sync') {
+        payload.transactions = transaction;
+    }
+    
+    try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        return result.success;
+    } catch (error) {
+        console.error('Gagal sync ke cloud:', error);
+        return false;
+    }
+}
+
+async function addTransactionToCloud(transaction) {
+    return await syncToCloud(transaction, 'add');
+}
+
+async function updateTransactionInCloud(id, transaction) {
+    return await syncToCloud(transaction, 'update', id);
+}
+
+async function deleteTransactionFromCloud(id) {
+    return await syncToCloud(null, 'delete', id);
+}
+
+async function syncAllToCloud(transactions) {
+    return await syncToCloud(transactions, 'sync');
+}
+
+// ============ LOCAL BACKUP FUNCTIONS ============
+function saveToLocalBackup() {
+    try {
+        localStorage.setItem('bank_vivi_backup', JSON.stringify(txs));
+        localStorage.setItem('bank_vivi_last_sync', new Date().toISOString());
+    } catch(e) {}
+}
+
+function loadFromLocalBackup() {
+    try {
+        const backup = localStorage.getItem('bank_vivi_backup');
+        if (backup) {
+            txs = JSON.parse(backup);
+        }
+    } catch(e) {
+        txs = [];
+    }
+}
+
+// ============ CORE FUNCTIONS (Sama seperti sebelumnya) ============
+function escape(s) { return s ? String(s).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;') : ''; }
+function validAmount(n) { let v = Number(n); return !isNaN(v) && v > 0 && v <= 9999999999 && Number.isInteger(v); }
+function rp(n) { return 'Rp ' + ((n || 0).toLocaleString('id-ID')); }
+function fmtDate(d) { if (!d) return '-'; let p = d.split('-'); return p.length === 3 ? `${parseInt(p[2])} ${monthNames[parseInt(p[1]) - 1]} ${p[0]}` : d; }
 
 function toast(msg) {
     let t = document.getElementById('toast');
-    if (t) {
-        t.innerText = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2500);
-    }
+    if (t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
 }
 
-function escape(s) {
-    return s ? String(s).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;') : '';
-}
-
-function rp(n) {
-    return 'Rp ' + ((n || 0).toLocaleString('id-ID'));
-}
-
-function fmtDate(d) {
-    if (!d) return '-';
-    let p = d.split('-');
-    return p.length === 3 ? `${parseInt(p[2])} ${monthNames[parseInt(p[1]) - 1]} ${p[0]}` : d;
-}
-
-function formatDateForInput(dateStr) {
-    if (!dateStr) return '';
-    return dateStr.split('T')[0];
-}
-
-// ============ LOG FUNCTIONS ============
-function loadLog() {
-    try {
-        let s = localStorage.getItem('bank_vivi_log');
-        activityLog = s ? JSON.parse(s) : [];
-    } catch (e) { activityLog = []; }
-}
-function saveLog() {
-    try {
-        localStorage.setItem('bank_vivi_log', JSON.stringify(activityLog));
-    } catch (e) { }
-}
-function addLog(action, detail, oldData = null, newData = null) {
-    let logEntry = {
-        id: Date.now(),
-        time: new Date().toLocaleString('id-ID'),
-        action: action,
-        detail: detail
-    };
-    if (oldData) logEntry.oldData = oldData;
-    if (newData) logEntry.newData = newData;
-    activityLog.unshift(logEntry);
-    if (activityLog.length > 500) activityLog = activityLog.slice(0, 500);
-    saveLog();
-}
-
-function openLogModal() {
-    let logList = document.getElementById('logList');
-    if (!activityLog.length) {
-        logList.innerHTML = '<div class="empty-row">Belum ada aktivitas</div>';
-    } else {
-        logList.innerHTML = activityLog.map(log => {
-            let cls = '';
-            if (log.action === 'TAMBAH') cls = 'log-action-add';
-            else if (log.action === 'EDIT') cls = 'log-action-edit';
-            else if (log.action === 'HAPUS') cls = 'log-action-delete';
-            else if (log.action === 'IMPORT') cls = 'log-action-import';
-            else if (log.action === 'HAPUS_SEMUA') cls = 'log-action-delete';
-            return `<div class="log-entry">
-                        <span class="log-time">${log.time}</span>
-                        <span class="log-action ${cls}">${log.action}</span>
-                        <span>${log.detail}</span>
-                        ${log.oldData ? `<div class="log-detail">📝 Sebelum: ${log.oldData}</div>` : ''}
-                        ${log.newData ? `<div class="log-detail">✏️ Sesudah: ${log.newData}</div>` : ''}
-                    </div>`;
-        }).join('');
-    }
-    document.getElementById('modalLog').classList.add('show');
-}
-
-// ============ SUPABASE CRUD ============
-
-async function loadFromSupabase() {
-    updateSyncStatus('syncing', 'Mengambil data...');
-    try {
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('id, date, keterangan, type, amount')
-            .order('date', { ascending: false });
-        
-        if (error) throw error;
-        
-        txs = data.map(item => ({
-            id: item.id,
-            date: formatDateForInput(item.date),
-            desc: item.keterangan,
-            type: item.type,
-            amount: Number(item.amount),
-            balance: 0
-        }));
-        
-        updateSyncStatus('online', 'Tersinkron');
-        updateLastUpdateTime();
-        render();
-        return true;
-    } catch (err) {
-        console.error('Load error:', err);
-        updateSyncStatus('error', 'Gagal sync');
-        toast('Gagal mengambil data: ' + err.message);
-        return false;
-    }
-}
-
-async function addToSupabase(transaction) {
-    try {
-        const { data, error } = await supabase
-            .from('transactions')
-            .insert([{
-                date: transaction.date,
-                keterangan: transaction.desc,
-                type: transaction.type,
-                amount: transaction.amount
-            }])
-            .select();
-        
-        if (error) throw error;
-        
-        if (data && data[0]) {
-            transaction.id = data[0].id;
-            txs.unshift(transaction);
-        }
-        
-        return true;
-    } catch (err) {
-        console.error('Add error:', err);
-        toast('Gagal menambah data: ' + err.message);
-        return false;
-    }
-}
-
-async function updateInSupabase(id, updates) {
-    try {
-        const { error } = await supabase
-            .from('transactions')
-            .update({
-                date: updates.date,
-                keterangan: updates.desc,
-                type: updates.type,
-                amount: updates.amount
-            })
-            .eq('id', id);
-        
-        if (error) throw error;
-        return true;
-    } catch (err) {
-        console.error('Update error:', err);
-        toast('Gagal update data: ' + err.message);
-        return false;
-    }
-}
-
-async function deleteFromSupabase(id) {
-    try {
-        const { error } = await supabase
-            .from('transactions')
-            .delete()
-            .eq('id', id);
-        
-        if (error) throw error;
-        return true;
-    } catch (err) {
-        console.error('Delete error:', err);
-        toast('Gagal hapus data: ' + err.message);
-        return false;
-    }
-}
-
-async function deleteAllFromSupabase() {
-    try {
-        const { error } = await supabase
-            .from('transactions')
-            .delete()
-            .neq('id', 0);
-        
-        if (error) throw error;
-        return true;
-    } catch (err) {
-        console.error('Delete all error:', err);
-        toast('Gagal hapus semua: ' + err.message);
-        return false;
-    }
-}
-
-async function importToSupabase(transactions) {
-    try {
-        const dataToInsert = transactions.map(t => ({
-            date: t.date,
-            keterangan: t.desc.slice(0, 100),
-            type: t.type,
-            amount: t.amount
-        }));
-        
-        const { data, error } = await supabase
-            .from('transactions')
-            .insert(dataToInsert)
-            .select();
-        
-        if (error) throw error;
-        return true;
-    } catch (err) {
-        console.error('Import error:', err);
-        toast('Gagal import: ' + err.message);
-        return false;
-    }
-}
-
-function updateLastUpdateTime() {
+function updateTime() {
     let e = document.getElementById('lastUpdate');
     if (e) e.innerText = new Date().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
-async function syncFromCloud() {
-    await loadFromSupabase();
-    toast('Data disinkronkan dari cloud');
-}
-
-// ============ RECALCULATE ============
 function recalcBalances() {
-    let sorted = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
     let bal = 0;
-    sorted.forEach(t => {
-        bal += t.type === 'income' ? t.amount : -t.amount;
-        t.balance = bal;
-    });
+    [...txs].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => { bal += t.type === 'income' ? t.amount : -t.amount; t.balance = bal; });
 }
 
-// ============ RENDER ============
 function getDisplayData() {
     let data = [...txs];
     if (filter === 'income') data = data.filter(t => t.type === 'income');
@@ -425,67 +304,73 @@ function getDisplayData() {
 }
 
 function render() {
-    recalcBalances();
-    
-    let totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    let totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    let curBal = txs.length ? txs[txs.length - 1].balance : 0;
-    
-    let now = new Date(), curM = String(now.getMonth() + 1).padStart(2, '0'), curY = now.getFullYear();
-    let mExp = 0;
-    txs.forEach(t => {
-        let [y, m] = t.date.split('-');
-        if (y == curY && m == curM && t.type === 'expense') mExp += t.amount;
-    });
-    
-    document.getElementById('totalSaldo').innerText = rp(curBal);
-    document.getElementById('totalPemasukan').innerText = rp(totalInc);
-    document.getElementById('totalPengeluaran').innerText = rp(totalExp);
-    document.getElementById('saldoBulan').innerText = rp(mExp);
-    
-    let data = getDisplayData();
-    let tb = document.getElementById('transactionTableBody');
-    let cnt = document.getElementById('transactionCount');
-    if (cnt) cnt.innerText = data.length + ' transaksi';
-    
-    if (!data.length) {
-        tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi</td></tr>';
-        return;
-    }
-    
-    tb.innerHTML = data.map((t, i) => {
-        let isInc = t.type === 'income';
-        return `<tr>
-            <td style="text-align:center">${i + 1}</td>
-            <td>${escape(fmtDate(t.date))}</td>
-            <td>${escape(t.desc)}</td>
-            <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
-            <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
-            <td class="text-right">${rp(t.balance)}</td>
-            <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋮</button></td>
-        </tr>`;
-    }).join('');
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+        try {
+            recalcBalances();
+            let totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            let totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            let curBal = txs.length ? txs.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
+            let now = new Date(), curM = String(now.getMonth() + 1).padStart(2, '0'), curY = now.getFullYear();
+            let mExp = 0;
+            txs.forEach(t => { let [y, m] = t.date.split('-'); if (y == curY && m == curM && t.type === 'expense') mExp += t.amount; });
+            
+            document.getElementById('totalSaldo').innerText = rp(curBal);
+            document.getElementById('totalPemasukan').innerText = rp(totalInc);
+            document.getElementById('totalPengeluaran').innerText = rp(totalExp);
+            document.getElementById('saldoBulan').innerText = rp(mExp);
+            
+            let data = getDisplayData();
+            let tb = document.getElementById('transactionTableBody');
+            let cnt = document.getElementById('transactionCount');
+            if (cnt) cnt.innerText = data.length + ' transaksi';
+            if (!data.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi</td></tr>'; return; }
+            
+            tb.innerHTML = data.map((t, i) => {
+                let isInc = t.type === 'income';
+                return `<tr>
+                    <td style="text-align:center">${i + 1}</td>
+                    <td>${escape(fmtDate(t.date))}</td>
+                    <td>${escape(t.desc)}</td>
+                    <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right">${rp(t.balance)}</td>
+                    <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋮</button></td>
+                </tr>`;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }, 10);
 }
 
-// ============ CRUD WRAPPERS ============
+// ============ CRUD OPERATIONS dengan Cloud ============
 async function handleSubmit(e) {
     e.preventDefault();
     let type = document.getElementById('txType').value;
     let date = document.getElementById('txDate').value;
     let desc = document.getElementById('txDesc').value.trim().slice(0, 100);
-    let amount = parseInt(document.getElementById('txAmount').value, 10);
+    let amt = parseInt(document.getElementById('txAmount').value, 10);
     
     if (!desc) { toast('Keterangan harus diisi'); return; }
-    if (!amount || amount <= 0) { toast('Nominal harus > 0'); return; }
+    if (!validAmount(amt)) { toast('Nominal harus >0'); return; }
     
-    let newTx = { id: 0, date, desc, type, amount };
-    let success = await addToSupabase(newTx);
+    const newTransaction = { id: Date.now(), date, desc, type, amount: amt };
+    
+    toast('Menyimpan ke cloud...');
+    const success = await addTransactionToCloud(newTransaction);
     
     if (success) {
-        addLog('TAMBAH', `"${desc}" (${fmtDate(date)}) - ${rp(amount)} - ${type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`);
+        await loadFromCloud();
+        render();
+        updateTime();
         closeModalTambah();
-        await loadFromSupabase();
         toast('Transaksi tersimpan di cloud');
+    } else {
+        // Fallback: simpan lokal dulu
+        txs.push(newTransaction);
+        saveToLocalBackup();
+        render();
+        closeModalTambah();
+        toast('Tersimpan lokal (offline mode) - akan sync nanti');
     }
 }
 
@@ -498,50 +383,87 @@ async function handleEditSubmit(e) {
     let newAmt = parseInt(document.getElementById('editJumlah').value, 10);
     
     if (!newDesc) { toast('Keterangan harus diisi'); return; }
-    if (!newAmt || newAmt <= 0) { toast('Nominal harus > 0'); return; }
+    if (!validAmount(newAmt)) { toast('Nominal harus >0'); return; }
     
-    let oldTx = txs.find(t => t.id === id);
-    let oldData = `"${oldTx.desc}" (${fmtDate(oldTx.date)}) - ${rp(oldTx.amount)} - ${oldTx.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`;
-    let newData = `"${newDesc}" (${fmtDate(newDate)}) - ${rp(newAmt)} - ${newType === 'income' ? 'Pemasukan' : 'Pengeluaran'}`;
+    const updatedTransaction = { id, date: newDate, desc: newDesc, type: newType, amount: newAmt };
     
-    let success = await updateInSupabase(id, {
-        date: newDate,
-        desc: newDesc,
-        type: newType,
-        amount: newAmt
-    });
+    toast('Mengupdate cloud...');
+    const success = await updateTransactionInCloud(id, updatedTransaction);
     
     if (success) {
-        addLog('EDIT', `"${newDesc}" diubah`, oldData, newData);
+        await loadFromCloud();
+        render();
         closeModalEdit();
-        await loadFromSupabase();
         toast('Transaksi diupdate');
-    }
-}
-
-async function deleteTransaction(id) {
-    let deleted = txs.find(t => t.id === id);
-    if (!deleted) return;
-    
-    let success = await deleteFromSupabase(id);
-    if (success) {
-        addLog('HAPUS', `"${deleted.desc}" (${fmtDate(deleted.date)}) - ${rp(deleted.amount)}`);
-        await loadFromSupabase();
-        toast('Transaksi dihapus dari cloud');
+    } else {
+        // Fallback
+        let idx = txs.findIndex(t => t.id === id);
+        if (idx !== -1) {
+            txs[idx] = updatedTransaction;
+            saveToLocalBackup();
+            render();
+            closeModalEdit();
+            toast('Update tersimpan lokal');
+        }
     }
 }
 
 async function confirmDeleteAll() {
     if (!txs.length) { toast('Tidak ada data'); closeDeleteAllModal(); return; }
-    if (confirm('Hapus semua data dari cloud?')) {
-        let success = await deleteAllFromSupabase();
-        if (success) {
-            addLog('HAPUS_SEMUA', `Menghapus ${txs.length} transaksi dari cloud`);
-            await loadFromSupabase();
-            closeDeleteAllModal();
-            toast('Semua data dihapus dari cloud');
-        }
+    if (!confirm('Hapus SEMUA data dari cloud?')) return;
+    
+    toast('Menghapus semua data...');
+    const success = await syncAllToCloud([]);
+    
+    if (success) {
+        await loadFromCloud();
+        render();
+        closeDeleteAllModal();
+        toast('Semua data telah dihapus dari cloud');
+    } else {
+        toast('Gagal menghapus dari cloud');
     }
+}
+
+async function deleteTransaction(id) {
+    closeModalActionMenu();
+    if (!confirm('Hapus transaksi ini?')) return;
+    
+    toast('Menghapus dari cloud...');
+    const success = await deleteTransactionFromCloud(id);
+    
+    if (success) {
+        await loadFromCloud();
+        render();
+        toast('Transaksi dihapus');
+    } else {
+        // Fallback
+        txs = txs.filter(x => x.id !== id);
+        saveToLocalBackup();
+        render();
+        toast('Dihapus (offline mode)');
+    }
+}
+
+async function syncWithCloud() {
+    if (isSyncing) { toast('Sinkronisasi sedang berjalan...'); return; }
+    isSyncing = true;
+    const syncBtn = document.getElementById('syncBtn');
+    syncBtn.textContent = '⏳ Syncing...';
+    
+    toast('Menyinkronkan dengan cloud...');
+    const success = await loadFromCloud();
+    
+    if (success) {
+        render();
+        updateTime();
+        toast('Sinkronisasi berhasil');
+    } else {
+        toast('Gagal sync, menggunakan data lokal');
+    }
+    
+    syncBtn.textContent = '🔄 Sinkronisasi';
+    isSyncing = false;
 }
 
 // ============ UI FUNCTIONS ============
@@ -552,8 +474,10 @@ function openModalTambah(type) {
     document.getElementById('modalTambah').classList.add('show');
 }
 function closeModalTambah() { document.getElementById('modalTambah').classList.remove('show'); }
-
 function closeModalEdit() { document.getElementById('modalEdit').classList.remove('show'); }
+function openDeleteAllModal() { document.getElementById('modalDeleteAll').classList.add('show'); }
+function closeDeleteAllModal() { document.getElementById('modalDeleteAll').classList.remove('show'); }
+function closeModalActionMenu() { document.getElementById('modalActionMenu').classList.remove('show'); actionId = null; }
 
 function openActionMenu(id) {
     let t = txs.find(x => x.id === id);
@@ -562,8 +486,8 @@ function openActionMenu(id) {
     document.getElementById('actionTransactionInfo').innerHTML = `<strong>${escape(t.desc)}</strong><br>${fmtDate(t.date)} · ${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`;
     document.getElementById('modalActionMenu').classList.add('show');
 }
-function closeModalActionMenu() { document.getElementById('modalActionMenu').classList.remove('show'); actionId = null; }
-function editFromActionMenu() {
+
+function editAction() {
     if (!actionId) return;
     let t = txs.find(x => x.id === actionId);
     if (!t) return;
@@ -574,14 +498,6 @@ function editFromActionMenu() {
     document.getElementById('editDeskripsi').value = t.desc;
     document.getElementById('editJumlah').value = t.amount;
     document.getElementById('modalEdit').classList.add('show');
-}
-function deleteFromActionMenu() {
-    if (!actionId) return;
-    closeModalActionMenu();
-    if (confirm('Hapus transaksi ini dari cloud?')) {
-        deleteTransaction(actionId);
-        actionId = null;
-    }
 }
 
 function setFilter(f) {
@@ -596,113 +512,32 @@ function setFilter(f) {
 function printReport() {
     let data = getDisplayData();
     if (!data.length) { toast('Tidak ada data untuk dicetak'); return; }
-    
     let filterText = filter === 'all' ? 'Semua Transaksi' : filter === 'income' ? 'Pemasukan' : filter === 'expense' ? 'Pengeluaran' : 'Pengeluaran Bulanan';
     let totalInc = data.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     let totalExp = data.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    let curBal = data.length ? data[0].balance : 0;
+    let curBal = data.length ? data.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
     let printDate = new Date().toLocaleString('id-ID');
-    
     let rows = data.map((t, i) => {
         let isInc = t.type === 'income';
-        return `<tr>
-            <td style="padding:8px;border:1px solid #ccc;text-align:center">${i + 1}</td>
-            <td style="padding:8px;border:1px solid #ccc">${fmtDate(t.date)}</td>
-            <td style="padding:8px;border:1px solid #ccc">${escape(t.desc)}</td>
-            <td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td>
-            <td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td>
-            <td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td>
-        </tr>`;
+        return `<tr><td style="padding:8px;border:1px solid #ccc;text-align:center">${i+1}</td><td style="padding:8px;border:1px solid #ccc">${fmtDate(t.date)}</td><td style="padding:8px;border:1px solid #ccc">${escape(t.desc)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td></tr>`;
     }).join('');
     
     let printWindow = window.open('', '_blank');
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Laporan Bank Vivi</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
-        body{font-family:'Inter',sans-serif;padding:24px}
-        .header{border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px}
-        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-        .stat-card{border:1px solid #ccc;padding:12px}
-        .stat-label{font-size:.65rem;color:#666}
-        .stat-value{font-size:1rem;font-weight:600}
-        table{width:100%;border-collapse:collapse}
-        th{background:#f5f5f5;padding:8px;border:1px solid #ccc}
-        td{padding:8px;border:1px solid #ccc}
-        .text-right{text-align:right}
-        @page{size:landscape;margin:1.5cm}
-    </style></head><body>
-        <div class="header"><h1>BANK VIVI</h1><p>Laporan Arus Kas - ${filterText} | Dicetak: ${printDate}</p></div>
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div>
-            <div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div>
-        </div>
-        <h3>📋 Detail Transaksi</h3>
-        <table><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th class="text-right">Pemasukan</th><th class="text-right">Pengeluaran</th><th class="text-right">Saldo</th></tr></thead><tbody>${rows}</tbody></table>
-        <div style="margin-top:20px;text-align:center;font-size:.6rem">2026 Bank Vivi</div>
-        <script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script>
-    </body></html>`);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Laporan Bank Vivi</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;padding:24px}.header{border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat-card{border:1px solid #ccc;padding:12px}.stat-label{font-size:.65rem;color:#666}.stat-value{font-size:1rem;font-weight:600}table{width:100%;border-collapse:collapse}th{background:#f5f5f5;padding:8px;border:1px solid #ccc}td{padding:8px;border:1px solid #ccc}.text-right{text-align:right}@page{size:landscape;margin:1.5cm}</style></head><body><div class="header"><h1>BANK VIVI</h1><p>Laporan Arus Kas - ${filterText} | Dicetak: ${printDate}</p></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div><div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div><div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div><div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div></div><h3 style="margin-bottom:10px;font-size:.9rem">📋 Detail Transaksi</h3><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th class="text-right">Pemasukan</th><th class="text-right">Pengeluaran</th><th class="text-right">Saldo</th></tr></thead><tbody>${rows}</tbody><div style="margin-top:20px;padding-top:12px;border-top:1px solid #ccc;font-size:.6rem;text-align:center">Bank Vivi - Dicetak: ${printDate}</div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
     printWindow.document.close();
 }
 
 function exportToJSON() {
     if (!txs.length) { toast('Tidak ada data'); return; }
     let a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({
-        exportDate: new Date().toISOString(),
-        version: '1.0',
-        transactions: txs.map(t => ({ id: t.id, date: t.date, desc: t.desc, type: t.type, amount: t.amount }))
-    }, null, 2)], { type: 'application/json' }));
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ exportDate: new Date().toISOString(), transactions: txs }, null, 2)], { type: 'application/json' }));
     a.download = `bank_vivi_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     toast('Backup JSON berhasil');
 }
 
-let pendingImport = [];
-function openImportJSONModal() { document.getElementById('modalImportJSON').classList.add('show'); document.getElementById('jsonFileInput').value = ''; document.getElementById('jsonPreviewArea').style.display = 'none'; pendingImport = []; }
-function closeImportJSONModal() { document.getElementById('modalImportJSON').classList.remove('show'); }
-
-document.getElementById('jsonFileInput').addEventListener('change', e => {
-    let file = e.target.files[0];
-    if (!file) return;
-    let r = new FileReader();
-    r.onload = ev => {
-        try {
-            let c = JSON.parse(ev.target.result);
-            let imp = c.transactions && Array.isArray(c.transactions) ? c.transactions : (Array.isArray(c) ? c : []);
-            let valid = imp.filter(t => t.date && t.desc && t.type && t.amount > 0);
-            if (!valid.length) throw new Error('Tidak ada data valid');
-            pendingImport = valid;
-            document.getElementById('jsonPreviewTable').innerHTML = `<thead><tr><th>Tanggal</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>${valid.slice(0, 5).map(d => `<tr><td>${d.date}</td><td>${escape(d.desc.slice(0, 25))}</td><td>${rp(d.amount)}</td></tr>`).join('')}</tbody>`;
-            document.getElementById('jsonPreviewArea').style.display = 'block';
-            document.getElementById('jsonLoadingArea').style.display = 'none';
-        } catch (err) { toast('Gagal baca file'); closeImportJSONModal(); }
-    };
-    r.readAsText(file);
-    document.getElementById('jsonLoadingArea').style.display = 'block';
-    document.getElementById('jsonPreviewArea').style.display = 'none';
-});
-
-async function confirmImport() {
-    if (!pendingImport.length) { toast('Tidak ada data'); return; }
-    if (confirm(`Import ${pendingImport.length} transaksi ke cloud?`)) {
-        let success = await importToSupabase(pendingImport);
-        if (success) {
-            addLog('IMPORT', `Import ${pendingImport.length} transaksi dari file JSON ke cloud`);
-            await loadFromSupabase();
-            closeImportJSONModal();
-            toast(`Import ${pendingImport.length} transaksi ke cloud`);
-            pendingImport = [];
-        }
-    }
-}
-
-function openDeleteAllModal() { document.getElementById('modalDeleteAll').classList.add('show'); }
-function closeDeleteAllModal() { document.getElementById('modalDeleteAll').classList.remove('show'); }
-
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-// ============ INIT ============
+// ============ INITIALIZATION ============
 window.openModalTambah = openModalTambah;
 window.closeModalTambah = closeModalTambah;
 window.handleSubmit = handleSubmit;
@@ -712,30 +547,28 @@ window.openDeleteAllModal = openDeleteAllModal;
 window.closeDeleteAllModal = closeDeleteAllModal;
 window.confirmDeleteAll = confirmDeleteAll;
 window.exportToJSON = exportToJSON;
-window.openImportJSONModal = openImportJSONModal;
-window.closeImportJSONModal = closeImportJSONModal;
 window.setFilter = setFilter;
 window.closeModalActionMenu = closeModalActionMenu;
-window.editFromActionMenu = editFromActionMenu;
-window.deleteFromActionMenu = deleteFromActionMenu;
+window.editFromActionMenu = editAction;
+window.deleteFromActionMenu = () => deleteTransaction(actionId);
 window.printReport = printReport;
-window.openLogModal = openLogModal;
-window.closeModal = closeModal;
+window.syncWithCloud = syncWithCloud;
 window.openActionMenu = openActionMenu;
-window.syncFromCloud = syncFromCloud;
 
-document.getElementById('actionEditBtn').onclick = editFromActionMenu;
-document.getElementById('actionDeleteBtn').onclick = deleteFromActionMenu;
-document.getElementById('confirmJSONImportBtn').onclick = confirmImport;
+document.getElementById('actionEditBtn').onclick = editAction;
+document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
 
-// Load initial data
-loadLog();
-loadFromSupabase();
-
-// Close modal on outside click
+// Close modals on outside click
 document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
 });
+
+// Load initial data
+(async function init() {
+    await loadFromCloud();
+    render();
+    updateTime();
+})();
 </script>
 </body>
 </html>

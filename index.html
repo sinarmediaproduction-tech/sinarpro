@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ArtaFlow - Multi Buku Kas (Audit Mode)</title>
+    <title>ArtaFlow - Multi Buku Kas (Vercel Audit Edition)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -101,7 +101,6 @@
         .new-row{animation:highlight 2s ease-out}
         @keyframes highlight{0%{background:#e3fcef}100%{background:transparent}}
         
-        /* Gaya Baris Log Audit */
         .log-line {border-bottom: 1px dashed #ddd; padding: 6px 0; display: block;}
         .log-line:last-child {border-bottom: none;}
         .log-tag {font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff;}
@@ -396,7 +395,6 @@
 </div>
 
 <script>
-// ==================== ENGINE BACKEND SCRIPT TEMPLATE ====================
 const BACKEND_SCRIPT = `// GOOGLE APPS SCRIPT BACKEND FOR ARTAFLOW
 function doPost(e) {
   const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
@@ -418,6 +416,7 @@ function doPost(e) {
       const rows = sheet.getDataRange().getValues();
       const txs = [];
       for (let i = 1; i < rows.length; i++) {
+        if(!rows[i][0]) continue;
         txs.push({
           id: Number(rows[i][0]),
           date: rows[i][1],
@@ -453,7 +452,6 @@ function doPost(e) {
   }
 }`;
 
-// ==================== STATE UTAMA APLIKASI LOCAL & MEMORY ====================
 let txs = [];
 let books = [];
 let currentBookId = 'b_default';
@@ -466,7 +464,6 @@ let timer = null;
 let lastAddedId = null;
 let actionId = null;
 
-// ==================== FUNGSI FORMAT DAN UTILITY ====================
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 function unRp(s) { return Number(s.replace(/[^0-9]/g, '')) || 0; }
 function formatRupiah(el) {
@@ -493,13 +490,10 @@ function formatDateTime(dtStr, createdStr) {
     } catch(e) { return dtStr; }
 }
 
-// FUNGSI INJEKSI LOG AUDIT DENGAN DETAIL KATEGORI OPERASI
 function logAudit(type, msg) {
     let time = new Date().toISOString();
     let bName = books.find(b => b.id === currentBookId)?.name || currentBookId;
     syncLogs.unshift({ time, type, msg, bookName: bName });
-    
-    // Batasan log dinaikkan menjadi 2000 entri demi kebutuhan histori audit panjang
     if(syncLogs.length > 2000) syncLogs.pop();
     localStorage.setItem('artaflow_logs', JSON.stringify(syncLogs));
     renderLogsToUI();
@@ -515,12 +509,10 @@ function renderLogsToUI() {
     area.innerHTML = syncLogs.map(l => {
         let d = new Date(l.time);
         let timeStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-        
         let tagClass = 'tag-system';
         if (l.type === 'TAMBAH') tagClass = 'tag-add';
         if (l.type === 'UBAH') tagClass = 'tag-edit';
         if (l.type === 'HAPUS') tagClass = 'tag-delete';
-        
         return `<span class="log-line">
             <small style="color:#888;">[${timeStr}]</small> 
             <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.bookName)})</small> 
@@ -530,7 +522,6 @@ function renderLogsToUI() {
     }).join('');
 }
 
-// ==================== ENGINE PERHITUNGAN DAN RENDER DATA ====================
 function recalcBalances() {
     let bal = 0;
     txs.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
@@ -567,18 +558,15 @@ function render() {
         try {
             recalcBalances();
             renderStats();
-            
             let filteredData = getDisplayData();
             let tb = document.getElementById('transactionTableBody');
             if (document.getElementById('transactionCount')) {
                 document.getElementById('transactionCount').innerText = filteredData.length + ' transaksi';
             }
-            
             if (!filteredData.length) {
                 tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td></tr>';
                 return;
             }
-            
             tb.innerHTML = filteredData.map((t, i) => {
                 let isInc = t.type === 'income';
                 let isNew = (lastAddedId === t.id);
@@ -596,7 +584,6 @@ function render() {
     }, 10);
 }
 
-// ==================== INTERAKSI CLOUD DENGAN GOOGLE SHEETS ====================
 function getCloudUrl() { return cloudUrls[currentBookId] || ''; }
 function saveCloudUrl(url) {
     cloudUrls[currentBookId] = url.trim();
@@ -637,7 +624,6 @@ async function syncWithCloud() {
     try {
         let btn = document.getElementById('forceSyncBtn');
         if(btn) { btn.disabled = true; btn.innerText = "Proses..."; }
-        
         let res = await fetch(url, {
             method: 'POST', mode: 'cors',
             body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } })
@@ -659,25 +645,30 @@ async function syncWithCloud() {
     }
 }
 
-// ==================== MANAJEMEN DATA OPERASI CRUD ====================
-function saveLocal() { localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); }
 async function loadDataForCurrentBook() {
     txs = [];
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    
     let url = getCloudUrl();
-    if (url) {
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-        try {
-            let res = await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'load', book: bName }) });
-            let d = await res.json();
-            if (d.success && d.transactions) {
-                txs = d.transactions; saveLocal(); logAudit('SYSTEM', "Data mutasi kas berhasil dimuat sinkron dari awan.");
-            }
-        } catch(e) { logAudit('SYSTEM', "Gagal kontak awan untuk muat data terbaru, memakai database lokal."); }
+    if (!url) { return; } // Proteksi Vercel: Jangan fetch jika kolom URL kosong
+    
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    try {
+        let res = await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'load', book: bName }) });
+        let d = await res.json();
+        if (d.success && d.transactions && d.transactions.length > 0) {
+            txs = d.transactions; 
+            saveLocal(); 
+            logAudit('SYSTEM', `Data mutasi kas (${bName}) berhasil dimuat sinkron dari awan.`);
+        }
+    } catch(e) { 
+        logAudit('SYSTEM', `Gagal kontak awan untuk muat data (${bName}), memakai database lokal.`); 
     }
     lastAddedId = null;
 }
+
+async function saveLocal() { localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); }
 
 async function handleSubmit(e) {
     e.preventDefault();
@@ -697,18 +688,18 @@ async function handleSubmit(e) {
     };
     
     lastAddedId = newTransaction.id;
-    
-    // TULIS LOG DETAIL TAMBAH DATA
     logAudit('TAMBAH', `Menambahkan transaksi [${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'}]. Nominal: ${rp(newTransaction.amount)} | Deskripsi: "${newTransaction.desc}" | Tanggal nota: ${newTransaction.date}`);
 
-    const success = await autoSync('add', async () => { return await addTransactionToCloud(newTransaction); });
-    if (success) { await loadDataForCurrentBook(); } 
-    else { txs.unshift(newTransaction); saveLocal(); }
+    // Strategi Optimis Vercel: Simpan lokal dulu agar user tidak stuck menunggu fetch lambat
+    txs.unshift(newTransaction); 
+    saveLocal();
+    render();
     
     closeModal('addModal');
     document.getElementById('addForm').reset();
     submitBtn.disabled = false; submitBtn.innerText = "Simpan";
-    render();
+
+    await autoSync('add', async () => { return await addTransactionToCloud(newTransaction); });
 }
 
 async function handleEditSubmit(e) {
@@ -719,12 +710,10 @@ async function handleEditSubmit(e) {
     
     let t = txs.find(x => x.id === id);
     if (t) {
-        // AMBIL REKAMAN SEBELUM DIUBAH UNTUK AUDITOR
         let oldType = t.type === 'income' ? 'MASUK' : 'KELUAR';
         let oldAmt = t.amount;
         let oldDesc = t.desc;
         let oldDate = t.date;
-
         let newType = document.querySelector('input[name="editType"]:checked').value;
         let newTypeLabel = newType === 'income' ? 'MASUK' : 'KELUAR';
 
@@ -733,8 +722,8 @@ async function handleEditSubmit(e) {
         t.desc = document.getElementById('editTxDesc').value.trim();
         t.amount = amt;
         saveLocal();
+        render();
 
-        // TULIS LOG DETAIL PERUBAHAN (SEBELUM VS SESUDAH)
         logAudit('UBAH', `Mengubah transaksi ID:${id}. SEBELUMNYA: [${oldType}] ${rp(oldAmt)} "${oldDesc}" (${oldDate}) -> MENJADI: [${newTypeLabel}] ${rp(t.amount)} "${t.desc}" (${t.date})`);
 
         await autoSync('sync', async () => {
@@ -744,17 +733,14 @@ async function handleEditSubmit(e) {
         });
     }
     closeModal('editModal');
-    render();
 }
 
 async function deleteTransaction(id) {
     if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
         let t = txs.find(x => x.id === id);
         if(t) {
-            // TULIS LOG DETAIL DATA YANG DIHAPUS
             logAudit('HAPUS', `Menghapus transaksi ID:${id}. Data terhapus: [${t.type==='income'?'MASUK':'KELUAR'}] ${rp(t.amount)} | Deskripsi: "${t.desc}" | Tanggal nota: ${t.date}`);
         }
-
         txs = txs.filter(t => t.id !== id);
         saveLocal();
         closeModalActionMenu();
@@ -772,12 +758,8 @@ async function confirmDeleteAll() {
     let bName = bObj ? bObj.name : "buku kas aktif";
     if (confirm(`PERINGATAN SEKURITAS!\nAnda akan menghapus seluruh data transaksi dari "${bName}"?`)) {
         if(confirm(`Konfirmasi akhir:\nTindakan ini menghapus permanen rekaman lokal & cloud pada buku "${bName}". Lanjutkan?`)) {
-            
-            // TULIS LOG MASAL KOSONGKAN BUKU
             logAudit('HAPUS', `KOSONGKAN DATA MUTASI MENGHANCURKAN SELURUH ISI TRANSAKSI BUKU KAS: "${bName}"`);
-            
-            txs = []; saveLocal(); 
-            render();
+            txs = []; saveLocal(); render();
             await autoSync('sync', async () => {
                 let url = getCloudUrl();
                 await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: [] } }) });
@@ -788,7 +770,6 @@ async function confirmDeleteAll() {
     }
 }
 
-// ==================== KONTROL TAMPILAN, MODAL, DAN UI TAB ====================
 function openModal(id) {
     document.getElementById(id).classList.add('show');
     if (id === 'addModal') {
@@ -841,7 +822,6 @@ function updateTime() {
     }
 }
 
-// ==================== SISTEM MULTI BUKU KAS (MULTI-BOOK ENGINE) ====================
 function loadBooks() {
     let stored = localStorage.getItem('artaflow_books');
     if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
@@ -885,7 +865,7 @@ function openBookManager() {
         return `<div class="book-item">
             <span style="font-weight:${b.id===currentBookId?'700':'400'}">${escapeHtml(b.name)} ${b.id===currentBookId?'(Aktif)':''}</span>
             <div class="book-item-actions">
-                <button class="book-item-btn" onclick="openEditBookModal('${b.id}','${escapeHtml(b.name)}')">Edit Nama</button>
+                <button class="book-item-btn" onclick="openEditBookModal('${b.id}','${escapeHtml(b.name)}')">Edit Name</button>
                 ${delAction}
             </div>
         </div>`;
@@ -894,10 +874,8 @@ function openBookManager() {
     let activeBookObj = books.find(b => b.id === currentBookId);
     let lblName = document.getElementById('cloudSettingBookName');
     if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
-    
     let cloudIn = document.getElementById('cloudUrlInput');
     if(cloudIn) cloudIn.value = getCloudUrl();
-    
     openModal('bookManagerModal');
 }
 function closeBookManager() { closeModal('bookManagerModal'); }
@@ -942,10 +920,7 @@ async function deleteBook(id) {
     }
 }
 
-// ==================== STRUKTUR IMPORT, EKSPOR, DAN PRINT LOGIKA ====================
-function openImportModalFromManager() {
-    openModal('importModal');
-}
+function openImportModalFromManager() { openModal('importModal'); }
 function closeImportModal() { closeModal('importModal'); }
 function handleImport() {
     let fileIn = document.getElementById('importFile'); if (!fileIn.files.length) return;
@@ -974,9 +949,7 @@ function handleImport() {
                     if (idx > -1) txs[idx] = imp; else txs.push(imp);
                 });
                 saveLocal(); render(); closeImportModal(); fileIn.value = ''; 
-                
                 logAudit('TAMBAH', `Mengimpor eksternal database transaksi sebanyak: ${importedTxs.length} baris dari file "${file.name}"`);
-                
                 await autoSync('sync', async () => {
                     let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
                     await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
@@ -992,9 +965,7 @@ function handleImport() {
 function exportToCSV() {
     if (!txs.length) { alert("Tidak ada data transaksi."); return; }
     let csvRows = [["ID", "Tanggal", "Deskripsi", "Jenis", "Jumlah", "Waktu Dibuat"].join(',')];
-    txs.forEach(t => {
-        csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.created_at || ''].join(','));
-    });
+    txs.forEach(t => { csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.created_at || ''].join(',')); });
     let blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
     a.href = URL.createObjectURL(blob);
@@ -1005,15 +976,13 @@ function exportToJSON() {
     if (!txs.length) { alert("Tidak ada data."); return; }
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
     let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-    a.setAttribute("href", dataStr);
-    a.setAttribute("download", `ArtaFlow_Backup_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`);
+    a.setAttribute("href", dataStr); a.setAttribute("download", `ArtaFlow_Backup_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`);
     a.click();
 }
 function exportLogs() {
     if (!syncLogs.length) { alert("Log kosong."); return; }
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(syncLogs, null, 2));
-    let a = document.createElement('a'); a.setAttribute("href", dataStr);
-    a.setAttribute("download", `ArtaFlow_AuditLogs_${new Date().toISOString().slice(0,10)}.json`);
+    let a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `ArtaFlow_AuditLogs_${new Date().toISOString().slice(0,10)}.json`);
     a.click();
 }
 function printReport() {
@@ -1025,9 +994,7 @@ function printReport() {
     w.document.write(`<html><head><title>Laporan ArtaFlow</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1a1a1a}h2{margin-bottom:4px}.meta{font-size:.8rem;color:#666;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85rem}th,td{border:1px solid #1a1a1a;padding:8px 12px}th{background:#f5f5f5}.text-right{text-align:right}.summary-box{margin-top:20px;border:1.5px solid #1a1a1a;padding:14px;border-radius:4px;display:inline-block;min-width:300px;font-size:.85rem}.summary-item{display:flex;justify-content:space-between;margin-bottom:6px}</style></head><body>`);
     w.document.write(`<h2>LAPORAN TRANSAKSI KAS</h2><div class="meta">Buku Kas: <strong>${bName}</strong><br>Dicetak: ${new Date().toLocaleString('id-ID')}</div>`);
     w.document.write(`<table><thead><tr><th>No</th><th>Tanggal & Jam</th><th>Deskripsi</th><th>Masuk</th><th>Keluar</th><th>Saldo</th></tr></thead><tbody>`);
-    data.forEach((t, i) => {
-        w.document.write(`<tr><td style="text-align:center">${i+1}</td><td>${formatDateTime(t.date, t.created_at)}</td><td>${t.desc}</td><td class="text-right">${t.type==='income'?rp(t.amount):'—'}</td><td class="text-right">${t.type==='expense'?rp(t.amount):'—'}</td><td class="text-right">${rp(t.balance)}</td></tr>`);
-    });
+    data.forEach((t, i) => { w.document.write(`<tr><td style="text-align:center">${i+1}</td><td>${formatDateTime(t.date, t.created_at)}</td><td>${t.desc}</td><td class="text-right">${t.type==='income'?rp(t.amount):'—'}</td><td class="text-right">${t.type==='expense'?rp(t.amount):'—'}</td><td class="text-right">${rp(t.balance)}</td></tr>`); });
     w.document.write(`</tbody></table><div class="summary-box"><div class="summary-item"><span>Transaksi Terfilter:</span> <strong>${data.length}</strong></div><div class="summary-item" style="color:#00875a"><span>Pemasukan:</span> <strong>${rp(inc)}</strong></div><div class="summary-item" style="color:#de350b"><span>Pengeluaran:</span> <strong>${rp(exp)}</strong></div><div class="summary-item" style="border-top:1px solid #1a1a1a;padding-top:6px;font-weight:700"><span>Arus Bersih:</span> <span>${rp(inc-exp)}</span></div></div></body></html>`);
     w.document.close(); w.print();
 }
@@ -1036,7 +1003,6 @@ function copyScriptToClipboard() {
     let btn = document.querySelector(".copy-btn"); btn.innerText = "Tersalin!"; setTimeout(() => { btn.innerText = "Salin Kode"; }, 2000);
 }
 
-// ==================== EVENT LISTENER REGISTER WINDOW SCOPE ====================
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.handleSubmit = handleSubmit;
@@ -1074,7 +1040,6 @@ document.getElementById('actionEditBtn').onclick = editAction;
 document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
 document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }); });
 
-// ==================== SYSTEM INITIALIZATION EXECUTION ====================
 (async function init() {
     loadBooks();
     document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;

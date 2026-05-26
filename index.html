@@ -142,61 +142,27 @@
         
         /* ============ STYLING KHUSUS UNTUK CETAK ============ */
         @media print {
-            /* Reset semua styling untuk cetak */
             body {
                 padding: 0;
                 margin: 0;
                 background: white;
-                font-size: 10pt;
             }
-            
             .container {
-                max-width: 100%;
+                padding: 0;
                 margin: 0;
-                padding: 0.5cm;
+                max-width: 100%;
             }
-            
-            /* Sembunyikan elemen yang tidak perlu saat cetak */
-            .toolbar,
-            .filter-section,
-            .footer-tools,
-            .action-btn,
-            .modal,
-            .toast,
-            .btn,
-            .tabs,
-            .tab-btn,
-            .book-selector,
-            .sync-status,
-            .last-update-info,
-            .filter-chip,
-            .date-filter,
-            .filter-reset,
-            .btn-group,
-            #actionEditBtn,
-            #actionDeleteBtn,
-            .action-buttons {
+            .toolbar, .filter-section, .footer-tools, .action-btn, .modal, .toast, .btn,
+            .tabs, .tab-btn, .book-selector, .sync-status, .last-update-info, .filter-chip,
+            .date-filter, .filter-reset, .btn-group, #actionEditBtn, #actionDeleteBtn,
+            .action-buttons, .table-header button, .footer-tools .btn-small {
                 display: none !important;
             }
-            
-            /* Header cetak */
             .header {
                 margin-bottom: 15px;
                 padding-bottom: 10px;
                 border-bottom: 2px solid #000;
             }
-            
-            .header h1 {
-                font-size: 16pt;
-                font-weight: bold;
-            }
-            
-            .header p {
-                font-size: 9pt;
-                color: #333;
-            }
-            
-            /* Statistik Grid - tampil rapi saat cetak */
             .stats-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -204,76 +170,45 @@
                 margin-bottom: 20px;
                 page-break-inside: avoid;
             }
-            
             .stat-card {
                 border: 1px solid #ccc;
                 padding: 8px 10px;
                 background: white;
                 box-shadow: none;
+                border-radius: 4px;
             }
-            
-            .stat-label {
-                font-size: 8pt;
-                color: #555;
-            }
-            
-            .stat-value {
-                font-size: 11pt;
-                font-weight: bold;
-            }
-            
-            /* Tabel */
             .table-wrapper {
                 border: 1px solid #ccc;
-                overflow-x: visible;
+                overflow: visible;
                 box-shadow: none;
                 margin-bottom: 15px;
                 page-break-inside: avoid;
             }
-            
             table {
                 width: 100%;
                 border-collapse: collapse;
                 font-size: 9pt;
             }
-            
             th {
                 background: #f0f0f0;
                 padding: 8px 10px;
-                border: 1px solid #ccc;
+                border: 1px solid #aaa;
                 font-weight: bold;
                 text-align: center;
             }
-            
             td {
                 padding: 6px 10px;
                 border: 1px solid #ccc;
             }
-            
-            /* Halaman baru untuk setiap section jika perlu */
-            .page-break {
-                page-break-before: always;
-            }
-            
-            /* Footer cetak */
             .footer {
-                margin-top: 20px;
-                padding-top: 10px;
+                margin-top: 15px;
+                padding-top: 8px;
                 border-top: 1px solid #ccc;
                 font-size: 8pt;
-                text-align: center;
-                color: #666;
             }
-            
-            /* Hindari potongan halaman pada elemen penting */
-            .stats-grid, .table-wrapper, .header {
-                page-break-inside: avoid;
-            }
-            
-            /* Ukuran kertas */
             @page {
                 size: A4 landscape;
-                margin: 1cm;
+                margin: 1.5cm;
             }
         }
         
@@ -1276,7 +1211,7 @@ function render() {
             if (cnt) cnt.innerText = filteredData.length + ' transaksi';
             
             if (!filteredData.length) { 
-                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td><tr>';
+                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td></tr>';
                 return; 
             }
             
@@ -1553,7 +1488,10 @@ function setFilter(f) {
 
 function printReport() {
     let data = getDisplayData();
-    if (!data.length) { toast('Tidak ada data untuk dicetak'); return; }
+    if (!data.length) { 
+        toast('Tidak ada data untuk dicetak'); 
+        return; 
+    }
     
     let filterText = filter === 'all' ? 'Semua Transaksi' : filter === 'income' ? 'Pemasukan' : filter === 'expense' ? 'Pengeluaran' : 'Pengeluaran Bulan Ini';
     if (dateFilterStart || dateFilterEnd) {
@@ -1564,7 +1502,6 @@ function printReport() {
         filterText += rangeText;
     }
     
-    // Dapatkan nama buku aktif
     const currentBook = books.find(b => b.id === currentBookId);
     const bookName = currentBook ? currentBook.name : 'Buku Kas';
     
@@ -1576,13 +1513,13 @@ function printReport() {
     let rows = data.map((t, i) => { 
         let isInc = t.type === 'income'; 
         return `<tr>
-            <td style="padding:6px 8px;border:1px solid #ccc;text-align:center">${i+1}</td>
-            <td style="padding:6px 8px;border:1px solid #ccc">${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
-            <td style="padding:6px 8px;border:1px solid #ccc">${escapeHtml(t.desc)}</td>
-            <td style="padding:6px 8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td>
-            <td style="padding:6px 8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td>
-            <td style="padding:6px 8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td>
-        </table>`;
+            <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${i+1}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd">${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd">${escapeHtml(t.desc)}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${isInc ? rp(t.amount) : '-'}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${!isInc ? rp(t.amount) : '-'}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${rp(t.balance)}</td>
+        </tr>`;
     }).join('');
     
     let printWindow = window.open('', '_blank');
@@ -1590,7 +1527,7 @@ function printReport() {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ArtaFlow - Laporan Keuangan</title>
+    <title>Laporan ArtaFlow - ${escapeHtml(bookName)}</title>
     <style>
         * {
             margin: 0;
@@ -1599,66 +1536,91 @@ function printReport() {
         }
         body {
             font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            padding: 1.5cm;
+            padding: 15px;
             background: white;
             font-size: 10pt;
+            line-height: 1.4;
+        }
+        .print-container {
+            max-width: 100%;
+            margin: 0 auto;
         }
         .print-header {
             text-align: center;
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #000;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #1a1a1a;
         }
         .print-header h1 {
-            font-size: 18pt;
-            margin-bottom: 5px;
+            font-size: 20pt;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
         }
         .print-header p {
             font-size: 9pt;
             color: #555;
+            margin-top: 4px;
         }
         .print-info {
             margin-bottom: 15px;
             font-size: 9pt;
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap;
+            padding: 8px 0;
+        }
+        .print-info .left, .print-info .right {
+            background: #f5f5f5;
+            padding: 6px 12px;
+            border-radius: 4px;
         }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 25px;
         }
         .stat-card {
-            border: 1px solid #ccc;
-            padding: 8px 10px;
-            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            background: #fafafa;
+            border-radius: 6px;
         }
         .stat-label {
             font-size: 8pt;
             color: #666;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .stat-value {
+            font-size: 12pt;
+            font-weight: 700;
+        }
+        .table-title {
             font-size: 11pt;
-            font-weight: bold;
+            font-weight: 600;
+            margin: 15px 0 8px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #ccc;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         th {
-            background: #f0f0f0;
+            background: #e8e8e8;
             padding: 8px 10px;
             border: 1px solid #aaa;
-            font-weight: bold;
+            font-weight: 700;
             text-align: center;
             font-size: 9pt;
         }
         td {
             padding: 6px 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             font-size: 9pt;
         }
         .text-right {
@@ -1673,53 +1635,85 @@ function printReport() {
             border-top: 1px solid #ccc;
             font-size: 8pt;
             text-align: center;
-            color: #999;
+            color: #888;
         }
         @page {
             size: A4 landscape;
-            margin: 1cm;
+            margin: 1.2cm;
         }
         @media print {
             body {
                 padding: 0;
                 margin: 0;
             }
+            .no-print {
+                display: none;
+            }
+            th {
+                background: #e8e8e8 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .stat-card {
+                background: #fafafa !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="print-header">
-        <h1>ARTAFLOW</h1>
-        <p>Laporan Arus Kas - ${escapeHtml(bookName)}</p>
-        <p>${escapeHtml(filterText)} | Dicetak: ${printDate}</p>
-    </div>
-    
-    <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div>
-        <div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div>
-        <div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div>
-        <div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div>
-    </div>
-    
-    <h3 style="margin-bottom:8px;font-size:11pt">Detail Transaksi</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Tanggal & Waktu</th>
-                <th>Keterangan</th>
-                <th class="text-right">Pemasukan</th>
-                <th class="text-right">Pengeluaran</th>
-                <th class="text-right">Saldo</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${rows}
-        </tbody>
-    </table>
-    
-    <div class="print-footer">
-        ArtaFlow - Laporan Keuangan | Dicetak: ${printDate}
+    <div class="print-container">
+        <div class="print-header">
+            <h1>ARTAFLOW</h1>
+            <p>Sistem Pencatatan Keuangan Digital</p>
+            <p>${escapeHtml(bookName)}</p>
+        </div>
+        
+        <div class="print-info">
+            <div class="left">📋 ${escapeHtml(filterText)}</div>
+            <div class="right">📅 Dicetak: ${printDate}</div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Saldo</div>
+                <div class="stat-value">${rp(curBal)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Pemasukan</div>
+                <div class="stat-value">${rp(totalInc)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Pengeluaran</div>
+                <div class="stat-value">${rp(totalExp)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Jumlah Transaksi</div>
+                <div class="stat-value">${data.length}</div>
+            </div>
+        </div>
+        
+        <div class="table-title">📊 Detail Transaksi</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:5%">No</th>
+                    <th style="width:18%">Tanggal & Waktu</th>
+                    <th style="width:37%">Keterangan</th>
+                    <th style="width:15%" class="text-right">Pemasukan</th>
+                    <th style="width:15%" class="text-right">Pengeluaran</th>
+                    <th style="width:10%" class="text-right">Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+        
+        <div class="print-footer">
+            ArtaFlow - Laporan Keuangan | Dicetak: ${printDate} | Halaman 1
+        </div>
     </div>
 </body>
 </html>`);

@@ -137,17 +137,144 @@
         .spinner{display:inline-block;width:16px;height:16px;border:2px solid #f3f3f3;border-top:2px solid #1a1a1a;border-radius:50%;animation:spin 1s linear infinite;margin-right:6px}
         @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
         
-        /* Highlight row baru */
         .new-row{background:#ecfdf5;animation:highlight 1s ease-out}
         @keyframes highlight{0%{background:#d1fae5}100%{background:transparent}}
         
+        /* ============ STYLING KHUSUS UNTUK CETAK ============ */
         @media print {
-            body{padding:0;margin:0;background:#fff}
-            .toolbar,.filter-section,.footer-tools,.action-btn,.modal,.toast,.btn,.tabs,.tab-btn,.book-selector{display:none!important}
-            .stats-grid{grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-            .stat-card{border:1px solid #ccc;break-inside:avoid}
-            th,td{border:1px solid #ccc}
-            @page{margin:1.5cm}
+            /* Reset semua styling untuk cetak */
+            body {
+                padding: 0;
+                margin: 0;
+                background: white;
+                font-size: 10pt;
+            }
+            
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0.5cm;
+            }
+            
+            /* Sembunyikan elemen yang tidak perlu saat cetak */
+            .toolbar,
+            .filter-section,
+            .footer-tools,
+            .action-btn,
+            .modal,
+            .toast,
+            .btn,
+            .tabs,
+            .tab-btn,
+            .book-selector,
+            .sync-status,
+            .last-update-info,
+            .filter-chip,
+            .date-filter,
+            .filter-reset,
+            .btn-group,
+            #actionEditBtn,
+            #actionDeleteBtn,
+            .action-buttons {
+                display: none !important;
+            }
+            
+            /* Header cetak */
+            .header {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #000;
+            }
+            
+            .header h1 {
+                font-size: 16pt;
+                font-weight: bold;
+            }
+            
+            .header p {
+                font-size: 9pt;
+                color: #333;
+            }
+            
+            /* Statistik Grid - tampil rapi saat cetak */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+            
+            .stat-card {
+                border: 1px solid #ccc;
+                padding: 8px 10px;
+                background: white;
+                box-shadow: none;
+            }
+            
+            .stat-label {
+                font-size: 8pt;
+                color: #555;
+            }
+            
+            .stat-value {
+                font-size: 11pt;
+                font-weight: bold;
+            }
+            
+            /* Tabel */
+            .table-wrapper {
+                border: 1px solid #ccc;
+                overflow-x: visible;
+                box-shadow: none;
+                margin-bottom: 15px;
+                page-break-inside: avoid;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9pt;
+            }
+            
+            th {
+                background: #f0f0f0;
+                padding: 8px 10px;
+                border: 1px solid #ccc;
+                font-weight: bold;
+                text-align: center;
+            }
+            
+            td {
+                padding: 6px 10px;
+                border: 1px solid #ccc;
+            }
+            
+            /* Halaman baru untuk setiap section jika perlu */
+            .page-break {
+                page-break-before: always;
+            }
+            
+            /* Footer cetak */
+            .footer {
+                margin-top: 20px;
+                padding-top: 10px;
+                border-top: 1px solid #ccc;
+                font-size: 8pt;
+                text-align: center;
+                color: #666;
+            }
+            
+            /* Hindari potongan halaman pada elemen penting */
+            .stats-grid, .table-wrapper, .header {
+                page-break-inside: avoid;
+            }
+            
+            /* Ukuran kertas */
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
         }
         
         @media (max-width:768px){
@@ -507,10 +634,8 @@ const STORAGE_ACTIVE_BOOK_KEY = 'artaflow_active_book';
 function formatDateTime(dateStr, createdTime = null) {
     if (!dateStr) return '-';
     
-    // Format tanggal
     let formattedDate = fmtDate(dateStr);
     
-    // Jika ada created_time (waktu input), tambahkan jam
     if (createdTime) {
         let time = new Date(createdTime);
         let hours = time.getHours().toString().padStart(2, '0');
@@ -869,9 +994,7 @@ async function loadDataForCurrentBook() {
         const response = await fetch(url);
         const data = await response.json();
         if (data.success && data.transactions) {
-            // Urutkan dari yang terbaru (created_at atau id terbesar)
             txs = data.transactions.sort((a,b) => {
-                // Urut berdasarkan created_at jika ada, fallback ke id
                 if (a.created_at && b.created_at) {
                     return new Date(b.created_at) - new Date(a.created_at);
                 }
@@ -1024,7 +1147,6 @@ function exportToCSV() {
     
     let csvRows = [['Tanggal & Waktu', 'Deskripsi', 'Tipe', 'Jumlah (Rp)', 'Saldo']];
     let runningBalance = 0;
-    // Untuk CSV urut berdasarkan tanggal (tanpa memperhatikan waktu input)
     const sortedTxs = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
     
     for (const t of sortedTxs) {
@@ -1099,7 +1221,6 @@ function validateDate(dateString) {
 
 function recalcBalances() { 
     let bal = 0; 
-    // Untuk saldo, urutkan berdasarkan tanggal (tanpa memperhatikan jam)
     [...txs].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => { 
         bal += t.type === 'income' ? t.amount : -t.amount; 
         t.balance = bal; 
@@ -1121,7 +1242,6 @@ function getDisplayData() {
     if (dateFilterStart) data = data.filter(t => t.date >= dateFilterStart);
     if (dateFilterEnd) data = data.filter(t => t.date <= dateFilterEnd);
     
-    // Urutkan berdasarkan created_at (waktu input) dari yang terbaru
     data.sort((a, b) => {
         if (a.created_at && b.created_at) {
             return new Date(b.created_at) - new Date(a.created_at);
@@ -1156,7 +1276,7 @@ function render() {
             if (cnt) cnt.innerText = filteredData.length + ' transaksi';
             
             if (!filteredData.length) { 
-                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td></tr>';
+                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td><tr>';
                 return; 
             }
             
@@ -1164,7 +1284,6 @@ function render() {
                 let isInc = t.type === 'income'; 
                 let isNew = (lastAddedId === t.id);
                 let rowClass = isNew ? 'new-row' : '';
-                // Hapus highlight setelah 2 detik
                 if (isNew) {
                     setTimeout(() => {
                         const row = document.querySelector(`tr[data-id="${t.id}"]`);
@@ -1217,14 +1336,13 @@ async function handleSubmit(e) {
         closeModalTambah();
         addLog('add', `Menambah ${type === 'income' ? 'pemasukan' : 'pengeluaran'} "${desc}" sebesar ${rp(amt)}`);
         toast('Transaksi tersimpan');
-        // Scroll ke atas untuk melihat data terbaru
         setTimeout(() => {
             const tableWrapper = document.querySelector('.table-wrapper');
             if (tableWrapper) tableWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     } else {
         newTransaction.created_at = new Date().toISOString();
-        txs.unshift(newTransaction); // Tambah di awal array
+        txs.unshift(newTransaction);
         saveToLocalBackup();
         render();
         closeModalTambah();
@@ -1333,7 +1451,6 @@ async function handleImport(event) {
             const validTransactions = importedTransactions.filter(t => t.id && t.date && t.desc && t.type && t.amount && typeof t.amount === 'number');
             if (validTransactions.length === 0) throw new Error('Tidak ada transaksi valid dalam file');
             
-            // Tambahkan created_at jika tidak ada
             validTransactions.forEach(t => {
                 if (!t.created_at) t.created_at = new Date().toISOString();
             });
@@ -1437,6 +1554,7 @@ function setFilter(f) {
 function printReport() {
     let data = getDisplayData();
     if (!data.length) { toast('Tidak ada data untuk dicetak'); return; }
+    
     let filterText = filter === 'all' ? 'Semua Transaksi' : filter === 'income' ? 'Pemasukan' : filter === 'expense' ? 'Pengeluaran' : 'Pengeluaran Bulan Ini';
     if (dateFilterStart || dateFilterEnd) {
         let rangeText = '';
@@ -1445,13 +1563,166 @@ function printReport() {
         if (dateFilterEnd) rangeText += `${fmtDate(dateFilterEnd)}`;
         filterText += rangeText;
     }
+    
+    // Dapatkan nama buku aktif
+    const currentBook = books.find(b => b.id === currentBookId);
+    const bookName = currentBook ? currentBook.name : 'Buku Kas';
+    
     let totalInc = data.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     let totalExp = data.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     let curBal = data.length ? data.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
     let printDate = new Date().toLocaleString('id-ID');
-    let rows = data.map((t, i) => { let isInc = t.type === 'income'; return `<tr><td style="padding:8px;border:1px solid #ccc;text-align:center">${i+1}</td><td style="padding:8px;border:1px solid #ccc">${formatDateTime(t.date, t.created_at)}</td><td style="padding:8px;border:1px solid #ccc">${escapeHtml(t.desc)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td>`; }).join('');
+    
+    let rows = data.map((t, i) => { 
+        let isInc = t.type === 'income'; 
+        return `<tr>
+            <td style="padding:6px 8px;border:1px solid #ccc;text-align:center">${i+1}</td>
+            <td style="padding:6px 8px;border:1px solid #ccc">${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
+            <td style="padding:6px 8px;border:1px solid #ccc">${escapeHtml(t.desc)}</td>
+            <td style="padding:6px 8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td>
+            <td style="padding:6px 8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td>
+            <td style="padding:6px 8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td>
+        </table>`;
+    }).join('');
+    
     let printWindow = window.open('', '_blank');
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>ArtaFlow - Laporan Keuangan</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;padding:24px}.header{border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat-card{border:1px solid #ccc;padding:12px}.stat-label{font-size:.65rem;color:#666}.stat-value{font-size:1rem;font-weight:600}table{width:100%;border-collapse:collapse}th{background:#f5f5f5;padding:8px;border:1px solid #ccc}td{padding:8px;border:1px solid #ccc}.text-right{text-align:right}@page{size:landscape;margin:1.5cm}</style></head><body><div class="header"><h1>ARTAFLOW</h1><p>Laporan Arus Kas - ${filterText} | Dicetak: ${printDate}</p></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div><div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div><div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div><div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div></div><h3 style="margin-bottom:10px;font-size:.9rem">Detail Transaksi</h3><thead><tr><th>No</th><th>Tanggal & Waktu</th><th>Keterangan</th><th class="text-right">Pemasukan</th><th class="text-right">Pengeluaran</th><th class="text-right">Saldo</th></tr></thead><tbody>${rows}</tbody><div style="margin-top:20px;padding-top:12px;border-top:1px solid #ccc;font-size:.6rem;text-align:center">ArtaFlow - Dicetak: ${printDate}</div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ArtaFlow - Laporan Keuangan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            padding: 1.5cm;
+            background: white;
+            font-size: 10pt;
+        }
+        .print-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #000;
+        }
+        .print-header h1 {
+            font-size: 18pt;
+            margin-bottom: 5px;
+        }
+        .print-header p {
+            font-size: 9pt;
+            color: #555;
+        }
+        .print-info {
+            margin-bottom: 15px;
+            font-size: 9pt;
+            display: flex;
+            justify-content: space-between;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            background: #f9f9f9;
+        }
+        .stat-label {
+            font-size: 8pt;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 11pt;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th {
+            background: #f0f0f0;
+            padding: 8px 10px;
+            border: 1px solid #aaa;
+            font-weight: bold;
+            text-align: center;
+            font-size: 9pt;
+        }
+        td {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            font-size: 9pt;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .print-footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            font-size: 8pt;
+            text-align: center;
+            color: #999;
+        }
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-header">
+        <h1>ARTAFLOW</h1>
+        <p>Laporan Arus Kas - ${escapeHtml(bookName)}</p>
+        <p>${escapeHtml(filterText)} | Dicetak: ${printDate}</p>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div>
+        <div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div>
+    </div>
+    
+    <h3 style="margin-bottom:8px;font-size:11pt">Detail Transaksi</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Tanggal & Waktu</th>
+                <th>Keterangan</th>
+                <th class="text-right">Pemasukan</th>
+                <th class="text-right">Pengeluaran</th>
+                <th class="text-right">Saldo</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${rows}
+        </tbody>
+    </table>
+    
+    <div class="print-footer">
+        ArtaFlow - Laporan Keuangan | Dicetak: ${printDate}
+    </div>
+</body>
+</html>`);
     printWindow.document.close();
 }
 

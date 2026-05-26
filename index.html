@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ArtaFlow - Multi Buku Kas</title>
+    <title>ArtaFlow - Multi Buku Kas (Audit Mode)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -16,1541 +16,1033 @@
         
         .book-selector{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
         .book-selector label{font-size:.7rem;font-weight:600;color:#666}
-        .book-select{min-width:200px}
-        .book-select select{padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:.7rem;font-family:inherit;background:#fff}
-        .book-manage-btn{padding:6px 12px;font-size:.65rem;border:1px solid #ccc;background:#fff;cursor:pointer;border-radius:4px}
-        .book-manage-btn:hover{background:#f5f5f5}
+        .book-select{min-width:180px;padding:6px 12px;font-size:.8rem;font-weight:600;border:1.5px solid #1a1a1a;background:#fff;border-radius:4px;cursor:pointer}
+        .manage-books-btn{padding:6px 12px;font-size:.75rem;font-weight:600;background:#1a1a1a;color:#fff;border:none;border-radius:4px;cursor:pointer}
         
-        .sync-status{display:inline-block;margin-left:12px;font-size:.6rem;padding:2px 8px;border-radius:20px;background:#e6f7e6;color:#2e7d32}
-        .sync-status.syncing{background:#fff3e0;color:#e65100}
-        .sync-status.error{background:#ffebee;color:#c62828}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:28px}
+        .stat-card{background:#fff;border:1.5px solid #1a1a1a;padding:16px;border-radius:6px;position:relative}
+        .stat-label{font-size:.7rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.5px}
+        .stat-value{font-size:1.25rem;font-weight:700;margin-top:8px}
+        .stat-card.income .stat-value{color:#00875a}
+        .stat-card.expense .stat-value{color:#de350b}
         
-        .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid #e0e0e0}
-        .btn-group{display:flex;gap:8px;flex-wrap:wrap}
-        .btn{padding:6px 14px;font-size:.7rem;font-weight:500;border:1px solid #ccc;background:#fff;cursor:pointer;border-radius:4px;transition:all 0.2s}
-        .btn:hover{background:#f5f5f5}
-        .btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-        .btn-primary:hover{background:#333}
-        .btn-danger{border-color:#dc2626;color:#dc2626}
-        .btn-danger:hover{background:#fee2e2}
+        .controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+        .filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .search-input{padding:6px 12px;font-size:.8rem;border:1.5px solid #1a1a1a;border-radius:4px;width:180px}
+        .filter-btn{padding:6px 12px;font-size:.75rem;font-weight:600;background:#fff;border:1.5px solid #1a1a1a;border-radius:4px;cursor:pointer}
+        .filter-btn.active{background:#1a1a1a;color:#fff}
         
-        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-        .stat-card{background:#fff;border:1px solid #e0e0e0;padding:14px 16px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
-        .stat-label{font-size:.65rem;font-weight:600;text-transform:uppercase;color:#666;margin-bottom:6px;letter-spacing:0.5px}
-        .stat-value{font-size:1.2rem;font-weight:600}
+        .date-filter-box{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #1a1a1a;padding:4px 8px;border-radius:4px;font-size:.75rem}
+        .date-filter-box input{border:none;font-family:inherit;font-size:.75rem;outline:none;cursor:pointer}
+        .date-clear-btn{background:none;border:none;font-weight:700;color:#de350b;cursor:pointer;margin-left:4px}
         
-        .filter-section{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:20px;padding:12px 0;border-top:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0}
-        .filter-chips{display:flex;gap:8px;flex-wrap:wrap}
-        .filter-chip{padding:4px 12px;font-size:.7rem;border:1px solid #ccc;background:#fff;cursor:pointer;border-radius:20px;transition:all 0.2s}
-        .filter-chip.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-        .filter-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-        .date-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-        .date-filter input{padding:5px 10px;border:1px solid #ccc;border-radius:4px;font-size:.7rem;font-family:inherit}
-        .date-filter label{font-size:.65rem;color:#666}
-        .filter-reset{padding:5px 10px;font-size:.65rem;border:1px solid #dc2626;background:#fff;color:#dc2626;border-radius:4px;cursor:pointer}
-        .filter-reset:hover{background:#fee2e2}
-        .date-range-badge{font-size:.6rem;background:#e6f7e6;padding:4px 8px;border-radius:12px;color:#2e7d32}
+        .actions{display:flex;gap:8px;flex-wrap:wrap}
+        .btn{padding:6px 14px;font-size:.75rem;font-weight:600;border:1.5px solid #1a1a1a;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+        .btn-primary{background:#1a1a1a;color:#fff}
+        .btn-secondary{background:#fff;color:#1a1a1a}
+        .btn-danger{background:#de350b;color:#fff;border-color:#de350b}
         
-        .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #e0e0e0}
-        .tab-btn{padding:10px 20px;font-size:.75rem;font-weight:500;background:none;border:none;cursor:pointer;color:#666;transition:all .2s}
-        .tab-btn.active{color:#1a1a1a;border-bottom:2px solid #1a1a1a;font-weight:600}
+        .sync-status{font-size:.65rem;font-weight:600;padding:4px 8px;border-radius:4px;border:1.5px solid #1a1a1a;display:inline-flex;align-items:center;gap:4px}
+        .sync-status.online{background:#e3fcef;color:#006644;border-color:#006644}
+        .sync-status.offline{background:#ffebe6;color:#bf2600;border-color:#bf2600}
         
-        .tab-content{display:none}
-        .tab-content.active{display:block}
-        
-        .table-wrapper{background:#fff;border:1px solid #e0e0e0;overflow-x:auto;margin-bottom:20px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
-        .table-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fafafa;border-bottom:1px solid #e0e0e0}
-        .table-title{font-size:.75rem;font-weight:600;text-transform:uppercase;color:#666;letter-spacing:0.5px}
-        table{width:100%;border-collapse:collapse;font-size:.75rem}
-        th{padding:12px 16px;background:#fafafa;font-weight:600;color:#555;border-bottom:1px solid #e0e0e0;font-size:.7rem;text-transform:uppercase;letter-spacing:0.3px}
-        td{padding:12px 16px;border-bottom:1px solid #f0f0f0}
+        .table-container{background:#fff;border:1.5px solid #1a1a1a;border-radius:6px;overflow-x:auto;margin-bottom:16px}
+        table{width:100%;border-collapse:collapse;text-align:left;font-size:.8rem}
+        th{background:#f9f9f9;padding:10px 14px;font-weight:600;border-bottom:1.5px solid #1a1a1a;font-size:.75rem;color:#666;text-transform:uppercase}
+        td{padding:10px 14px;border-bottom:1px solid #eee;vertical-align:middle}
+        tr:last-child td{border-bottom:none}
         tr:hover td{background:#fafafa}
+        
         .text-right{text-align:right}
         .text-center{text-align:center}
-        .action-btn{background:none;border:1px solid #ccc;cursor:pointer;padding:4px 12px;font-size:.7rem;border-radius:4px;color:#555}
-        .action-btn:hover{background:#f5f5f5}
         
-        .log-entry{font-size:.7rem;padding:8px 12px;border-bottom:1px solid #f0f0f0}
-        .log-entry:hover{background:#fafafa}
-        .log-time{color:#999;font-size:.6rem}
-        .log-action-add{color:#10b981}
-        .log-action-edit{color:#3b82f6}
-        .log-action-delete{color:#ef4444}
-        .log-action-import{color:#8b5cf6}
+        .action-btn{background:none;border:none;font-weight:700;cursor:pointer;padding:4px 8px;font-size:1rem}
+        .empty-row{text-align:center;padding:40px !important;color:#666;font-style:italic}
         
-        .footer-tools{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #e0e0e0;flex-wrap:wrap}
-        .footer-tools .btn-small{padding:5px 12px;font-size:.65rem;border:1px solid #ccc;background:#fff;cursor:pointer;color:#555;border-radius:4px;white-space:nowrap}
-        .footer-tools .btn-small:hover{background:#f5f5f5;color:#1a1a1a}
+        .footer{display:flex;justify-content:space-between;align-items:center;font-size:.7rem;color:#666}
         
-        .footer{text-align:center;margin-top:20px;padding-top:12px;border-top:1px solid #e0e0e0;font-size:.6rem;color:#999}
-        
-        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);justify-content:center;align-items:center;z-index:1000}
+        .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
         .modal.show{display:flex}
-        .modal-content{background:#fff;width:90%;max-width:650px;padding:24px;border:1px solid #ccc;border-radius:8px;max-height:85vh;overflow-y:auto}
-        .modal-content h3{font-size:1rem;font-weight:600;margin-bottom:18px}
+        .modal-content{background:#fff;border:2px solid #1a1a1a;border-radius:8px;padding:20px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee}
+        .modal-header h3{font-size:1rem;font-weight:600}
+        .modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;font-weight:600}
+        
         .form-group{margin-bottom:14px}
-        .form-group label{display:block;font-size:.65rem;font-weight:600;margin-bottom:4px;color:#666}
-        .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:1px solid #ccc;font-family:inherit;font-size:.75rem;border-radius:4px}
-        .form-group textarea{font-family:monospace;font-size:.7rem;resize:vertical}
+        .form-group label{display:block;font-size:.7rem;font-weight:600;color:#666;margin-bottom:4px;text-transform:uppercase}
+        .form-control{width:100%;padding:8px 12px;font-size:.8rem;border:1.5px solid #1a1a1a;border-radius:4px;font-family:inherit}
+        .form-control:focus{outline:none;background:#fafafa}
         
-        .amount-input{position:relative}
-        .amount-input input{padding-right:30px}
-        .amount-format-hint{font-size:.6rem;color:#999;margin-top:2px}
+        .radio-group{display:flex;gap:12px;margin-top:4px}
+        .radio-label{display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer}
         
-        .modal-buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
-        .action-modal{max-width:280px;text-align:center}
-        .action-buttons{display:flex;gap:12px;margin-top:16px}
-        .action-buttons button{flex:1}
+        .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:12px;border-top:1px solid #eee}
         
-        .book-list{max-height:250px;overflow-y:auto;margin-bottom:16px;border:1px solid #e0e0e0;border-radius:4px}
-        .book-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #e0e0e0}
+        .action-menu-list{list-style:none}
+        .action-menu-list li button{width:100%;padding:10px;text-align:left;background:none;border:none;font-size:.8rem;font-family:inherit;cursor:pointer;border-radius:4px}
+        .action-menu-list li button:hover{background:#f5f5f5}
+        .action-menu-list li button.delete-action{color:#de350b}
+        
+        .book-list-container{max-height:150px;overflow-y:auto;border:1.5px solid #1a1a1a;border-radius:4px;margin-bottom:14px;background:#f9f9f9}
+        .book-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #eee;font-size:.8rem}
         .book-item:last-child{border-bottom:none}
-        .book-item:hover{background:#fafafa}
-        .book-info{flex:1}
-        .book-name{font-weight:600;font-size:.7rem}
-        .book-url{font-size:.55rem;color:#999;font-family:monospace;margin-top:2px}
-        .book-actions{display:flex;gap:6px}
-        .book-actions button{padding:3px 8px;font-size:.55rem}
+        .book-item-actions{display:flex;gap:6px}
+        .book-item-btn{background:none;border:none;font-size:.7rem;font-weight:600;cursor:pointer;color:#666}
+        .book-item-btn.del{color:#de350b}
         
-        .add-book-section{background:#fafafa;border-radius:8px;padding:12px;margin-bottom:16px;border:1px solid #e0e0e0}
-        .add-book-section h4{font-size:.7rem;font-weight:600;margin-bottom:8px;color:#1a1a1a}
-        .add-book-form{display:flex;flex-direction:column;gap:10px}
-        .add-book-form input{padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:.65rem}
-        .add-book-form button{align-self:flex-start;padding:4px 12px;font-size:.65rem}
+        .nav-tabs{display:none;gap:4px;margin-bottom:16px;border-bottom:1.5px solid #1a1a1a}
+        .nav-tab{padding:8px 16px;font-size:.75rem;font-weight:600;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px}
+        .nav-tab.active{border-bottom-color:#1a1a1a;color:#1a1a1a}
         
-        .danger-zone{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;margin-bottom:16px}
-        .danger-zone h4{font-size:.65rem;font-weight:600;margin-bottom:6px;color:#dc2626}
-        .danger-buttons{display:flex;gap:8px;flex-wrap:wrap}
-        .danger-buttons .btn-small{padding:3px 8px;font-size:.55rem}
-        .danger-zone p{font-size:.55rem;color:#999;margin-top:6px}
+        .code-container{position:relative;margin-top:10px}
+        .code-box{width:100%;height:100px;font-family:monospace;font-size:.65rem;padding:10px;border:1.5px solid #1a1a1a;border-radius:4px;background:#fafafa;resize:none;outline:none}
+        .copy-btn{position:absolute;top:8px;right:8px;padding:4px 8px;font-size:.6rem;font-weight:600;background:#1a1a1a;color:#fff;border:none;border-radius:3px;cursor:pointer}
         
-        .script-code{background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:6px;font-family:monospace;font-size:.65rem;overflow-x:auto;white-space:pre-wrap;margin:10px 0}
-        .copy-btn{padding:3px 10px;font-size:.6rem;background:#1a1a1a;color:#fff;border:none;border-radius:4px;cursor:pointer}
-        .copy-btn:hover{background:#333}
+        .new-row{animation:highlight 2s ease-out}
+        @keyframes highlight{0%{background:#e3fcef}100%{background:transparent}}
         
-        .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:#fff;padding:8px 20px;font-size:.7rem;transition:.2s;opacity:0;z-index:1100;border-radius:40px}
-        .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-        .empty-row{text-align:center;padding:40px;color:#999}
-        
-        .log-count{font-size:.6rem;color:#999;margin-left:8px}
-        
-        .spinner{display:inline-block;width:16px;height:16px;border:2px solid #f3f3f3;border-top:2px solid #1a1a1a;border-radius:50%;animation:spin 1s linear infinite;margin-right:6px}
-        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        
-        .new-row{background:#ecfdf5;animation:highlight 1s ease-out}
-        @keyframes highlight{0%{background:#d1fae5}100%{background:transparent}}
-        
-        @media print {
-            body{padding:0;margin:0;background:#fff}
-            .toolbar,.filter-section,.footer-tools,.action-btn,.modal,.toast,.btn,.tabs,.tab-btn,.book-selector{display:none!important}
-            .stats-grid{grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-            .stat-card{border:1px solid #ccc;break-inside:avoid}
-            th,td{border:1px solid #ccc}
-            @page{margin:1.5cm}
-        }
-        
-        @media (max-width:768px){
-            body{padding:16px}
-            .stats-grid{grid-template-columns:repeat(2,1fr);gap:12px}
-            .footer-tools{justify-content:center}
-            th,td{padding:8px 10px}
-            .toolbar{flex-direction:column;align-items:stretch}
-            .filter-section{flex-direction:column;align-items:stretch}
-            .filter-chips{justify-content:center}
-            .filter-right{justify-content:space-between}
-            .date-filter{justify-content:center}
+        /* Gaya Baris Log Audit */
+        .log-line {border-bottom: 1px dashed #ddd; padding: 6px 0; display: block;}
+        .log-line:last-child {border-bottom: none;}
+        .log-tag {font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff;}
+        .tag-add {background: #00875a;}
+        .tag-edit {background: #ffab00; color: #1a1a1a !important;}
+        .tag-delete {background: #de350b;}
+        .tag-system {background: #4a5568;}
+
+        @media(max-width:768px){
+            body{padding:12px}
             .header{flex-direction:column;align-items:flex-start;gap:12px}
-            .danger-buttons{flex-direction:column}
+            .controls{flex-direction:column;align-items:stretch}
+            .filters{width:100%;justify-content:space-between}
+            .search-input{flex-grow:1;width:auto}
+            .actions{width:100%;justify-content:space-between}
+            .actions .btn{flex-grow:1;justify-content:center}
+            .nav-tabs{display:flex}
+            .tab-content{display:none}
+            .tab-content.active{display:block}
         }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
         <div>
-            <h1>ArtaFlow <span id="syncStatus" class="sync-status">Cloud Sync</span></h1>
-            <p>Multi Buku Kas - Sinkronisasi Otomatis dengan Google Spreadsheet</p>
+            <h1>ArtaFlow</h1>
+            <p>Sistem Multi Buku Kas Independen Lokal & Cloud (Audit Protected)</p>
         </div>
         <div class="book-selector">
-            <label>BUKU KAS</label>
-            <div class="book-select">
-                <select id="bookSelect" onchange="switchBook()"></select>
-            </div>
-            <button class="book-manage-btn" onclick="openBookManager()">Kelola Buku</button>
+            <span id="syncStatusTag" class="sync-status offline" style="margin-right: 4px;">OFFLINE MODE</span>
+            <label for="currentBookSelect">BUKU AKTIF:</label>
+            <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
+            <button class="manage-books-btn" onclick="openBookManager()">Kelola Buku</button>
         </div>
     </div>
-    
-    <div class="toolbar">
-        <div class="btn-group">
-            <button class="btn btn-primary" onclick="openModalTambah('Pemasukan')">Tambah Pemasukan</button>
-            <button class="btn" onclick="openModalTambah('Pengeluaran')">Tambah Pengeluaran</button>
-        </div>
-        <div class="last-update-info">
-            <span class="btn" id="lastUpdate" style="background:#fafafa;display:inline-flex;align-items:center;gap:6px">
-                <span style="font-weight:500;">Terakhir diperbarui:</span>
-                <span id="lastUpdateTime">-</span>
-            </span>
-        </div>
-    </div>
-    
+
     <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Saldo Kas</div><div class="stat-value" id="totalSaldo">Rp 0</div></div>
-        <div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value" id="totalPemasukan">Rp 0</div></div>
-        <div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value" id="totalPengeluaran">Rp 0</div></div>
-        <div class="stat-card"><div class="stat-label">Pengeluaran Bulan Ini</div><div class="stat-value" id="saldoBulan">Rp 0</div></div>
-    </div>
-    
-    <div class="filter-section">
-        <div class="filter-chips">
-            <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">Semua</div>
-            <div class="filter-chip" data-filter="income" onclick="setFilter('income')">Pemasukan</div>
-            <div class="filter-chip" data-filter="expense" onclick="setFilter('expense')">Pengeluaran</div>
-            <div class="filter-chip" data-filter="bulanan" onclick="setFilter('bulanan')">Bulan Ini</div>
+        <div class="stat-card">
+            <div class="stat-label">Total Saldo</div>
+            <div class="stat-value" id="statBalance">Rp 0</div>
         </div>
-        
-        <div class="filter-right">
-            <div class="date-filter">
-                <label>Dari</label>
-                <input type="date" id="filterDateStart" onchange="applyDateFilter()">
-                <label>Sampai</label>
-                <input type="date" id="filterDateEnd" onchange="applyDateFilter()">
-                <button class="filter-reset" onclick="resetDateFilter()">Reset</button>
+        <div class="stat-card income">
+            <div class="stat-label">Total Pemasukan</div>
+            <div class="stat-value" id="statIncome">Rp 0</div>
+        </div>
+        <div class="stat-card expense">
+            <div class="stat-label">Total Pengeluaran</div>
+            <div class="stat-value" id="statExpense">Rp 0</div>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="nav-tab active" id="tabLink-records" onclick="switchTab('records')">Transaksi</button>
+        <button class="nav-tab" id="tabLink-tools" onclick="switchTab('tools')">Alat & Cloud</button>
+    </div>
+
+    <div id="tab-records" class="tab-content active">
+        <div class="controls">
+            <div class="filters">
+                <input type="text" id="searchInput" class="search-input" placeholder="Cari deskripsi..." oninput="render()">
+                <button id="filter-all" class="filter-btn active" onclick="setFilter('all')">Semua</button>
+                <button id="filter-income" class="filter-btn" onclick="setFilter('income')">Masuk</button>
+                <button id="filter-expense" class="filter-btn" onclick="setFilter('expense')">Keluar</button>
+                
+                <div class="date-filter-box">
+                    <input type="date" id="dateFilterStart" onchange="applyDateFilter()">
+                    <span>s/d</span>
+                    <input type="date" id="dateFilterEnd" onchange="applyDateFilter()">
+                    <button id="clearDateBtn" class="date-clear-btn" style="display:none;" onclick="resetDateFilter()">×</button>
+                </div>
             </div>
-            <div id="dateRangeInfo"></div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
+            </div>
         </div>
-    </div>
-    
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('transaksi')">Transaksi</button>
-        <button class="tab-btn" onclick="switchTab('log')">Log Aktivitas <span id="logCount" class="log-count"></span></button>
-    </div>
-    
-    <div id="tabTransaksi" class="tab-content active">
-        <div class="table-wrapper">
-            <div class="table-header"><span class="table-title">Daftar Transaksi</span><span id="transactionCount" style="font-size:.65rem;color:#999">0 transaksi</span></div>
+
+        <div class="table-container">
             <table>
                 <thead>
-                    <tr><th style="width:5%">No</th><th style="width:15%">Tanggal & Waktu</th><th style="width:35%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:15%" class="text-right">Saldo</th><th style="width:5%" class="text-center">Aksi</th></tr>
+                    <tr>
+                        <th style="width:60px" class="text-center">No</th>
+                        <th style="width:140px">Tanggal & Jam</th>
+                        <th>Deskripsi</th>
+                        <th style="width:150px" class="text-right">Pemasukan</th>
+                        <th style="width:150px" class="text-right">Pengeluaran</th>
+                        <th style="width:160px" class="text-right">Saldo</th>
+                        <th style="width:60px" class="text-center">Aksi</th>
+                    </tr>
                 </thead>
-                <tbody id="transactionTableBody">
-                    <tr><td colspan="7" class="empty-row">Memuat data...</td></tr>
-                </tbody>
+                <tbody id="transactionTableBody"></tbody>
             </table>
         </div>
     </div>
-    
-    <div id="tabLog" class="tab-content">
-        <div class="table-wrapper">
-            <div class="table-header">
-                <span class="table-title">Riwayat Aktivitas</span>
-                <button class="btn-small" onclick="exportLogs()">Ekspor Log</button>
-            </div>
-            <div id="logList" class="log-list" style="max-height:500px;overflow-y:auto">
-                <div class="empty-row">Memuat log...</div>
-            </div>
-            <div class="table-header" style="justify-content:center;background:#f5f5f5">
-                <span style="font-size:.6rem;color:#999">Catatan audit - tidak dapat dihapus</span>
-            </div>
+
+    <div id="tab-tools" class="tab-content">
+        <div class="controls" style="justify-content: flex-start; gap: 12px; margin-bottom: 24px;">
+            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
+            <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit Tambah/Ubah/Hapus</button>
+            <button class="btn btn-secondary" onclick="exportToJSON()">Cadangan JSON</button>
+            <button class="btn btn-secondary" onclick="printReport()">Cetak Laporan</button>
+            <button class="btn btn-secondary" onclick="exportLogs()">Ekspor File Log (.json)</button>
         </div>
     </div>
-    
-    <div class="footer-tools">
-        <button class="btn-small" onclick="printReport()">Cetak Laporan</button>
-        <button class="btn-small" onclick="exportToJSON()">Ekspor JSON</button>
-        <button class="btn-small" onclick="exportToCSV()">Ekspor CSV</button>
-    </div>
-    <div class="footer">ArtaFlow - Multi Buku Kas - Sinkronisasi otomatis dengan Google Spreadsheet</div>
-</div>
 
-<!-- MODAL KELOLA BUKU -->
-<div id="modalBookManager" class="modal">
-    <div class="modal-content">
-        <h3>Kelola Buku Kas</h3>
-        
-        <div style="margin-bottom:16px">
-            <label style="font-weight:600;font-size:.65rem;margin-bottom:6px;display:block">Daftar Buku Kas</label>
-            <div id="bookListContainer" class="book-list"></div>
-        </div>
-        
-        <div class="add-book-section">
-            <h4>Tambah Buku Kas Baru</h4>
-            <div class="add-book-form">
-                <input type="text" id="newBookName" placeholder="Nama Buku (contoh: Kas A, Kas B)">
-                <input type="text" id="newBookUrl" placeholder="URL Google Apps Script (opsional)">
-                <button class="btn btn-primary" onclick="addNewBook()" style="align-self:flex-start">+ Tambah Buku</button>
-            </div>
-        </div>
-        
-        <div class="danger-zone">
-            <h4>Pengaturan Data</h4>
-            <div class="danger-buttons">
-                <button class="btn-small" onclick="openImportModal()">Import Data</button>
-                <button class="btn-small btn-danger" onclick="openDeleteAllModal()">Hapus Semua</button>
-            </div>
-            <p>Import: gabung/ganti data dari file JSON | Hapus semua: menghapus seluruh transaksi</p>
-        </div>
-        
-        <div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <label style="font-weight:600;font-size:.65rem">Script Google Spreadsheet</label>
-                <button class="copy-btn" onclick="copyScriptToClipboard()">Salin Script</button>
-            </div>
-            <div class="script-code" id="scriptCode">
-// ============ ARTAFLOW BACKEND SCRIPT ============
-const SHEET_NAME = "Transactions";
-
-function doGet() { return handleRequest(); }
-function doPost(e) { return handleRequest(e); }
-
-function handleRequest(e) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      sheet = ss.insertSheet(SHEET_NAME);
-      sheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
-    }
-    
-    const data = e ? JSON.parse(e.postData.contents) : {};
-    const action = data.action || "get";
-    
-    if (action === "add" && data.transaction) {
-      const t = data.transaction;
-      sheet.appendRow([t.id, t.date, t.desc, t.type, t.amount, new Date().toISOString()]);
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
-    }
-    
-    if (action === "update" && data.id && data.transaction) {
-      const rows = sheet.getDataRange().getValues();
-      for (let i = 1; i < rows.length; i++) {
-        if (rows[i][0] == data.id) {
-          sheet.getRange(i + 1, 1, 1, 5).setValues([[
-            data.transaction.id, data.transaction.date, 
-            data.transaction.desc, data.transaction.type, data.transaction.amount
-          ]]);
-          break;
-        }
-      }
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
-    }
-    
-    if (action === "delete" && data.id) {
-      const rows = sheet.getDataRange().getValues();
-      for (let i = 1; i < rows.length; i++) {
-        if (rows[i][0] == data.id) {
-          sheet.deleteRow(i + 1);
-          break;
-        }
-      }
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
-    }
-    
-    if (action === "sync" && data.transactions) {
-      sheet.clear();
-      sheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
-      data.transactions.forEach(t => {
-        sheet.appendRow([t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()]);
-      });
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
-    }
-    
-    const rows = sheet.getDataRange().getValues();
-    const transactions = [];
-    for (let i = 1; i < rows.length; i++) {
-      transactions.push({
-        id: rows[i][0], date: rows[i][1], desc: rows[i][2],
-        type: rows[i][3], amount: rows[i][4], created_at: rows[i][5]
-      });
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ success: true, transactions: transactions }));
-    
-  } catch(error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }));
-  }
-}
-            </div>
-            <p style="font-size:.55rem;color:#999;margin-top:8px">
-                <strong>Cara Setup:</strong> Buat Spreadsheet → Extensions → Apps Script → paste script → Deploy as web app → copy URL
-            </p>
-        </div>
-        
-        <div class="modal-buttons">
-            <button class="btn" onclick="closeBookManager()">Tutup</button>
-        </div>
+    <div class="footer">
+        <div id="transactionCount">0 transaksi</div>
+        <div id="liveClock">00:00:00</div>
     </div>
 </div>
 
-<!-- MODAL EDIT BUKU -->
-<div id="modalEditBook" class="modal">
+<div id="addModal" class="modal">
     <div class="modal-content">
-        <h3>Edit Buku Kas</h3>
-        <div class="form-group">
-            <label>Nama Buku Kas</label>
-            <input type="text" id="editBookName">
+        <div class="modal-header">
+            <h3>Transaksi Baru</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">×</button>
         </div>
-        <div class="form-group">
-            <label>Google Apps Script URL</label>
-            <input type="text" id="editBookUrl">
-        </div>
-        <div class="modal-buttons">
-            <button class="btn" onclick="closeEditBookModal()">Batal</button>
-            <button class="btn btn-primary" onclick="saveBookEdit()">Simpan</button>
-        </div>
-    </div>
-</div>
-
-<div id="modalTambah" class="modal">
-    <div class="modal-content">
-        <h3>Tambah Transaksi</h3>
-        <form id="txForm" onsubmit="handleSubmit(event)">
-            <input type="hidden" id="txType">
+        <form id="addForm" onsubmit="handleSubmit(event)">
             <div class="form-group">
-                <label>Tanggal</label>
-                <input type="date" id="txDate" required>
+                <label>Jenis Transaksi</label>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="type" value="income" checked> Pemasukan</label>
+                    <label class="radio-label"><input type="radio" name="type" value="expense"> Pengeluaran</label>
+                </div>
             </div>
             <div class="form-group">
-                <label>Keterangan</label>
-                <input type="text" id="txDesc" maxlength="100" required>
+                <label for="txDate">Tanggal & Waktu</label>
+                <input type="datetime-local" id="txDate" class="form-control" required>
             </div>
             <div class="form-group">
-                <label>Nominal (Rp)</label>
-                <input type="text" id="txAmount" placeholder="Contoh: 1.000.000" required oninput="formatRupiah(this)">
-                <div class="amount-format-hint">Gunakan titik sebagai pemisah ribuan (contoh: 1.000.000)</div>
+                <label for="txDesc">Deskripsi</label>
+                <input type="text" id="txDesc" class="form-control" placeholder="Contoh: Penjualan produk" required>
             </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn" onclick="closeModalTambah()">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+            <div class="form-group">
+                <label for="txAmount">Jumlah (Rp)</label>
+                <input type="text" id="txAmount" class="form-control" placeholder="0" oninput="formatRupiah(this)" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Batal</button>
+                <button type="submit" id="addSubmitBtn" class="btn btn-primary">Simpan</button>
             </div>
         </form>
     </div>
 </div>
 
-<div id="modalEdit" class="modal">
+<div id="editModal" class="modal">
     <div class="modal-content">
-        <h3>Edit Transaksi</h3>
+        <div class="modal-header">
+            <h3>Ubah Transaksi</h3>
+            <button class="modal-close" onclick="closeModal('editModal')">×</button>
+        </div>
         <form id="editForm" onsubmit="handleEditSubmit(event)">
             <input type="hidden" id="editId">
             <div class="form-group">
-                <label>Jenis</label>
-                <select id="editJenis">
-                    <option value="income">Pemasukan</option>
-                    <option value="expense">Pengeluaran</option>
-                </select>
+                <label>Jenis Transaksi</label>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="editType" value="income" id="editTypeIncome"> Pemasukan</label>
+                    <label class="radio-label"><input type="radio" name="editType" value="expense" id="editTypeExpense"> Pengeluaran</label>
+                </div>
             </div>
             <div class="form-group">
-                <label>Tanggal</label>
-                <input type="date" id="editTanggal" required>
+                <label for="editTxDate">Tanggal & Waktu</label>
+                <input type="datetime-local" id="editTxDate" class="form-control" required>
             </div>
             <div class="form-group">
-                <label>Keterangan</label>
-                <input type="text" id="editDeskripsi" maxlength="100" required>
+                <label for="editTxDesc">Deskripsi</label>
+                <input type="text" id="editTxDesc" class="form-control" required>
             </div>
             <div class="form-group">
-                <label>Nominal (Rp)</label>
-                <input type="text" id="editJumlah" placeholder="Contoh: 1.000.000" required oninput="formatRupiah(this)">
-                <div class="amount-format-hint">Gunakan titik sebagai pemisah ribuan (contoh: 1.000.000)</div>
+                <label for="editTxAmount">Jumlah (Rp)</label>
+                <input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required>
             </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn" onclick="closeModalEdit()">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Batal</button>
+                <button type="submit" id="editSubmitBtn" class="btn btn-primary">Simpan Perubahan</button>
             </div>
         </form>
     </div>
 </div>
 
-<div id="modalImport" class="modal"><div class="modal-content"><h3>Import Data JSON</h3><p style="font-size:.7rem;color:#666;margin-bottom:16px">Pilih file JSON hasil export dari ArtaFlow</p><form id="importForm" onsubmit="handleImport(event)"><div class="form-group"><label>File JSON</label><input type="file" id="importFile" accept=".json" required></div><div class="form-group"><label>Mode Import</label><select id="importMode"><option value="merge">Gabung dengan data existing</option><option value="replace">Ganti semua data existing</option></select></div><div class="modal-buttons"><button type="button" class="btn" onclick="closeImportModal()">Batal</button><button type="submit" class="btn btn-primary">Import</button></div></form></div></div>
+<div id="actionMenuModal" class="modal">
+    <div class="modal-content" style="max-width: 260px; padding: 12px;">
+        <div class="modal-header" style="margin-bottom: 8px; padding-bottom: 6px;">
+            <h3 style="font-size: .85rem;">Pilihan Aksi</h3>
+            <button class="modal-close" onclick="closeModalActionMenu()">×</button>
+        </div>
+        <ul class="action-menu-list">
+            <li><button id="actionEditBtn">Ubah Data</button></li>
+            <li><button id="actionDeleteBtn" class="delete-action">Hapus Transaksi</button></li>
+        </ul>
+    </div>
+</div>
 
-<div id="modalActionMenu" class="modal"><div class="modal-content action-modal"><h3>Pilih Aksi</h3><p id="actionTransactionInfo" style="font-size:.75rem">Memuat...</p><div class="action-buttons"><button class="btn btn-primary" id="actionEditBtn">Edit</button><button class="btn" id="actionDeleteBtn" style="border-color:#dc2626;color:#dc2626">Hapus</button></div><div class="modal-buttons" style="margin-top:12px;justify-content:center"><button class="btn" onclick="closeModalActionMenu()">Batal</button></div></div></div>
+<div id="bookManagerModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3>Kelola Daftar Buku Kas</h3>
+            <button class="modal-close" onclick="closeBookManager()">×</button>
+        </div>
+        
+        <div class="book-list-container" id="bookListContainer"></div>
+        
+        <form onsubmit="addNewBook(event)" style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 8px;">
+                <label for="newBookName">Tambah Buku Baru</label>
+                <input type="text" id="newBookName" class="form-control" placeholder="Nama buku kas baru..." required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 6px;">Buat Buku Baru</button>
+        </form>
 
-<div id="modalDeleteAll" class="modal"><div class="modal-content"><h3>Konfirmasi Hapus</h3><p>Semua data transaksi pada buku ini akan dihapus permanen dari cloud.</p><div class="modal-buttons"><button class="btn" onclick="closeDeleteAllModal()">Batal</button><button class="btn btn-primary" onclick="confirmDeleteAll()">Hapus Semua</button></div></div></div>
+        <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px; margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label style="color: #1a1a1a; font-weight:700;">URL Cloud Web App (<span id="cloudSettingBookName" style="text-transform:none; color:#666;">Buku Aktif</span>)</label>
+                <input type="text" id="cloudUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveCloudUrl(this.value)">
+            </div>
+            <div style="display:flex; justify-content: flex-end; margin-bottom: 14px;">
+                <button type="button" id="forceSyncBtn" class="btn btn-primary" style="padding: 6px 12px; font-size: .7rem;" onclick="syncWithCloud()">Paksa Sinkronisasi Sekarang</button>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: 700;">Setup Google Apps Script Backend</label>
+                <div class="code-container">
+                    <button class="copy-btn" onclick="copyScriptToClipboard()">Salin Kode</button>
+                    <textarea id="scriptCodeArea" class="code-box" readonly></textarea>
+                </div>
+            </div>
+        </div>
 
-<div id="toast" class="toast"></div>
+        <div style="border-top: 1px solid #1a1a1a; padding-top: 14px; background: #fffbfb; padding: 12px; border-radius: 6px; border: 1.5px solid #de350b;">
+            <label style="font-weight: 700; color: #de350b; font-size: .75rem; display: block; margin-bottom: 10px; text-transform: uppercase;">Zona Keamanan & Data Buku Aktif</label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" style="flex: 1; min-width: 130px; font-size: .7rem; border-color: #1a1a1a;" onclick="openImportModalFromManager()">Impor File (.json/.csv)</button>
+                <button class="btn btn-danger" style="flex: 1; min-width: 130px; font-size: .7rem;" onclick="confirmDeleteAll()">Kosongkan Buku Aktif</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="syncLogModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Jalur Audit Transaksi (Permanen)</h3>
+            <button class="modal-close" onclick="closeModal('syncLogModal')">×</button>
+        </div>
+        <div id="logSummaryArea" style="font-size: .7rem; color: #1a1a1a; max-height: 380px; overflow-y: auto; font-family: monospace; line-height: 1.6; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px; word-break: break-all;">
+            Tidak ada log aktivitas saat ini.
+        </div>
+        <div class="modal-footer" style="margin-top: 14px;">
+            <p style="font-size:.65rem; color:#666; text-align:left; flex-grow:1; font-style:italic; align-self:center;">* Sistem Penguncian Audit Aktif: Log tidak diizinkan untuk dibersihkan.</p>
+            <button type="button" class="btn btn-primary" style="font-size: .7rem;" onclick="closeModal('syncLogModal')">Tutup Jendela</button>
+        </div>
+    </div>
+</div>
+
+<div id="editBookModal" class="modal">
+    <div class="modal-content" style="max-width: 320px; z-index: 1100;">
+        <div class="modal-header">
+            <h3>Ubah Nama Buku</h3>
+            <button class="modal-close" onclick="closeEditBookModal()">×</button>
+        </div>
+        <input type="hidden" id="editBookId">
+        <div class="form-group">
+            <label for="editBookNameField">Nama Baru</label>
+            <input type="text" id="editBookNameField" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeEditBookModal()">Batal</button>
+            <button type="button" class="btn btn-primary" onclick="saveBookEdit()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<div id="importModal" class="modal">
+    <div class="modal-content" style="max-width: 360px; z-index: 1100;">
+        <div class="modal-header">
+            <h3>Impor Data Kas</h3>
+            <button class="modal-close" onclick="closeImportModal()">×</button>
+        </div>
+        <div class="form-group">
+            <label for="importFile">Pilih File (.json atau .csv)</label>
+            <input type="file" id="importFile" class="form-control" accept=".json,.csv">
+            <p style="font-size: .65rem; color: #666; margin-top: 6px; line-height: 1.3;">
+                * Catatan: Mengimpor file akan menggabungkan data file dengan data aktif saat ini berdasarkan ID unik transaksi.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Batal</button>
+            <button type="button" class="btn btn-primary" onclick="handleImport()">Proses Impor</button>
+        </div>
+    </div>
+</div>
 
 <script>
-// ============ FUNGSI FORMAT RUPIAH ============
-function formatRupiah(input) {
-    let value = input.value.replace(/[^\d]/g, '');
-    if (value === '') {
-        input.value = '';
-        return;
-    }
-    let formatted = new Intl.NumberFormat('id-ID').format(parseInt(value));
-    input.value = formatted;
-}
-
-function parseRupiahToNumber(formattedValue) {
-    if (!formattedValue) return 0;
-    let numericValue = formattedValue.replace(/\./g, '').replace(/[^\d]/g, '');
-    return parseInt(numericValue) || 0;
-}
-
-// ============ KONFIGURASI MULTI BUKU ============
-let books = [];
-let currentBookId = null;
-let txs = [];
-let logs = [];
-let actionId = null;
-let filter = 'all';
-let dateFilterStart = null;
-let dateFilterEnd = null;
-let timer = null;
-let isSyncing = false;
-let lastAddedId = null;
-
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-const STORAGE_BOOKS_KEY = 'artaflow_books';
-const STORAGE_ACTIVE_BOOK_KEY = 'artaflow_active_book';
-
-// ============ FUNGSI FORMAT TANGGAL DENGAN JAM ============
-function formatDateTime(dateStr, createdTime = null) {
-    if (!dateStr) return '-';
-    
-    let formattedDate = fmtDate(dateStr);
-    
-    if (createdTime) {
-        let time = new Date(createdTime);
-        let hours = time.getHours().toString().padStart(2, '0');
-        let minutes = time.getMinutes().toString().padStart(2, '0');
-        return `${formattedDate} ${hours}:${minutes}`;
-    }
-    
-    return formattedDate;
-}
-
-function fmtDate(d) {
-    if (!d) return '-';
-    let p = d.split('-');
-    return p.length === 3 ? `${parseInt(p[2])} ${monthNames[parseInt(p[1]) - 1]} ${p[0]}` : d;
-}
-
-const BACKEND_SCRIPT = `// ============ ARTAFLOW BACKEND SCRIPT ============
-const SHEET_NAME = "Transactions";
-
-function doGet() { return handleRequest(); }
-function doPost(e) { return handleRequest(e); }
-
-function handleRequest(e) {
+// ==================== ENGINE BACKEND SCRIPT TEMPLATE ====================
+const BACKEND_SCRIPT = `// GOOGLE APPS SCRIPT BACKEND FOR ARTAFLOW
+function doPost(e) {
+  const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
   try {
+    const raw = e.postData.contents;
+    const req = JSON.parse(raw);
+    const action = req.action;
+    const book = req.book || "default_book";
+    const data = req.data;
+    
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(SHEET_NAME);
+    let sheet = ss.getSheetByName(book);
     if (!sheet) {
-      sheet = ss.insertSheet(SHEET_NAME);
+      sheet = ss.insertSheet(book);
       sheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
     }
     
-    const data = e ? JSON.parse(e.postData.contents) : {};
-    const action = data.action || "get";
-    
-    if (action === "add" && data.transaction) {
-      const t = data.transaction;
-      sheet.appendRow([t.id, t.date, t.desc, t.type, t.amount, new Date().toISOString()]);
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
-    }
-    
-    if (action === "update" && data.id && data.transaction) {
+    if (action === "load") {
       const rows = sheet.getDataRange().getValues();
+      const txs = [];
       for (let i = 1; i < rows.length; i++) {
-        if (rows[i][0] == data.id) {
-          sheet.getRange(i + 1, 1, 1, 5).setValues([[
-            data.transaction.id, data.transaction.date, 
-            data.transaction.desc, data.transaction.type, data.transaction.amount
-          ]]);
-          break;
-        }
+        txs.push({
+          id: Number(rows[i][0]),
+          date: rows[i][1],
+          desc: rows[i][2],
+          type: rows[i][3],
+          amount: Number(rows[i][4]),
+          created_at: rows[i][5]
+        });
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
-    }
-    
-    if (action === "delete" && data.id) {
-      const rows = sheet.getDataRange().getValues();
-      for (let i = 1; i < rows.length; i++) {
-        if (rows[i][0] == data.id) {
-          sheet.deleteRow(i + 1);
-          break;
-        }
-      }
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
+      return res.setContent(JSON.stringify({ success: true, transactions: txs }));
     }
     
     if (action === "sync" && data.transactions) {
       sheet.clear();
       sheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
-      data.transactions.forEach(t => {
-        sheet.appendRow([t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()]);
-      });
-      return ContentService.createTextOutput(JSON.stringify({ success: true }));
+      if (data.transactions.length > 0) {
+        const values = data.transactions.map(function(t) {
+          return [t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()];
+        });
+        sheet.getRange(2, 1, values.length, 6).setValues(values);
+      }
+      return res.setContent(JSON.stringify({ success: true }));
     }
     
-    const rows = sheet.getDataRange().getValues();
-    const transactions = [];
-    for (let i = 1; i < rows.length; i++) {
-      transactions.push({
-        id: rows[i][0], date: rows[i][1], desc: rows[i][2],
-        type: rows[i][3], amount: rows[i][4], created_at: rows[i][5]
-      });
+    if (action === "add") {
+      sheet.appendRow([data.id, data.date, data.desc, data.type, data.amount, data.created_at || new Date().toISOString()]);
+      return res.setContent(JSON.stringify({ success: true }));
     }
     
-    return ContentService.createTextOutput(JSON.stringify({ success: true, transactions: transactions }));
-    
-  } catch(error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }));
+    return res.setContent(JSON.stringify({ success: false, error: "Aksi tidak dikenal" }));
+  } catch(err) {
+    return res.setContent(JSON.stringify({ success: false, error: err.toString() }));
   }
 }`;
 
-function copyScriptToClipboard() {
-    navigator.clipboard.writeText(BACKEND_SCRIPT).then(() => {
-        toast('Script berhasil disalin ke clipboard');
-    }).catch(() => {
-        toast('Gagal menyalin script');
-    });
+// ==================== STATE UTAMA APLIKASI LOCAL & MEMORY ====================
+let txs = [];
+let books = [];
+let currentBookId = 'b_default';
+let cloudUrls = {};
+let syncLogs = [];
+let currentFilter = 'all';
+let filterStartDate = '';
+let filterEndDate = '';
+let timer = null;
+let lastAddedId = null;
+let actionId = null;
+
+// ==================== FUNGSI FORMAT DAN UTILITY ====================
+function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+function unRp(s) { return Number(s.replace(/[^0-9]/g, '')) || 0; }
+function formatRupiah(el) {
+    let val = el.value.replace(/[^0-9]/g, '');
+    if(!val) { el.value = ''; return; }
+    el.value = Number(val).toLocaleString('id-ID');
+}
+function escapeHtml(str) {
+    if(!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function formatDateTime(dtStr, createdStr) {
+    try {
+        let d = new Date(dtStr);
+        if (isNaN(d.getTime())) return dtStr;
+        let pad = n => String(n).padStart(2, '0');
+        let datePart = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+        let timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        if (createdStr) {
+            let c = new Date(createdStr);
+            if (!isNaN(c.getTime())) { timePart = `${pad(c.getHours())}:${pad(c.getMinutes())}`; }
+        }
+        return `${datePart} ${timePart}`;
+    } catch(e) { return dtStr; }
 }
 
-// ============ MANAJEMEN BUKU ============
-function loadBooks() {
-    try {
-        const saved = localStorage.getItem(STORAGE_BOOKS_KEY);
-        if (saved) {
-            books = JSON.parse(saved);
-        } else {
-            books = [{
-                id: 'book_default',
-                name: 'Kas Utama',
-                url: ''
-            }];
-            saveBooks();
-        }
+// FUNGSI INJEKSI LOG AUDIT DENGAN DETAIL KATEGORI OPERASI
+function logAudit(type, msg) {
+    let time = new Date().toISOString();
+    let bName = books.find(b => b.id === currentBookId)?.name || currentBookId;
+    syncLogs.unshift({ time, type, msg, bookName: bName });
+    
+    // Batasan log dinaikkan menjadi 2000 entri demi kebutuhan histori audit panjang
+    if(syncLogs.length > 2000) syncLogs.pop();
+    localStorage.setItem('artaflow_logs', JSON.stringify(syncLogs));
+    renderLogsToUI();
+}
+
+function renderLogsToUI() {
+    let area = document.getElementById('logSummaryArea');
+    if(!area) return;
+    if(!syncLogs.length) {
+        area.innerHTML = "Belum ada rekaman aktivitas audit.";
+        return;
+    }
+    area.innerHTML = syncLogs.map(l => {
+        let d = new Date(l.time);
+        let timeStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
         
-        const savedActive = localStorage.getItem(STORAGE_ACTIVE_BOOK_KEY);
-        if (savedActive && books.find(b => b.id === savedActive)) {
-            currentBookId = savedActive;
-        } else {
-            currentBookId = books[0].id;
-        }
+        let tagClass = 'tag-system';
+        if (l.type === 'TAMBAH') tagClass = 'tag-add';
+        if (l.type === 'UBAH') tagClass = 'tag-edit';
+        if (l.type === 'HAPUS') tagClass = 'tag-delete';
         
-        renderBookSelect();
-    } catch(e) {
-        books = [{ id: 'book_default', name: 'Kas Utama', url: '' }];
-        currentBookId = 'book_default';
-        saveBooks();
-    }
-}
-
-function saveBooks() {
-    localStorage.setItem(STORAGE_BOOKS_KEY, JSON.stringify(books));
-}
-
-function renderBookSelect() {
-    const select = document.getElementById('bookSelect');
-    if (!select) return;
-    select.innerHTML = books.map(book => `<option value="${book.id}" ${book.id === currentBookId ? 'selected' : ''}>${escapeHtml(book.name)}</option>`).join('');
-}
-
-function renderBookList() {
-    const container = document.getElementById('bookListContainer');
-    if (!container) return;
-    
-    if (books.length === 0) {
-        container.innerHTML = '<div class="empty-row">Belum ada buku kas. Tambah buku baru di bawah.</div>';
-        return;
-    }
-    
-    container.innerHTML = books.map(book => `
-        <div class="book-item">
-            <div class="book-info">
-                <div class="book-name">${escapeHtml(book.name)}</div>
-                <div class="book-url">${book.url ? escapeHtml(book.url.substring(0, 50)) + (book.url.length > 50 ? '...' : '') : 'Belum diisi'}</div>
-            </div>
-            <div class="book-actions">
-                <button class="btn-small" onclick="editBook('${book.id}')">Edit</button>
-                <button class="btn-small btn-danger" onclick="deleteBook('${book.id}')" ${books.length === 1 ? 'disabled' : ''}>Hapus</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function addNewBook() {
-    const name = document.getElementById('newBookName').value.trim();
-    const url = document.getElementById('newBookUrl').value.trim();
-    
-    if (!name) {
-        toast('Nama buku harus diisi');
-        return;
-    }
-    
-    if (books.some(b => b.name.toLowerCase() === name.toLowerCase())) {
-        toast('Nama buku sudah ada');
-        return;
-    }
-    
-    const newBook = {
-        id: 'book_' + Date.now(),
-        name: name,
-        url: url || ''
-    };
-    
-    books.push(newBook);
-    saveBooks();
-    renderBookSelect();
-    renderBookList();
-    
-    document.getElementById('newBookName').value = '';
-    document.getElementById('newBookUrl').value = '';
-    
-    toast(`Buku "${name}" berhasil ditambahkan`);
-}
-
-function switchBook() {
-    const select = document.getElementById('bookSelect');
-    const newBookId = select.value;
-    if (newBookId === currentBookId) return;
-    
-    currentBookId = newBookId;
-    localStorage.setItem(STORAGE_ACTIVE_BOOK_KEY, currentBookId);
-    
-    txs = [];
-    logs = [];
-    filter = 'all';
-    dateFilterStart = null;
-    dateFilterEnd = null;
-    document.getElementById('filterDateStart').value = '';
-    document.getElementById('filterDateEnd').value = '';
-    document.getElementById('dateRangeInfo').innerHTML = '';
-    
-    document.querySelectorAll('.filter-chip').forEach(c => {
-        c.classList.remove('active');
-        if (c.dataset.filter === 'all') c.classList.add('active');
-    });
-    
-    loadDataForCurrentBook();
-}
-
-function getCurrentBookUrl() {
-    const book = books.find(b => b.id === currentBookId);
-    return book ? book.url : '';
-}
-
-function isDefaultUrl() {
-    const url = getCurrentBookUrl();
-    return !url || url === '';
-}
-
-function openBookManager() {
-    renderBookList();
-    document.getElementById('newBookName').value = '';
-    document.getElementById('newBookUrl').value = '';
-    document.getElementById('modalBookManager').classList.add('show');
-}
-
-function closeBookManager() {
-    document.getElementById('modalBookManager').classList.remove('show');
-}
-
-function editBook(bookId) {
-    const book = books.find(b => b.id === bookId);
-    if (!book) return;
-    
-    document.getElementById('editBookName').value = book.name;
-    document.getElementById('editBookUrl').value = book.url || '';
-    document.getElementById('modalEditBook').classList.add('show');
-    
-    window._editingBookId = bookId;
-}
-
-function closeEditBookModal() {
-    document.getElementById('modalEditBook').classList.remove('show');
-    window._editingBookId = null;
-}
-
-function saveBookEdit() {
-    const bookId = window._editingBookId;
-    const book = books.find(b => b.id === bookId);
-    if (!book) return;
-    
-    const newName = document.getElementById('editBookName').value.trim();
-    const newUrl = document.getElementById('editBookUrl').value.trim();
-    
-    if (!newName) {
-        toast('Nama buku harus diisi');
-        return;
-    }
-    
-    if (books.some(b => b.id !== bookId && b.name.toLowerCase() === newName.toLowerCase())) {
-        toast('Nama buku sudah digunakan oleh buku lain');
-        return;
-    }
-    
-    const oldName = book.name;
-    book.name = newName;
-    book.url = newUrl;
-    saveBooks();
-    renderBookSelect();
-    renderBookList();
-    closeEditBookModal();
-    
-    if (currentBookId === bookId) {
-        loadDataForCurrentBook();
-    }
-    
-    toast(`Buku "${oldName}" berhasil diupdate menjadi "${newName}"`);
-}
-
-function deleteBook(bookId) {
-    if (books.length === 1) {
-        toast('Minimal harus ada satu buku kas');
-        return;
-    }
-    
-    const bookToDelete = books.find(b => b.id === bookId);
-    if (!confirm(`Hapus buku "${bookToDelete?.name}"? Data akan tetap tersimpan di Google Spreadsheet.`)) return;
-    
-    books = books.filter(b => b.id !== bookId);
-    saveBooks();
-    
-    if (currentBookId === bookId) {
-        currentBookId = books[0].id;
-        localStorage.setItem(STORAGE_ACTIVE_BOOK_KEY, currentBookId);
-        loadDataForCurrentBook();
-    }
-    
-    renderBookSelect();
-    renderBookList();
-    toast(`Buku "${bookToDelete?.name}" dihapus`);
-}
-
-// ============ AUTO SYNC FUNCTIONS ============
-async function autoSync(actionName, syncFunction) {
-    if (isSyncing) {
-        toast('Sinkronisasi sedang berjalan...');
-        return false;
-    }
-    
-    isSyncing = true;
-    setSyncStatus('syncing');
-    
-    try {
-        const result = await syncFunction();
-        if (result) {
-            await loadDataForCurrentBook();
-            setSyncStatus('success');
-            return true;
-        } else {
-            setSyncStatus('error', 'Gagal');
-            return false;
-        }
-    } catch (error) {
-        console.error('Auto sync error:', error);
-        setSyncStatus('error', 'Gagal');
-        return false;
-    } finally {
-        isSyncing = false;
-        setTimeout(() => {
-            if (document.getElementById('syncStatus').textContent === 'Gagal') {
-                setSyncStatus('success');
-            }
-        }, 2000);
-    }
-}
-
-async function loadDataForCurrentBook() {
-    if (isDefaultUrl()) {
-        loadFromLocalBackup();
-        setSyncStatus('error', 'No URL');
-        render();
-        updateTime();
-        return false;
-    }
-    
-    try {
-        const url = getCurrentBookUrl();
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.success && data.transactions) {
-            txs = data.transactions.sort((a,b) => {
-                if (a.created_at && b.created_at) {
-                    return new Date(b.created_at) - new Date(a.created_at);
-                }
-                return b.id - a.id;
-            });
-            saveToLocalBackup();
-            setSyncStatus('success');
-            render();
-            updateTime();
-            return true;
-        } else {
-            throw new Error('Invalid response');
-        }
-    } catch (error) {
-        console.error('Gagal load dari cloud:', error);
-        setSyncStatus('error', 'Offline');
-        loadFromLocalBackup();
-        render();
-        updateTime();
-        return false;
-    }
-}
-
-async function syncToCloud(transaction, action, id = null) {
-    if (isDefaultUrl()) return false;
-    
-    const url = getCurrentBookUrl();
-    let payload = { action: action };
-    if (action === 'add') payload.transaction = transaction;
-    else if (action === 'update') { payload.id = id; payload.transaction = transaction; }
-    else if (action === 'delete') payload.id = id;
-    else if (action === 'sync') payload.transactions = transaction;
-    
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            mode: 'cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-        return result.success;
-    } catch (error) {
-        console.error('Gagal sync ke cloud:', error);
-        return false;
-    }
-}
-
-function getStorageKey(prefix) {
-    return `${prefix}_${currentBookId}`;
-}
-
-function saveToLocalBackup() {
-    try {
-        localStorage.setItem(getStorageKey('artaflow_backup'), JSON.stringify(txs));
-        localStorage.setItem(getStorageKey('artaflow_last_sync'), new Date().toISOString());
-    } catch(e) {}
-}
-
-function loadFromLocalBackup() {
-    try {
-        const backup = localStorage.getItem(getStorageKey('artaflow_backup'));
-        if (backup) {
-            txs = JSON.parse(backup);
-        } else {
-            txs = [];
-        }
-    } catch(e) {
-        txs = [];
-    }
-    
-    try {
-        const savedLogs = localStorage.getItem(getStorageKey('artaflow_logs'));
-        if (savedLogs) {
-            logs = JSON.parse(savedLogs);
-        } else {
-            logs = [];
-        }
-    } catch(e) {
-        logs = [];
-    }
-    renderLogs();
-    updateLogCount();
-}
-
-function saveLogsToLocal() {
-    try {
-        localStorage.setItem(getStorageKey('artaflow_logs'), JSON.stringify(logs));
-    } catch(e) {}
-}
-
-// ============ LOG FUNCTIONS ============
-function addLog(action, details, oldData = null, newData = null) {
-    const logEntry = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        action: action,
-        details: details,
-        oldData: oldData,
-        newData: newData
-    };
-    logs.unshift(logEntry);
-    if (logs.length > 1000) logs = logs.slice(0, 1000);
-    saveLogsToLocal();
-    renderLogs();
-    updateLogCount();
-}
-
-function renderLogs() {
-    const logContainer = document.getElementById('logList');
-    if (!logContainer) return;
-    if (logs.length === 0) { logContainer.innerHTML = '<div class="empty-row">Belum ada aktivitas</div>'; return; }
-    logContainer.innerHTML = logs.map(log => {
-        let actionClass = '';
-        switch(log.action) {
-            case 'add': actionClass = 'log-action-add'; break;
-            case 'edit': actionClass = 'log-action-edit'; break;
-            case 'delete': actionClass = 'log-action-delete'; break;
-            case 'import': actionClass = 'log-action-import'; break;
-            case 'clear_all': actionClass = 'log-action-delete'; break;
-            default: actionClass = '';
-        }
-        const time = new Date(log.timestamp).toLocaleString('id-ID');
-        return `<div class="log-entry"><div><span class="${actionClass}">${getActionText(log.action)}</span><span style="margin-left:8px;font-size:.65rem;color:#666">${escapeHtml(log.details)}</span></div><div class="log-time">${time}</div></div>`;
+        return `<span class="log-line">
+            <small style="color:#888;">[${timeStr}]</small> 
+            <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.bookName)})</small> 
+            <span class="log-tag ${tagClass}">${l.type}</span> 
+            <span>${escapeHtml(l.msg)}</span>
+        </span>`;
     }).join('');
 }
 
-function getActionText(action) {
-    const texts = {'add':'Menambah','edit':'Mengedit','delete':'Menghapus','import':'Import Data','clear_all':'Hapus Semua'};
-    return texts[action] || action;
+// ==================== ENGINE PERHITUNGAN DAN RENDER DATA ====================
+function recalcBalances() {
+    let bal = 0;
+    txs.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
+    txs.forEach(t => {
+        bal += (t.type === 'income' ? t.amount : -t.amount);
+        t.balance = bal;
+    });
 }
 
-function updateLogCount() {
-    const logCountEl = document.getElementById('logCount');
-    if (logCountEl) logCountEl.textContent = `(${logs.length})`;
-}
-
-function exportLogs() {
-    if (logs.length === 0) { toast('Tidak ada log untuk diekspor'); return; }
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({ exportDate: new Date().toISOString(), totalLogs: logs.length, logs: logs }, null, 2)], { type: 'application/json' }));
-    a.download = `artaflow_logs_${currentBookId}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-    a.click(); URL.revokeObjectURL(a.href);
-    toast('Log berhasil diekspor');
-}
-
-// ============ EXPORT FUNCTIONS ============
-function exportToCSV() {
-    if (!txs.length) { toast('Tidak ada data untuk diekspor'); return; }
-    
-    let csvRows = [['Tanggal & Waktu', 'Deskripsi', 'Tipe', 'Jumlah (Rp)', 'Saldo']];
-    let runningBalance = 0;
-    const sortedTxs = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    for (const t of sortedTxs) {
-        runningBalance += t.type === 'income' ? t.amount : -t.amount;
-        csvRows.push([
-            formatDateTime(t.date, t.created_at),
-            t.desc,
-            t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-            t.amount.toLocaleString('id-ID'),
-            runningBalance.toLocaleString('id-ID')
-        ]);
-    }
-    
-    const totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    csvRows.push(['', '', '', '', '']);
-    csvRows.push(['RINGKASAN', '', '', '', '']);
-    csvRows.push(['Total Pemasukan', '', '', totalInc.toLocaleString('id-ID'), '']);
-    csvRows.push(['Total Pengeluaran', '', '', totalExp.toLocaleString('id-ID'), '']);
-    csvRows.push(['Saldo Akhir', '', '', (totalInc - totalExp).toLocaleString('id-ID'), '']);
-    
-    const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute('download', `artaflow_${currentBookId}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    addLog('export', `Ekspor data ke CSV (${txs.length} transaksi)`);
-    toast('Ekspor CSV berhasil');
-}
-
-// ============ STATUS ============
-function setSyncStatus(status, message) {
-    const statusEl = document.getElementById('syncStatus');
-    if (!statusEl) return;
-    if (status === 'syncing') { statusEl.textContent = 'Menyimpan...'; statusEl.className = 'sync-status syncing';
-    } else if (status === 'error') { 
-        let msg = message === 'No URL' ? 'Setup URL' : (message === 'Gagal' ? 'Gagal sync' : message);
-        statusEl.textContent = msg; 
-        statusEl.className = 'sync-status error';
-        setTimeout(() => { if (statusEl.textContent === msg) { statusEl.textContent = 'Cloud Sync'; statusEl.className = 'sync-status'; } }, 3000);
-    } else { statusEl.textContent = 'Cloud Sync'; statusEl.className = 'sync-status'; }
-}
-
-async function addTransactionToCloud(transaction) { return await syncToCloud(transaction, 'add'); }
-async function updateTransactionInCloud(id, transaction) { return await syncToCloud(transaction, 'update', id); }
-async function deleteTransactionFromCloud(id) { return await syncToCloud(null, 'delete', id); }
-async function syncAllToCloud(transactions) { return await syncToCloud(transactions, 'sync'); }
-
-// ============ CORE FUNCTIONS ============
-function escapeHtml(s) { return s ? String(s).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;') : ''; }
-function validAmount(n) { return !isNaN(n) && n > 0 && n <= 9999999999; }
-function rp(n) { return 'Rp ' + ((n || 0).toLocaleString('id-ID')); }
-function toast(msg, duration = 2500) { let t = document.getElementById('toast'); if (t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), duration); } }
-function updateTime() { 
-    let e = document.getElementById('lastUpdateTime'); 
-    if (e) e.innerText = new Date().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); 
-}
-
-function validateDate(dateString) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(dateString);
-    selectedDate.setHours(0, 0, 0, 0);
-    return selectedDate <= today;
-}
-
-function recalcBalances() { 
-    let bal = 0; 
-    [...txs].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => { 
-        bal += t.type === 'income' ? t.amount : -t.amount; 
-        t.balance = bal; 
-    }); 
-}
-
-// ============ FUNGSI RENDER STATISTIK (TANPA FILTER) ============
 function renderStats() {
-    // Hitung dari seluruh data (txs) tanpa filter
-    let totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    let totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    let curBal = txs.length ? txs.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
-    
-    // Hitung pengeluaran bulan ini (seluruh data)
-    let now = new Date(), curM = String(now.getMonth() + 1).padStart(2, '0'), curY = now.getFullYear();
-    let mExp = 0;
-    txs.forEach(t => { 
-        let [y, m] = t.date.split('-'); 
-        if (y == curY && m == curM && t.type === 'expense') mExp += t.amount; 
-    });
-    
-    document.getElementById('totalSaldo').innerText = rp(curBal);
-    document.getElementById('totalPemasukan').innerText = rp(totalInc);
-    document.getElementById('totalPengeluaran').innerText = rp(totalExp);
-    document.getElementById('saldoBulan').innerText = rp(mExp);
+    let inc = txs.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
+    let exp = txs.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
+    document.getElementById('statBalance').innerText = rp(inc - exp);
+    document.getElementById('statIncome').innerText = rp(inc);
+    document.getElementById('statExpense').innerText = rp(exp);
 }
 
-function getDisplayData() { 
-    let data = [...txs]; 
-    
-    if (filter === 'income') data = data.filter(t => t.type === 'income');
-    else if (filter === 'expense') data = data.filter(t => t.type === 'expense');
-    else if (filter === 'bulanan') {
-        const now = new Date();
-        const curM = String(now.getMonth() + 1).padStart(2, '0');
-        const curY = now.getFullYear();
-        data = data.filter(t => t.type === 'expense' && t.date.split('-')[0] == curY && t.date.split('-')[1] == curM);
-    }
-    
-    if (dateFilterStart) data = data.filter(t => t.date >= dateFilterStart);
-    if (dateFilterEnd) data = data.filter(t => t.date <= dateFilterEnd);
-    
-    data.sort((a, b) => {
-        if (a.created_at && b.created_at) {
-            return new Date(b.created_at) - new Date(a.created_at);
-        }
-        return b.id - a.id;
+function getDisplayData() {
+    let q = document.getElementById('searchInput').value.toLowerCase().trim();
+    let src = txs.filter(t => {
+        if (currentFilter === 'income' && t.type !== 'income') return false;
+        if (currentFilter === 'expense' && t.type !== 'expense') return false;
+        if (filterStartDate && t.date.split('T')[0] < filterStartDate) return false;
+        if (filterEndDate && t.date.split('T')[0] > filterEndDate) return false;
+        if (q && !t.desc.toLowerCase().includes(q)) return false;
+        return true;
     });
-    
-    return data; 
+    return src.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 }
 
 function render() {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
         try {
-            // Render statistik dari SELURUH data (tanpa filter)
+            recalcBalances();
             renderStats();
             
-            // Render tabel dari data yang sudah difilter
             let filteredData = getDisplayData();
-            
             let tb = document.getElementById('transactionTableBody');
-            let cnt = document.getElementById('transactionCount');
-            if (cnt) cnt.innerText = filteredData.length + ' transaksi';
-            
-            if (!filteredData.length) { 
-                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td></tr>';
-                return; 
+            if (document.getElementById('transactionCount')) {
+                document.getElementById('transactionCount').innerText = filteredData.length + ' transaksi';
             }
             
-            tb.innerHTML = filteredData.map((t, i) => { 
-                let isInc = t.type === 'income'; 
+            if (!filteredData.length) {
+                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td></tr>';
+                return;
+            }
+            
+            tb.innerHTML = filteredData.map((t, i) => {
+                let isInc = t.type === 'income';
                 let isNew = (lastAddedId === t.id);
-                let rowClass = isNew ? 'new-row' : '';
-                if (isNew) {
-                    setTimeout(() => {
-                        const row = document.querySelector(`tr[data-id="${t.id}"]`);
-                        if (row) row.classList.remove('new-row');
-                    }, 2000);
-                }
-                return `<tr data-id="${t.id}" class="${rowClass}">
-                    <td style="text-align:center">${i + 1}</td>
+                return `<tr data-id="${t.id}" class="${isNew ? 'new-row' : ''}">
+                    <td class="text-center">${i + 1}</td>
                     <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
                     <td>${escapeHtml(t.desc)}</td>
                     <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
                     <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
                     <td class="text-right">${rp(t.balance)}</td>
-                    <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">...</button></td>
+                    <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">···</button></td>
                 </tr>`;
             }).join('');
         } catch(e) { console.error(e); }
     }, 10);
 }
 
-// ============ CRUD OPERATIONS dengan AUTO SYNC ============
+// ==================== INTERAKSI CLOUD DENGAN GOOGLE SHEETS ====================
+function getCloudUrl() { return cloudUrls[currentBookId] || ''; }
+function saveCloudUrl(url) {
+    cloudUrls[currentBookId] = url.trim();
+    localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
+    updateSyncStatusIndicator();
+}
+function updateSyncStatusIndicator() {
+    let tag = document.getElementById('syncStatusTag');
+    if(!tag) return;
+    if (getCloudUrl()) {
+        tag.className = "sync-status online"; tag.innerText = "CLOUD CONNECTED";
+    } else {
+        tag.className = "sync-status offline"; tag.innerText = "OFFLINE MODE";
+    }
+}
+async function autoSync(action, onlineFn) {
+    if (!getCloudUrl()) return false;
+    try { return await onlineFn(); } catch(e) {
+        logAudit('SYSTEM', `Otomatis-sinkronisasi [${action}] gagal terkirim ke cloud backend: ${e.toString()}`);
+        return false;
+    }
+}
+async function addTransactionToCloud(t) {
+    let url = getCloudUrl(); if(!url) return false;
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    let res = await fetch(url, {
+        method: 'POST', mode: 'cors',
+        body: JSON.stringify({ action: 'add', book: bName, data: t })
+    });
+    let d = await res.json();
+    if(d.success) logAudit('SYSTEM', `Sukses sinkronisasi transaksi baru ID ${t.id} ke lembar awan.`);
+    return d.success;
+}
+async function syncWithCloud() {
+    let url = getCloudUrl();
+    if (!url) { alert("Masukkan URL Web App Deployment terlebih dahulu di kolom atas!"); return; }
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    try {
+        let btn = document.getElementById('forceSyncBtn');
+        if(btn) { btn.disabled = true; btn.innerText = "Proses..."; }
+        
+        let res = await fetch(url, {
+            method: 'POST', mode: 'cors',
+            body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } })
+        });
+        let d = await res.json();
+        if(d.success) {
+            alert("Sinkronisasi data lokal ke Google Sheets Berhasil!");
+            logAudit('SYSTEM', `Sinkronisasi menyeluruh manual berhasil didorong ke Google Sheets.`);
+        } else {
+            alert("Gagal sinkronisasi: " + d.error);
+            logAudit('SYSTEM', `Gagal dorong data manual. Cloud menolak: ${d.error}`);
+        }
+        if(btn) { btn.disabled = false; btn.innerText = "Paksa Sinkronisasi Sekarang"; }
+    } catch(e) {
+        alert("Koneksi gagal: " + e.toString());
+        logAudit('SYSTEM', `Gagal koneksi sinkronisasi manual: ${e.toString()}`);
+        let btn = document.getElementById('forceSyncBtn');
+        if(btn) { btn.disabled = false; btn.innerText = "Paksa Sinkronisasi Sekarang"; }
+    }
+}
+
+// ==================== MANAJEMEN DATA OPERASI CRUD ====================
+function saveLocal() { localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); }
+async function loadDataForCurrentBook() {
+    txs = [];
+    let local = localStorage.getItem('artaflow_txs_' + currentBookId);
+    if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    let url = getCloudUrl();
+    if (url) {
+        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+        try {
+            let res = await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'load', book: bName }) });
+            let d = await res.json();
+            if (d.success && d.transactions) {
+                txs = d.transactions; saveLocal(); logAudit('SYSTEM', "Data mutasi kas berhasil dimuat sinkron dari awan.");
+            }
+        } catch(e) { logAudit('SYSTEM', "Gagal kontak awan untuk muat data terbaru, memakai database lokal."); }
+    }
+    lastAddedId = null;
+}
+
 async function handleSubmit(e) {
     e.preventDefault();
-    let type = document.getElementById('txType').value;
-    let date = document.getElementById('txDate').value;
-    let desc = document.getElementById('txDesc').value.trim().slice(0, 100);
-    let amtRaw = document.getElementById('txAmount').value;
-    let amt = parseRupiahToNumber(amtRaw);
+    let submitBtn = document.getElementById('addSubmitBtn');
+    submitBtn.disabled = true; submitBtn.innerText = "Menyimpan...";
     
-    if (!desc) { toast('Keterangan harus diisi'); return; }
-    if (!validAmount(amt)) { toast('Nominal harus lebih dari 0'); return; }
-    if (!validateDate(date)) { toast('Tanggal tidak boleh melebihi hari ini'); return; }
+    let amt = unRp(document.getElementById('txAmount').value);
+    if (amt <= 0) { alert("Jumlah harus lebih dari 0!"); submitBtn.disabled = false; submitBtn.innerText = "Simpan"; return; }
     
-    const newId = Date.now();
-    const newTransaction = { 
-        id: newId, 
-        date, 
-        desc, 
-        type, 
+    let newTransaction = {
+        id: Date.now() + Math.floor(Math.random() * 100),
+        type: document.querySelector('input[name="type"]:checked').value,
+        date: document.getElementById('txDate').value,
+        desc: document.getElementById('txDesc').value.trim(),
         amount: amt,
         created_at: new Date().toISOString()
     };
     
-    const success = await autoSync('add', async () => {
-        return await addTransactionToCloud(newTransaction);
-    });
+    lastAddedId = newTransaction.id;
     
-    if (success) {
-        lastAddedId = newId;
-        closeModalTambah();
-        addLog('add', `Menambah ${type === 'income' ? 'pemasukan' : 'pengeluaran'} "${desc}" sebesar ${rp(amt)}`);
-        toast('Transaksi tersimpan');
-        setTimeout(() => {
-            const tableWrapper = document.querySelector('.table-wrapper');
-            if (tableWrapper) tableWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    } else {
-        newTransaction.created_at = new Date().toISOString();
-        txs.unshift(newTransaction);
-        saveToLocalBackup();
-        render();
-        closeModalTambah();
-        addLog('add', `Menambah ${type === 'income' ? 'pemasukan' : 'pengeluaran'} "${desc}" sebesar ${rp(amt)} (offline mode)`);
-        toast('Tersimpan lokal (offline mode)');
-    }
+    // TULIS LOG DETAIL TAMBAH DATA
+    logAudit('TAMBAH', `Menambahkan transaksi [${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'}]. Nominal: ${rp(newTransaction.amount)} | Deskripsi: "${newTransaction.desc}" | Tanggal nota: ${newTransaction.date}`);
+
+    const success = await autoSync('add', async () => { return await addTransactionToCloud(newTransaction); });
+    if (success) { await loadDataForCurrentBook(); } 
+    else { txs.unshift(newTransaction); saveLocal(); }
+    
+    closeModal('addModal');
+    document.getElementById('addForm').reset();
+    submitBtn.disabled = false; submitBtn.innerText = "Simpan";
+    render();
 }
 
 async function handleEditSubmit(e) {
     e.preventDefault();
-    let id = parseInt(document.getElementById('editId').value);
-    let newType = document.getElementById('editJenis').value;
-    let newDate = document.getElementById('editTanggal').value;
-    let newDesc = document.getElementById('editDeskripsi').value.trim().slice(0, 100);
-    let newAmtRaw = document.getElementById('editJumlah').value;
-    let newAmt = parseRupiahToNumber(newAmtRaw);
+    let id = Number(document.getElementById('editId').value);
+    let amt = unRp(document.getElementById('editTxAmount').value);
+    if(amt <= 0) { alert("Jumlah harus lebih dari 0!"); return; }
     
-    if (!newDesc) { toast('Keterangan harus diisi'); return; }
-    if (!validAmount(newAmt)) { toast('Nominal harus lebih dari 0'); return; }
-    if (!validateDate(newDate)) { toast('Tanggal tidak boleh melebihi hari ini'); return; }
-    
-    const oldTx = txs.find(t => t.id === id);
-    const updatedTransaction = { 
-        id, 
-        date: newDate, 
-        desc: newDesc, 
-        type: newType, 
-        amount: newAmt,
-        created_at: oldTx?.created_at || new Date().toISOString()
-    };
-    
-    const success = await autoSync('edit', async () => {
-        return await updateTransactionInCloud(id, updatedTransaction);
-    });
-    
-    if (success) {
-        closeModalEdit();
-        addLog('edit', `Mengedit transaksi dari "${oldTx?.desc}" (${rp(oldTx?.amount)}) menjadi "${newDesc}" (${rp(newAmt)})`, oldTx, updatedTransaction);
-        toast('Transaksi diupdate');
-    } else {
-        let idx = txs.findIndex(t => t.id === id);
-        if (idx !== -1) {
-            txs[idx] = updatedTransaction;
-            saveToLocalBackup();
-            render();
-            closeModalEdit();
-            addLog('edit', `Mengedit transaksi dari "${oldTx?.desc}" (${rp(oldTx?.amount)}) menjadi "${newDesc}" (${rp(newAmt)}) (offline mode)`, oldTx, updatedTransaction);
-            toast('Update tersimpan lokal');
+    let t = txs.find(x => x.id === id);
+    if (t) {
+        // AMBIL REKAMAN SEBELUM DIUBAH UNTUK AUDITOR
+        let oldType = t.type === 'income' ? 'MASUK' : 'KELUAR';
+        let oldAmt = t.amount;
+        let oldDesc = t.desc;
+        let oldDate = t.date;
+
+        let newType = document.querySelector('input[name="editType"]:checked').value;
+        let newTypeLabel = newType === 'income' ? 'MASUK' : 'KELUAR';
+
+        t.type = newType;
+        t.date = document.getElementById('editTxDate').value;
+        t.desc = document.getElementById('editTxDesc').value.trim();
+        t.amount = amt;
+        saveLocal();
+
+        // TULIS LOG DETAIL PERUBAHAN (SEBELUM VS SESUDAH)
+        logAudit('UBAH', `Mengubah transaksi ID:${id}. SEBELUMNYA: [${oldType}] ${rp(oldAmt)} "${oldDesc}" (${oldDate}) -> MENJADI: [${newTypeLabel}] ${rp(t.amount)} "${t.desc}" (${t.date})`);
+
+        await autoSync('sync', async () => {
+            let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+            await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
+            return true;
+        });
+    }
+    closeModal('editModal');
+    render();
+}
+
+async function deleteTransaction(id) {
+    if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+        let t = txs.find(x => x.id === id);
+        if(t) {
+            // TULIS LOG DETAIL DATA YANG DIHAPUS
+            logAudit('HAPUS', `Menghapus transaksi ID:${id}. Data terhapus: [${t.type==='income'?'MASUK':'KELUAR'}] ${rp(t.amount)} | Deskripsi: "${t.desc}" | Tanggal nota: ${t.date}`);
         }
+
+        txs = txs.filter(t => t.id !== id);
+        saveLocal();
+        closeModalActionMenu();
+        render();
+        await autoSync('sync', async () => {
+            let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+            await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
+            return true;
+        });
     }
 }
 
 async function confirmDeleteAll() {
-    if (!txs.length) { toast('Tidak ada data'); closeDeleteAllModal(); return; }
-    if (!confirm('Hapus semua data dari cloud? Aksi ini akan tercatat di log.')) return;
-    const deletedCount = txs.length;
-    
-    const success = await autoSync('delete_all', async () => {
-        return await syncAllToCloud([]);
-    });
-    
-    if (success) {
-        closeDeleteAllModal();
-        addLog('clear_all', `Menghapus semua ${deletedCount} transaksi dari sistem`);
-        toast('Semua data telah dihapus');
-    } else {
-        toast('Gagal menghapus dari cloud');
+    let bObj = books.find(b => b.id === currentBookId);
+    let bName = bObj ? bObj.name : "buku kas aktif";
+    if (confirm(`PERINGATAN SEKURITAS!\nAnda akan menghapus seluruh data transaksi dari "${bName}"?`)) {
+        if(confirm(`Konfirmasi akhir:\nTindakan ini menghapus permanen rekaman lokal & cloud pada buku "${bName}". Lanjutkan?`)) {
+            
+            // TULIS LOG MASAL KOSONGKAN BUKU
+            logAudit('HAPUS', `KOSONGKAN DATA MUTASI MENGHANCURKAN SELURUH ISI TRANSAKSI BUKU KAS: "${bName}"`);
+            
+            txs = []; saveLocal(); 
+            render();
+            await autoSync('sync', async () => {
+                let url = getCloudUrl();
+                await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: [] } }) });
+                return true;
+            });
+            alert(`Buku kas "${bName}" berhasil dikosongkan.`);
+        }
     }
 }
 
-async function deleteTransaction(id) {
-    closeModalActionMenu();
-    if (!confirm('Hapus transaksi ini? Aksi akan tercatat di log.')) return;
-    const deletedTx = txs.find(t => t.id === id);
-    
-    const success = await autoSync('delete', async () => {
-        return await deleteTransactionFromCloud(id);
-    });
-    
-    if (success) {
-        addLog('delete', `Menghapus transaksi "${deletedTx?.desc}" sebesar ${rp(deletedTx?.amount)}`);
-        toast('Transaksi dihapus');
-    } else {
-        txs = txs.filter(x => x.id !== id);
-        saveToLocalBackup();
-        render();
-        addLog('delete', `Menghapus transaksi "${deletedTx?.desc}" sebesar ${rp(deletedTx?.amount)} (offline mode)`);
-        toast('Dihapus (offline mode)');
+// ==================== KONTROL TAMPILAN, MODAL, DAN UI TAB ====================
+function openModal(id) {
+    document.getElementById(id).classList.add('show');
+    if (id === 'addModal') {
+        let now = new Date(); let offset = now.getTimezoneOffset() * 60000;
+        document.getElementById('txDate').value = (new Date(now - offset)).toISOString().slice(0, 16);
+    }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function openActionMenu(id) { actionId = id; openModal('actionMenuModal'); }
+function closeModalActionMenu() { closeModal('actionMenuModal'); }
+
+function editAction() {
+    let t = txs.find(x => x.id === actionId); if (!t) return;
+    document.getElementById('editId').value = t.id;
+    if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
+    else document.getElementById('editTypeExpense').checked = true;
+    document.getElementById('editTxDate').value = t.date;
+    document.getElementById('editTxDesc').value = t.desc;
+    document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
+    closeModalActionMenu(); openModal('editModal');
+}
+function setFilter(type) {
+    currentFilter = type;
+    document.querySelectorAll('.filters .filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('filter-' + type).classList.add('active');
+    render();
+}
+function applyDateFilter() {
+    filterStartDate = document.getElementById('dateFilterStart').value;
+    filterEndDate = document.getElementById('dateFilterEnd').value;
+    if (filterStartDate || filterEndDate) document.getElementById('clearDateBtn').style.display = 'inline-block';
+    render();
+}
+function resetDateFilter() {
+    document.getElementById('dateFilterStart').value = ''; document.getElementById('dateFilterEnd').value = '';
+    filterStartDate = ''; filterEndDate = ''; document.getElementById('clearDateBtn').style.display = 'none';
+    render();
+}
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tabLink-' + tab).classList.add('active');
+}
+function updateTime() {
+    let clock = document.getElementById('liveClock');
+    if (clock) {
+        let now = new Date(); let pad = n => String(n).padStart(2, '0');
+        clock.innerText = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
 }
 
-async function handleImport(event) {
-    event.preventDefault();
-    const fileInput = document.getElementById('importFile');
-    const mode = document.getElementById('importMode').value;
-    if (!fileInput.files || !fileInput.files[0]) { toast('Pilih file JSON terlebih dahulu'); return; }
-    const file = fileInput.files[0];
-    const reader = new FileReader();
+// ==================== SISTEM MULTI BUKU KAS (MULTI-BOOK ENGINE) ====================
+function loadBooks() {
+    let stored = localStorage.getItem('artaflow_books');
+    if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
+    if (!books.length) {
+        books = [{ id: 'b_default', name: 'Buku Utama' }];
+        localStorage.setItem('artaflow_books', JSON.stringify(books));
+    }
+    let storedUrls = localStorage.getItem('artaflow_cloud_urls');
+    if (storedUrls) { try { cloudUrls = JSON.parse(storedUrls); } catch(e) { cloudUrls = {}; } }
+    let storedLogs = localStorage.getItem('artaflow_logs');
+    if (storedLogs) { try { syncLogs = JSON.parse(storedLogs); } catch(e) { syncLogs = []; } }
+    
+    let active = localStorage.getItem('artaflow_active_book_id');
+    currentBookId = (active && books.some(b => b.id === active)) ? active : books[0].id;
+    refreshBookSelectOptions();
+    renderLogsToUI();
+}
+function refreshBookSelectOptions() {
+    let sel = document.getElementById('currentBookSelect');
+    if (sel) sel.innerHTML = books.map(b => `<option value="${b.id}" ${b.id===currentBookId?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
+    
+    let activeBookObj = books.find(b => b.id === currentBookId);
+    let lblName = document.getElementById('cloudSettingBookName');
+    if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
+    
+    let cloudIn = document.getElementById('cloudUrlInput');
+    if(cloudIn) cloudIn.value = getCloudUrl();
+    updateSyncStatusIndicator();
+}
+async function switchBook(id) {
+    currentBookId = id; localStorage.setItem('artaflow_active_book_id', id);
+    refreshBookSelectOptions();
+    await loadDataForCurrentBook();
+    render();
+}
+function openBookManager() {
+    let container = document.getElementById('bookListContainer');
+    container.innerHTML = books.map(b => {
+        let isDefault = b.id === 'b_default';
+        let delAction = isDefault ? `<span style="color:#ccc;font-size:.65rem">Sistem</span>` : `<button class="book-item-btn del" onclick="deleteBook('${b.id}')">Hapus</button>`;
+        return `<div class="book-item">
+            <span style="font-weight:${b.id===currentBookId?'700':'400'}">${escapeHtml(b.name)} ${b.id===currentBookId?'(Aktif)':''}</span>
+            <div class="book-item-actions">
+                <button class="book-item-btn" onclick="openEditBookModal('${b.id}','${escapeHtml(b.name)}')">Edit Nama</button>
+                ${delAction}
+            </div>
+        </div>`;
+    }).join('');
+    
+    let activeBookObj = books.find(b => b.id === currentBookId);
+    let lblName = document.getElementById('cloudSettingBookName');
+    if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
+    
+    let cloudIn = document.getElementById('cloudUrlInput');
+    if(cloudIn) cloudIn.value = getCloudUrl();
+    
+    openModal('bookManagerModal');
+}
+function closeBookManager() { closeModal('bookManagerModal'); }
+function addNewBook(e) {
+    e.preventDefault();
+    let nameIn = document.getElementById('newBookName'); let name = nameIn.value.trim(); if (!name) return;
+    let id = 'b_' + Date.now(); books.push({ id, name });
+    localStorage.setItem('artaflow_books', JSON.stringify(books));
+    logAudit('SYSTEM', `Membuat buku kas baru dengan identitas nama: "${name}"`);
+    nameIn.value = ''; openBookManager(); refreshBookSelectOptions();
+}
+function openEditBookModal(id, name) {
+    document.getElementById('editBookId').value = id;
+    document.getElementById('editBookNameField').value = name;
+    openModal('editBookModal');
+}
+function closeEditBookModal() { closeModal('editBookModal'); }
+function saveBookEdit() {
+    let id = document.getElementById('editBookId').value;
+    let name = document.getElementById('editBookNameField').value.trim(); if (!name) return;
+    let b = books.find(x => x.id === id);
+    if (b) { 
+        let oldName = b.name;
+        b.name = name; 
+        localStorage.setItem('artaflow_books', JSON.stringify(books)); 
+        logAudit('SYSTEM', `Mengubah nama buku kas dari "${oldName}" menjadi "${name}"`);
+    }
+    closeEditBookModal(); openBookManager(); refreshBookSelectOptions();
+}
+async function deleteBook(id) {
+    if (id === 'b_default') return;
+    let b = books.find(x => x.id === id);
+    let oldBookName = b ? b.name : id;
+    if (confirm(`Hapus seluruh buku kas "${oldBookName}" beserta seluruh riwayat lokal di dalamnya?`)) {
+        books = books.filter(b => b.id !== id);
+        localStorage.setItem('artaflow_books', JSON.stringify(books));
+        localStorage.removeItem('artaflow_txs_' + id);
+        logAudit('HAPUS', `MENGHAPUS PERMANEN SATU BUKU KAS BESERTA SELURUH TRANSAKSINYA: "${oldBookName}"`);
+        if (cloudUrls[id]) { delete cloudUrls[id]; localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls)); }
+        if (currentBookId === id) { currentBookId = 'b_default'; localStorage.setItem('artaflow_active_book_id', 'b_default'); }
+        openBookManager(); refreshBookSelectOptions(); await loadDataForCurrentBook(); render();
+    }
+}
+
+// ==================== STRUKTUR IMPORT, EKSPOR, DAN PRINT LOGIKA ====================
+function openImportModalFromManager() {
+    openModal('importModal');
+}
+function closeImportModal() { closeModal('importModal'); }
+function handleImport() {
+    let fileIn = document.getElementById('importFile'); if (!fileIn.files.length) return;
+    let file = fileIn.files[0]; let reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            const importedData = JSON.parse(e.target.result);
-            let importedTransactions = [];
-            if (importedData.transactions && Array.isArray(importedData.transactions)) importedTransactions = importedData.transactions;
-            else if (Array.isArray(importedData)) importedTransactions = importedData;
-            else throw new Error('Format file tidak valid');
-            const validTransactions = importedTransactions.filter(t => t.id && t.date && t.desc && t.type && t.amount && typeof t.amount === 'number');
-            if (validTransactions.length === 0) throw new Error('Tidak ada transaksi valid dalam file');
-            
-            validTransactions.forEach(t => {
-                if (!t.created_at) t.created_at = new Date().toISOString();
-            });
-            
-            let newTransactions = [], importDetails = '';
-            if (mode === 'replace') { newTransactions = validTransactions; importDetails = `Mengganti semua ${txs.length} data dengan ${validTransactions.length} transaksi baru`; addLog('clear_all', `Menghapus semua ${txs.length} transaksi sebelum import (otomatis)`);
-            } else { const existingIds = new Set(txs.map(t => t.id)); const newUnique = validTransactions.filter(t => !existingIds.has(t.id)); newTransactions = [...txs, ...newUnique]; importDetails = `Menambah ${newUnique.length} transaksi baru dari total ${validTransactions.length} (${validTransactions.length - newUnique.length} duplikat diabaikan)`;
+            let importedTxs = [];
+            if (file.name.endsWith('.json')) { importedTxs = JSON.parse(e.target.result); } 
+            else if (file.name.endsWith('.csv')) {
+                let lines = e.target.result.split('\n');
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    if (cols.length >= 5) {
+                        importedTxs.push({
+                            id: Number(cols[0]) || (Date.now() + i), date: cols[1],
+                            desc: cols[2].replace(/^"|"$/g, '').replace(/""/g, '"'),
+                            type: cols[3], amount: Number(cols[4]) || 0, created_at: cols[5] ? cols[5].trim() : new Date().toISOString()
+                        });
+                    }
+                }
             }
-            
-            const success = await autoSync('import', async () => {
-                return await syncAllToCloud(newTransactions);
-            });
-            
-            if (success) {
-                addLog('import', importDetails);
-                closeImportModal();
-                toast(`Berhasil import ${validTransactions.length} transaksi`);
-            } else {
-                txs = newTransactions;
-                saveToLocalBackup();
-                render();
-                addLog('import', `${importDetails} (offline mode)`);
-                closeImportModal();
-                toast(`Import ${validTransactions.length} transaksi (tersimpan lokal)`);
+            if (Array.isArray(importedTxs)) {
+                importedTxs.forEach(imp => {
+                    let idx = txs.findIndex(x => x.id === imp.id);
+                    if (idx > -1) txs[idx] = imp; else txs.push(imp);
+                });
+                saveLocal(); render(); closeImportModal(); fileIn.value = ''; 
+                
+                logAudit('TAMBAH', `Mengimpor eksternal database transaksi sebanyak: ${importedTxs.length} baris dari file "${file.name}"`);
+                
+                await autoSync('sync', async () => {
+                    let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+                    await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
+                    return true;
+                });
+                alert("Data berhasil diimpor dan disinkronkan.");
             }
-        } catch (error) { console.error('Import error:', error); toast('Gagal import: ' + error.message); }
+        } catch(err) { alert("File rusak atau tidak kompatibel: " + err.toString()); }
     };
-    reader.onerror = function() { toast('Gagal membaca file'); };
     reader.readAsText(file);
 }
 
-// ============ UI FUNCTIONS ============
-function applyDateFilter() {
-    const startInput = document.getElementById('filterDateStart');
-    const endInput = document.getElementById('filterDateEnd');
-    
-    dateFilterStart = startInput.value ? startInput.value : null;
-    dateFilterEnd = endInput.value ? endInput.value : null;
-    
-    const infoDiv = document.getElementById('dateRangeInfo');
-    if (dateFilterStart || dateFilterEnd) {
-        let infoText = '';
-        if (dateFilterStart) infoText += `${fmtDate(dateFilterStart)}`;
-        if (dateFilterStart && dateFilterEnd) infoText += ' - ';
-        if (dateFilterEnd) infoText += `${fmtDate(dateFilterEnd)}`;
-        infoDiv.innerHTML = `<span class="date-range-badge">Filter: ${infoText}</span>`;
-    } else {
-        infoDiv.innerHTML = '';
-    }
-    render();
+function exportToCSV() {
+    if (!txs.length) { alert("Tidak ada data transaksi."); return; }
+    let csvRows = [["ID", "Tanggal", "Deskripsi", "Jenis", "Jumlah", "Waktu Dibuat"].join(',')];
+    txs.forEach(t => {
+        csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.created_at || ''].join(','));
+    });
+    let blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
+    a.href = URL.createObjectURL(blob);
+    a.download = `ArtaFlow_Mutasi_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
 }
-
-function resetDateFilter() {
-    document.getElementById('filterDateStart').value = '';
-    document.getElementById('filterDateEnd').value = '';
-    dateFilterStart = null;
-    dateFilterEnd = null;
-    document.getElementById('dateRangeInfo').innerHTML = '';
-    render();
-    toast('Filter tanggal direset');
-}
-
-function switchTab(tab) {
-    const tabs = document.querySelectorAll('.tab-btn');
-    tabs.forEach(btn => btn.classList.remove('active'));
-    if (tab === 'transaksi') { document.getElementById('tabTransaksi').classList.add('active'); document.getElementById('tabLog').classList.remove('active'); tabs[0].classList.add('active');
-    } else { document.getElementById('tabTransaksi').classList.remove('active'); document.getElementById('tabLog').classList.add('active'); tabs[1].classList.add('active'); renderLogs(); }
-}
-
-function openModalTambah(type) { 
-    document.getElementById('txType').value = type === 'Pemasukan' ? 'income' : 'expense'; 
-    document.getElementById('txForm').reset(); 
-    document.getElementById('txDate').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('txDate').max = new Date().toISOString().slice(0, 10);
-    document.getElementById('modalTambah').classList.add('show'); 
-}
-function closeModalTambah() { document.getElementById('modalTambah').classList.remove('show'); }
-function closeModalEdit() { document.getElementById('modalEdit').classList.remove('show'); }
-function openDeleteAllModal() { document.getElementById('modalDeleteAll').classList.add('show'); }
-function closeDeleteAllModal() { document.getElementById('modalDeleteAll').classList.remove('show'); }
-function closeModalActionMenu() { document.getElementById('modalActionMenu').classList.remove('show'); actionId = null; }
-function openImportModal() { document.getElementById('importForm').reset(); document.getElementById('modalImport').classList.add('show'); }
-function closeImportModal() { document.getElementById('modalImport').classList.remove('show'); }
-
-function openActionMenu(id) { let t = txs.find(x => x.id === id); if (!t) return; actionId = id; document.getElementById('actionTransactionInfo').innerHTML = `<strong>${escapeHtml(t.desc)}</strong><br>${formatDateTime(t.date, t.created_at)} · ${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`; document.getElementById('modalActionMenu').classList.add('show'); }
-function editAction() { if (!actionId) return; let t = txs.find(x => x.id === actionId); if (!t) return; closeModalActionMenu(); document.getElementById('editId').value = t.id; document.getElementById('editJenis').value = t.type; document.getElementById('editTanggal').value = t.date; document.getElementById('editTanggal').max = new Date().toISOString().slice(0, 10); document.getElementById('editDeskripsi').value = t.desc; 
-    document.getElementById('editJumlah').value = t.amount.toLocaleString('id-ID');
-    document.getElementById('modalEdit').classList.add('show'); 
-}
-
-function setFilter(f) { 
-    filter = f; 
-    document.querySelectorAll('.filter-chip').forEach(c => { 
-        c.classList.remove('active'); 
-        if (c.dataset.filter === f) c.classList.add('active'); 
-    }); 
-    if (f === 'bulanan') resetDateFilter();
-    render(); 
-}
-
-function printReport() {
-    let data = getDisplayData();
-    if (!data.length) { 
-        toast('Tidak ada data untuk dicetak'); 
-        return; 
-    }
-    
-    let filterText = filter === 'all' ? 'Semua Transaksi' : filter === 'income' ? 'Pemasukan' : filter === 'expense' ? 'Pengeluaran' : 'Pengeluaran Bulan Ini';
-    if (dateFilterStart || dateFilterEnd) {
-        let rangeText = '';
-        if (dateFilterStart) rangeText += ` dari ${fmtDate(dateFilterStart)}`;
-        if (dateFilterStart && dateFilterEnd) rangeText += ' sampai ';
-        if (dateFilterEnd) rangeText += `${fmtDate(dateFilterEnd)}`;
-        filterText += rangeText;
-    }
-    
-    const currentBook = books.find(b => b.id === currentBookId);
-    const bookName = currentBook ? currentBook.name : 'Buku Kas';
-    
-    // Untuk cetak, statistik tetap dari seluruh data
-    let totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    let totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    let curBal = txs.length ? txs.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
-    let printDate = new Date().toLocaleString('id-ID');
-    
-    let rows = data.map((t, i) => { 
-        let isInc = t.type === 'income'; 
-        return `<tr>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${i+1}</td>
-            <td style="padding:6px 8px;border:1px solid #ddd">${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
-            <td style="padding:6px 8px;border:1px solid #ddd">${escapeHtml(t.desc)}</td>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${isInc ? rp(t.amount) : '-'}</td>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${!isInc ? rp(t.amount) : '-'}</td>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${rp(t.balance)}</td>
-        </tr>`;
-    }).join('');
-    
-    let printWindow = window.open('', '_blank');
-    printWindow.document.write(`<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Laporan ArtaFlow - ${escapeHtml(bookName)}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; padding: 15px; background: white; font-size: 10pt; line-height: 1.4; }
-        .print-container { max-width: 100%; margin: 0 auto; }
-        .print-header { text-align: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #1a1a1a; }
-        .print-header h1 { font-size: 20pt; font-weight: 700; margin-bottom: 6px; }
-        .print-header p { font-size: 9pt; color: #555; margin-top: 4px; }
-        .print-info { margin-bottom: 15px; font-size: 9pt; display: flex; justify-content: space-between; flex-wrap: wrap; padding: 8px 0; }
-        .print-info .left, .print-info .right { background: #f5f5f5; padding: 6px 12px; border-radius: 4px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
-        .stat-card { border: 1px solid #ddd; padding: 10px 12px; background: #fafafa; border-radius: 6px; }
-        .stat-label { font-size: 8pt; color: #666; margin-bottom: 5px; text-transform: uppercase; }
-        .stat-value { font-size: 12pt; font-weight: 700; }
-        .table-title { font-size: 11pt; font-weight: 600; margin: 15px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid #ccc; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        th { background: #e8e8e8; padding: 8px 10px; border: 1px solid #aaa; font-weight: 700; text-align: center; font-size: 9pt; }
-        td { padding: 6px 10px; border: 1px solid #ddd; font-size: 9pt; }
-        .text-right { text-align: right; }
-        .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 8pt; text-align: center; color: #888; }
-        @page { size: A4 landscape; margin: 1.2cm; }
-        @media print { body { padding: 0; margin: 0; } }
-    </style>
-</head>
-<body>
-    <div class="print-container">
-        <div class="print-header">
-            <h1>ARTAFLOW</h1>
-            <p>${escapeHtml(bookName)}</p>
-        </div>
-        
-        <div class="print-info">
-            <div class="left">📋 ${escapeHtml(filterText)}</div>
-            <div class="right">📅 Dicetak: ${printDate}</div>
-        </div>
-        
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div>
-            <div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${txs.length}</div></div>
-        </div>
-        
-        <div class="table-title">📊 Detail Transaksi (${filterText})</div>
-        <table>
-            <thead><tr><th style="width:5%">No</th><th style="width:18%">Tanggal & Waktu</th><th style="width:37%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:10%" class="text-right">Saldo</th></tr></thead>
-            <tbody>${rows}</tbody>
-        </table>
-        
-        <div class="print-footer">ArtaFlow - Laporan Keuangan | Dicetak: ${printDate}</div>
-    </div>
-</body>
-</html>`);
-    printWindow.document.close();
-}
-
 function exportToJSON() {
-    if (!txs.length) { toast('Tidak ada data'); return; }
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({ exportDate: new Date().toISOString(), transactions: txs }, null, 2)], { type: 'application/json' }));
-    a.download = `artaflow_${currentBookId}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-    a.click(); URL.revokeObjectURL(a.href);
-    addLog('export', `Ekspor data ke JSON (${txs.length} transaksi)`);
-    toast('Backup JSON berhasil');
+    if (!txs.length) { alert("Tidak ada data."); return; }
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
+    let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", `ArtaFlow_Backup_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`);
+    a.click();
+}
+function exportLogs() {
+    if (!syncLogs.length) { alert("Log kosong."); return; }
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(syncLogs, null, 2));
+    let a = document.createElement('a'); a.setAttribute("href", dataStr);
+    a.setAttribute("download", `ArtaFlow_AuditLogs_${new Date().toISOString().slice(0,10)}.json`);
+    a.click();
+}
+function printReport() {
+    let bName = books.find(b => b.id === currentBookId)?.name || 'Buku Utama';
+    let data = getDisplayData();
+    let inc = data.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
+    let exp = data.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
+    let w = window.open();
+    w.document.write(`<html><head><title>Laporan ArtaFlow</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1a1a1a}h2{margin-bottom:4px}.meta{font-size:.8rem;color:#666;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85rem}th,td{border:1px solid #1a1a1a;padding:8px 12px}th{background:#f5f5f5}.text-right{text-align:right}.summary-box{margin-top:20px;border:1.5px solid #1a1a1a;padding:14px;border-radius:4px;display:inline-block;min-width:300px;font-size:.85rem}.summary-item{display:flex;justify-content:space-between;margin-bottom:6px}</style></head><body>`);
+    w.document.write(`<h2>LAPORAN TRANSAKSI KAS</h2><div class="meta">Buku Kas: <strong>${bName}</strong><br>Dicetak: ${new Date().toLocaleString('id-ID')}</div>`);
+    w.document.write(`<table><thead><tr><th>No</th><th>Tanggal & Jam</th><th>Deskripsi</th><th>Masuk</th><th>Keluar</th><th>Saldo</th></tr></thead><tbody>`);
+    data.forEach((t, i) => {
+        w.document.write(`<tr><td style="text-align:center">${i+1}</td><td>${formatDateTime(t.date, t.created_at)}</td><td>${t.desc}</td><td class="text-right">${t.type==='income'?rp(t.amount):'—'}</td><td class="text-right">${t.type==='expense'?rp(t.amount):'—'}</td><td class="text-right">${rp(t.balance)}</td></tr>`);
+    });
+    w.document.write(`</tbody></table><div class="summary-box"><div class="summary-item"><span>Transaksi Terfilter:</span> <strong>${data.length}</strong></div><div class="summary-item" style="color:#00875a"><span>Pemasukan:</span> <strong>${rp(inc)}</strong></div><div class="summary-item" style="color:#de350b"><span>Pengeluaran:</span> <strong>${rp(exp)}</strong></div><div class="summary-item" style="border-top:1px solid #1a1a1a;padding-top:6px;font-weight:700"><span>Arus Bersih:</span> <span>${rp(inc-exp)}</span></div></div></body></html>`);
+    w.document.close(); w.print();
+}
+function copyScriptToClipboard() {
+    let el = document.getElementById('scriptCodeArea'); el.select(); el.setSelectionRange(0, 99999); document.execCommand("copy");
+    let btn = document.querySelector(".copy-btn"); btn.innerText = "Tersalin!"; setTimeout(() => { btn.innerText = "Salin Kode"; }, 2000);
 }
 
-// ============ INITIALIZATION ============
-window.openModalTambah = openModalTambah;
-window.closeModalTambah = closeModalTambah;
+// ==================== EVENT LISTENER REGISTER WINDOW SCOPE ====================
+window.closeModal = closeModal;
+window.openModal = openModal;
 window.handleSubmit = handleSubmit;
-window.closeModalEdit = closeModalEdit;
 window.handleEditSubmit = handleEditSubmit;
-window.openDeleteAllModal = openDeleteAllModal;
-window.closeDeleteAllModal = closeDeleteAllModal;
+window.saveCloudUrl = saveCloudUrl;
+window.syncWithCloud = syncWithCloud;
 window.confirmDeleteAll = confirmDeleteAll;
 window.exportToJSON = exportToJSON;
 window.exportToCSV = exportToCSV;
@@ -1562,7 +1054,7 @@ window.printReport = printReport;
 window.openActionMenu = openActionMenu;
 window.switchTab = switchTab;
 window.exportLogs = exportLogs;
-window.openImportModal = openImportModal;
+window.openImportModalFromManager = openImportModalFromManager;
 window.closeImportModal = closeImportModal;
 window.handleImport = handleImport;
 window.applyDateFilter = applyDateFilter;
@@ -1570,7 +1062,7 @@ window.resetDateFilter = resetDateFilter;
 window.openBookManager = openBookManager;
 window.closeBookManager = closeBookManager;
 window.addNewBook = addNewBook;
-window.editBook = editBook;
+window.editBook = saveBookEdit;
 window.closeEditBookModal = closeEditBookModal;
 window.saveBookEdit = saveBookEdit;
 window.deleteBook = deleteBook;
@@ -1580,16 +1072,16 @@ window.formatRupiah = formatRupiah;
 
 document.getElementById('actionEditBtn').onclick = editAction;
 document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
-
 document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }); });
 
-(async function init() { 
+// ==================== SYSTEM INITIALIZATION EXECUTION ====================
+(async function init() {
     loadBooks();
+    document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;
     await loadDataForCurrentBook();
-    render(); 
-    updateTime(); 
-    renderLogs(); 
-    updateLogCount(); 
+    render();
+    updateTime();
+    setInterval(updateTime, 1000);
 })();
 </script>
 </body>

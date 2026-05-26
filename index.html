@@ -621,7 +621,7 @@
         <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px; margin-bottom: 14px;">
             <div class="form-group" style="margin-bottom: 10px;">
                 <label style="color: #1a1a1a; font-weight:700;">URL Cloud Web App (<span id="cloudSettingBookName" style="text-transform:none; color:#666;">Buku Aktif</span>)</label>
-                <input type="text" id="cloudUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveCloudUrl(this.value)">
+                <input type="password" id="cloudUrlInput" class="form-control" placeholder="••••••••••••••••••••••••••••••••••••" oninput="saveCloudUrl(this.value)">
             </div>
             <div style="display:flex; justify-content: flex-end; margin-bottom: 14px;">
                 <button type="button" id="forceSyncBtn" class="btn btn-primary" style="padding: 6px 12px; font-size: .7rem;" onclick="syncWithCloud()">Paksa Sinkronisasi Sekarang</button>
@@ -771,6 +771,28 @@ let timer = null;
 let lastAddedId = null;
 let actionId = null;
 
+// --- PERUBAHAN KEAMANAN: ENGINE ENKRIPSI & DEKRIPSI RINGAN (XOR + BASE64 MASKING) ---
+const _S_KEY = 42; // Salt internal key
+function _obfuscate(str) {
+    if(!str) return '';
+    let result = "";
+    for (let i = 0; i < str.length; i++) {
+        result += String.fromCharCode(str.charCodeAt(i) ^ _S_KEY);
+    }
+    return btoa(result);
+}
+function _deobfuscate(b64) {
+    if(!b64) return '';
+    try {
+        let str = atob(b64);
+        let result = "";
+        for (let i = 0; i < str.length; i++) {
+            result += String.fromCharCode(str.charCodeAt(i) ^ _S_KEY);
+        }
+        return result;
+    } catch(e) { return ''; }
+}
+
 // --- FORMATTER FUNCTIONS ---
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 function unRp(s) { return Number(s.replace(/[^0-9]/g, '')) || 0; }
@@ -898,9 +920,14 @@ function render() {
 }
 
 // --- CLOUD CONFIGURATION & SYNC ---
-function getCloudUrl() { return cloudUrls[currentBookId] || ''; }
+// PERUBAHAN KEAMANAN: Membaca URL cloud dengan melakukan deobfuscate terlebih dahulu
+function getCloudUrl() { 
+    let b64 = cloudUrls[currentBookId] || ''; 
+    return _deobfuscate(b64);
+}
+// PERUBAHAN KEAMANAN: Menyimpan URL cloud ke basis data setelah diacak (obfuscate)
 function saveCloudUrl(url) {
-    cloudUrls[currentBookId] = url.trim();
+    cloudUrls[currentBookId] = _obfuscate(url.trim());
     localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
     updateSyncStatusIndicator();
 }
@@ -1172,6 +1199,7 @@ function refreshBookSelectOptions() {
     if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
     
     let cloudIn = document.getElementById('cloudUrlInput');
+    // PERUBAHAN KEAMANAN: Membuka deobfuscate saat ditampilkan di kolom input password
     if(cloudIn) cloudIn.value = getCloudUrl();
     updateSyncStatusIndicator();
 }
@@ -1371,12 +1399,7 @@ document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e
 (async function init() {
     loadBooks();
     document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;
-    
-    // Logika Bootstrapping Aman:
-    // Ketika aplikasi dibuka di device lain/baru, muat data buku aktif langsung dari cloud 
-    // agar data lokal kosong otomatis terisi dari Google Sheets tanpa menghapus data di cloud.
     await loadDataForCurrentBook();
-    
     render();
     updateTime();
     setInterval(updateTime, 1000);

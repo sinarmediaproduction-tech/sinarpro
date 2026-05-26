@@ -647,12 +647,12 @@
 </div>
 
 <div id="syncLogModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 1000px; width: 100%;">
         <div class="modal-header">
             <h3>Jalur Audit Transaksi (Permanen)</h3>
             <button class="modal-close" onclick="closeModal('syncLogModal')">×</button>
         </div>
-        <div id="logSummaryArea" style="font-size: .7rem; color: #1a1a1a; max-height: 380px; overflow-y: auto; font-family: monospace; line-height: 1.6; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px; word-break: break-all;">
+        <div id="logSummaryArea" style="font-size: .7rem; color: #1a1a1a; max-height: 550px; overflow-y: auto; font-family: monospace; line-height: 1.6; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px; word-break: break-all;">
             Tidak ada log aktivitas saat ini.
         </div>
         <div class="modal-footer" style="margin-top: 14px;">
@@ -960,7 +960,6 @@ async function syncWithCloud() {
 }
 
 async function loadDataForCurrentBook() {
-    // 1. Ambil data lokal terlebih dahulu sebagai fallback utama
     txs = [];
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
@@ -970,20 +969,14 @@ async function loadDataForCurrentBook() {
     
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     try {
-        // 2. Kirim request load ke Google Sheets API
         let res = await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'load', book: bName }) });
         let d = await res.json();
         
-        // Perbaikan Proteksi Data Kosong: Jika di cloud SUDAH ADA transaksi, 
-        // timpa data lokal agar sinkron. Jika cloud masih kosong (buku baru di cloud), 
-        // JANGAN kosongkan data lokal yang sudah berisi agar data lama tidak hilang.
         if (d.success && d.transactions && d.transactions.length > 0) {
             txs = d.transactions; 
             saveLocal(); 
             logAudit('SYSTEM', `Data mutasi kas (${bName}) berhasil dimuat sinkron dari awan.`);
         } else if (d.success && txs.length > 0) {
-            // Skenario khusus: Device lama punya data lokal, tapi di Google Sheet lembarannya kosong/baru dibuat.
-            // Dorong data lokal secara otomatis ke cloud agar cloud terisi.
             logAudit('SYSTEM', `Mendeteksi lembar cloud (${bName}) masih kosong. Mengunggah backup lokal otomatis...`);
             await fetch(url, {
                 method: 'POST', mode: 'cors',

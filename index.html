@@ -78,7 +78,7 @@
         .log-action-delete{color:#ef4444}
         .log-action-import{color:#8b5cf6}
         
-        .footer-tools{display:flex;justify-content:center;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #e0e0e0;flex-wrap:wrap}
+        .footer-tools{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #e0e0e0;flex-wrap:wrap}
         .footer-tools .btn-small{padding:5px 12px;font-size:.65rem;border:1px solid #ccc;background:#fff;cursor:pointer;color:#555;border-radius:4px;white-space:nowrap}
         .footer-tools .btn-small:hover{background:#f5f5f5;color:#1a1a1a}
         
@@ -93,7 +93,6 @@
         .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:1px solid #ccc;font-family:inherit;font-size:.75rem;border-radius:4px}
         .form-group textarea{font-family:monospace;font-size:.7rem;resize:vertical}
         
-        /* Input nominal dengan format ribuan */
         .amount-input{position:relative}
         .amount-input input{padding-right:30px}
         .amount-format-hint{font-size:.6rem;color:#999;margin-top:2px}
@@ -103,28 +102,30 @@
         .action-buttons{display:flex;gap:12px;margin-top:16px}
         .action-buttons button{flex:1}
         
-        .book-list{max-height:300px;overflow-y:auto;margin-bottom:16px;border:1px solid #e0e0e0;border-radius:4px}
-        .book-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #e0e0e0}
+        .book-list{max-height:250px;overflow-y:auto;margin-bottom:16px;border:1px solid #e0e0e0;border-radius:4px}
+        .book-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #e0e0e0}
         .book-item:last-child{border-bottom:none}
         .book-item:hover{background:#fafafa}
         .book-info{flex:1}
-        .book-name{font-weight:600;font-size:.75rem}
-        .book-url{font-size:.6rem;color:#999;font-family:monospace;margin-top:2px}
-        .book-actions{display:flex;gap:8px}
-        .book-actions button{padding:4px 8px;font-size:.6rem}
+        .book-name{font-weight:600;font-size:.7rem}
+        .book-url{font-size:.55rem;color:#999;font-family:monospace;margin-top:2px}
+        .book-actions{display:flex;gap:6px}
+        .book-actions button{padding:3px 8px;font-size:.55rem}
         
-        .add-book-section{background:#fafafa;border-radius:8px;padding:16px;margin-bottom:20px;border:1px solid #e0e0e0}
-        .add-book-section h4{font-size:.75rem;font-weight:600;margin-bottom:12px;color:#1a1a1a}
-        .add-book-form{display:flex;flex-direction:column;gap:12px}
-        .add-book-form input{padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:.7rem}
-        .add-book-form button{align-self:flex-start;padding:6px 16px}
+        .add-book-section{background:#fafafa;border-radius:8px;padding:12px;margin-bottom:16px;border:1px solid #e0e0e0}
+        .add-book-section h4{font-size:.7rem;font-weight:600;margin-bottom:8px;color:#1a1a1a}
+        .add-book-form{display:flex;flex-direction:column;gap:10px}
+        .add-book-form input{padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:.65rem}
+        .add-book-form button{align-self:flex-start;padding:4px 12px;font-size:.65rem}
         
-        .danger-zone{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:20px}
-        .danger-zone h4{font-size:.75rem;font-weight:600;margin-bottom:12px;color:#dc2626}
-        .danger-buttons{display:flex;gap:12px;flex-wrap:wrap}
+        .danger-zone{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;margin-bottom:16px}
+        .danger-zone h4{font-size:.65rem;font-weight:600;margin-bottom:6px;color:#dc2626}
+        .danger-buttons{display:flex;gap:8px;flex-wrap:wrap}
+        .danger-buttons .btn-small{padding:3px 8px;font-size:.55rem}
+        .danger-zone p{font-size:.55rem;color:#999;margin-top:6px}
         
-        .script-code{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:monospace;font-size:.7rem;overflow-x:auto;white-space:pre-wrap;margin:12px 0}
-        .copy-btn{padding:4px 12px;font-size:.65rem;background:#1a1a1a;color:#fff;border:none;border-radius:4px;cursor:pointer}
+        .script-code{background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:6px;font-family:monospace;font-size:.65rem;overflow-x:auto;white-space:pre-wrap;margin:10px 0}
+        .copy-btn{padding:3px 10px;font-size:.6rem;background:#1a1a1a;color:#fff;border:none;border-radius:4px;cursor:pointer}
         .copy-btn:hover{background:#333}
         
         .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:#fff;padding:8px 20px;font-size:.7rem;transition:.2s;opacity:0;z-index:1100;border-radius:40px}
@@ -250,6 +251,7 @@
         </div>
     </div>
     
+    <!-- Footer Tools - mentok kanan -->
     <div class="footer-tools">
         <button class="btn-small" onclick="printReport()">Cetak Laporan</button>
         <button class="btn-small" onclick="exportToJSON()">Ekspor JSON</button>
@@ -264,35 +266,35 @@
         <h3>Kelola Buku Kas</h3>
         
         <!-- Daftar Buku yang Sudah Ada -->
-        <div style="margin-bottom:20px">
-            <label style="font-weight:600;font-size:.7rem;margin-bottom:8px;display:block">Daftar Buku Kas</label>
+        <div style="margin-bottom:16px">
+            <label style="font-weight:600;font-size:.65rem;margin-bottom:6px;display:block">Daftar Buku Kas</label>
             <div id="bookListContainer" class="book-list"></div>
         </div>
         
-        <!-- Form Tambah Buku Baru -->
+        <!-- Form Tambah Buku Baru - diperkecil -->
         <div class="add-book-section">
             <h4>Tambah Buku Kas Baru</h4>
             <div class="add-book-form">
-                <input type="text" id="newBookName" placeholder="Nama Buku (contoh: Kas A, Kas B, Bendahara)">
-                <input type="text" id="newBookUrl" placeholder="URL Google Apps Script (opsional, bisa diisi nanti)">
+                <input type="text" id="newBookName" placeholder="Nama Buku (contoh: Kas A, Kas B)">
+                <input type="text" id="newBookUrl" placeholder="URL Google Apps Script (opsional)">
                 <button class="btn btn-primary" onclick="addNewBook()" style="align-self:flex-start">+ Tambah Buku</button>
             </div>
         </div>
         
-        <!-- Danger Zone: Import & Hapus Semua -->
+        <!-- Danger Zone - diperkecil tidak mencolok -->
         <div class="danger-zone">
-            <h4>⚠️ Pengaturan Data</h4>
+            <h4>Pengaturan Data</h4>
             <div class="danger-buttons">
-                <button class="btn btn-small" onclick="openImportModal()">📂 Import Data JSON</button>
-                <button class="btn btn-small btn-danger" onclick="openDeleteAllModal()">🗑️ Hapus Semua Data</button>
+                <button class="btn-small" onclick="openImportModal()">Import Data</button>
+                <button class="btn-small btn-danger" onclick="openDeleteAllModal()">Hapus Semua</button>
             </div>
-            <p style="font-size:.6rem;color:#999;margin-top:8px">Import: menggabungkan atau mengganti data dari file JSON. Hapus semua: menghapus seluruh transaksi di buku ini.</p>
+            <p>Import: gabung/ganti data dari file JSON | Hapus semua: menghapus seluruh transaksi</p>
         </div>
         
         <!-- Script untuk Google Spreadsheet -->
-        <div style="margin-top:20px;border-top:1px solid #e0e0e0;padding-top:16px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <label style="font-weight:600;font-size:.7rem">Script untuk Google Spreadsheet</label>
+        <div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <label style="font-weight:600;font-size:.65rem">Script Google Spreadsheet</label>
                 <button class="copy-btn" onclick="copyScriptToClipboard()">Salin Script</button>
             </div>
             <div class="script-code" id="scriptCode">
@@ -370,15 +372,8 @@ function handleRequest(e) {
   }
 }
             </div>
-            <p style="font-size:.6rem;color:#999;margin-top:12px">
-                <strong>Cara Setup Spreadsheet:</strong><br>
-                1. Buat Google Spreadsheet baru<br>
-                2. Buka menu Extensions → Apps Script<br>
-                3. Hapus kode default, paste script di atas<br>
-                4. Simpan (Ctrl+S) dan beri nama "ArtaFlow Backend"<br>
-                5. Klik Deploy → Deploy as web app<br>
-                6. Execute as: "Me", Who has access: "Anyone with link"<br>
-                7. Copy URL yang muncul dan masukkan ke kolom URL buku kas
+            <p style="font-size:.55rem;color:#999;margin-top:8px">
+                <strong>Cara Setup:</strong> Buat Spreadsheet → Extensions → Apps Script → paste script → Deploy as web app → copy URL
             </p>
         </div>
         
@@ -423,7 +418,7 @@ function handleRequest(e) {
             </div>
             <div class="form-group">
                 <label>Nominal (Rp)</label>
-                <input type="text" id="txAmount" placeholder="Contoh: 1000000 atau 1.000.000" required oninput="formatRupiah(this)">
+                <input type="text" id="txAmount" placeholder="Contoh: 1.000.000" required oninput="formatRupiah(this)">
                 <div class="amount-format-hint">Gunakan titik sebagai pemisah ribuan (contoh: 1.000.000)</div>
             </div>
             <div class="modal-buttons">
@@ -457,7 +452,7 @@ function handleRequest(e) {
             </div>
             <div class="form-group">
                 <label>Nominal (Rp)</label>
-                <input type="text" id="editJumlah" placeholder="Contoh: 1000000 atau 1.000.000" required oninput="formatRupiah(this)">
+                <input type="text" id="editJumlah" placeholder="Contoh: 1.000.000" required oninput="formatRupiah(this)">
                 <div class="amount-format-hint">Gunakan titik sebagai pemisah ribuan (contoh: 1.000.000)</div>
             </div>
             <div class="modal-buttons">
@@ -479,22 +474,17 @@ function handleRequest(e) {
 <script>
 // ============ FUNGSI FORMAT RUPIAH ============
 function formatRupiah(input) {
-    // Hapus semua karakter non-digit
     let value = input.value.replace(/[^\d]/g, '');
-    
     if (value === '') {
         input.value = '';
         return;
     }
-    
-    // Format dengan titik sebagai pemisah ribuan
     let formatted = new Intl.NumberFormat('id-ID').format(parseInt(value));
     input.value = formatted;
 }
 
 function parseRupiahToNumber(formattedValue) {
     if (!formattedValue) return 0;
-    // Hapus semua titik dan karakter non-digit
     let numericValue = formattedValue.replace(/\./g, '').replace(/[^\d]/g, '');
     return parseInt(numericValue) || 0;
 }
@@ -1340,7 +1330,6 @@ function closeImportModal() { document.getElementById('modalImport').classList.r
 
 function openActionMenu(id) { let t = txs.find(x => x.id === id); if (!t) return; actionId = id; document.getElementById('actionTransactionInfo').innerHTML = `<strong>${escapeHtml(t.desc)}</strong><br>${fmtDate(t.date)} · ${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`; document.getElementById('modalActionMenu').classList.add('show'); }
 function editAction() { if (!actionId) return; let t = txs.find(x => x.id === actionId); if (!t) return; closeModalActionMenu(); document.getElementById('editId').value = t.id; document.getElementById('editJenis').value = t.type; document.getElementById('editTanggal').value = t.date; document.getElementById('editTanggal').max = new Date().toISOString().slice(0, 10); document.getElementById('editDeskripsi').value = t.desc; 
-    // Format nilai awal ke format ribuan
     document.getElementById('editJumlah').value = t.amount.toLocaleString('id-ID');
     document.getElementById('modalEdit').classList.add('show'); 
 }

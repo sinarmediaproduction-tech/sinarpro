@@ -137,6 +137,10 @@
         .spinner{display:inline-block;width:16px;height:16px;border:2px solid #f3f3f3;border-top:2px solid #1a1a1a;border-radius:50%;animation:spin 1s linear infinite;margin-right:6px}
         @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
         
+        /* Highlight row baru */
+        .new-row{background:#ecfdf5;animation:highlight 1s ease-out}
+        @keyframes highlight{0%{background:#d1fae5}100%{background:transparent}}
+        
         @media print {
             body{padding:0;margin:0;background:#fff}
             .toolbar,.filter-section,.footer-tools,.action-btn,.modal,.toast,.btn,.tabs,.tab-btn,.book-selector{display:none!important}
@@ -227,7 +231,7 @@
             <div class="table-header"><span class="table-title">Daftar Transaksi</span><span id="transactionCount" style="font-size:.65rem;color:#999">0 transaksi</span></div>
             <table>
                 <thead>
-                    <tr><th style="width:5%">No</th><th style="width:12%">Tanggal</th><th style="width:38%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:15%" class="text-right">Saldo</th><th style="width:5%" class="text-center">Aksi</th></tr>
+                    <tr><th style="width:5%">No</th><th style="width:15%">Tanggal & Waktu</th><th style="width:35%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:15%" class="text-right">Saldo</th><th style="width:5%" class="text-center">Aksi</th></tr>
                 </thead>
                 <tbody id="transactionTableBody">
                     <tr><td colspan="7" class="empty-row">Memuat data...</td></tr>
@@ -251,7 +255,6 @@
         </div>
     </div>
     
-    <!-- Footer Tools - mentok kanan -->
     <div class="footer-tools">
         <button class="btn-small" onclick="printReport()">Cetak Laporan</button>
         <button class="btn-small" onclick="exportToJSON()">Ekspor JSON</button>
@@ -265,13 +268,11 @@
     <div class="modal-content">
         <h3>Kelola Buku Kas</h3>
         
-        <!-- Daftar Buku yang Sudah Ada -->
         <div style="margin-bottom:16px">
             <label style="font-weight:600;font-size:.65rem;margin-bottom:6px;display:block">Daftar Buku Kas</label>
             <div id="bookListContainer" class="book-list"></div>
         </div>
         
-        <!-- Form Tambah Buku Baru - diperkecil -->
         <div class="add-book-section">
             <h4>Tambah Buku Kas Baru</h4>
             <div class="add-book-form">
@@ -281,7 +282,6 @@
             </div>
         </div>
         
-        <!-- Danger Zone - diperkecil tidak mencolok -->
         <div class="danger-zone">
             <h4>Pengaturan Data</h4>
             <div class="danger-buttons">
@@ -291,7 +291,6 @@
             <p>Import: gabung/ganti data dari file JSON | Hapus semua: menghapus seluruh transaksi</p>
         </div>
         
-        <!-- Script untuk Google Spreadsheet -->
         <div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <label style="font-weight:600;font-size:.65rem">Script Google Spreadsheet</label>
@@ -402,7 +401,6 @@ function handleRequest(e) {
     </div>
 </div>
 
-<!-- MODAL TAMBAH TRANSAKSI dengan Format Ribuan -->
 <div id="modalTambah" class="modal">
     <div class="modal-content">
         <h3>Tambah Transaksi</h3>
@@ -429,7 +427,6 @@ function handleRequest(e) {
     </div>
 </div>
 
-<!-- MODAL EDIT TRANSAKSI dengan Format Ribuan -->
 <div id="modalEdit" class="modal">
     <div class="modal-content">
         <h3>Edit Transaksi</h3>
@@ -500,10 +497,35 @@ let dateFilterStart = null;
 let dateFilterEnd = null;
 let timer = null;
 let isSyncing = false;
+let lastAddedId = null;
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 const STORAGE_BOOKS_KEY = 'artaflow_books';
 const STORAGE_ACTIVE_BOOK_KEY = 'artaflow_active_book';
+
+// ============ FUNGSI FORMAT TANGGAL DENGAN JAM ============
+function formatDateTime(dateStr, createdTime = null) {
+    if (!dateStr) return '-';
+    
+    // Format tanggal
+    let formattedDate = fmtDate(dateStr);
+    
+    // Jika ada created_time (waktu input), tambahkan jam
+    if (createdTime) {
+        let time = new Date(createdTime);
+        let hours = time.getHours().toString().padStart(2, '0');
+        let minutes = time.getMinutes().toString().padStart(2, '0');
+        return `${formattedDate} ${hours}:${minutes}`;
+    }
+    
+    return formattedDate;
+}
+
+function fmtDate(d) {
+    if (!d) return '-';
+    let p = d.split('-');
+    return p.length === 3 ? `${parseInt(p[2])} ${monthNames[parseInt(p[1]) - 1]} ${p[0]}` : d;
+}
 
 const BACKEND_SCRIPT = `// ============ ARTAFLOW BACKEND SCRIPT ============
 const SHEET_NAME = "Transactions";
@@ -847,7 +869,14 @@ async function loadDataForCurrentBook() {
         const response = await fetch(url);
         const data = await response.json();
         if (data.success && data.transactions) {
-            txs = data.transactions.sort((a,b) => b.id - a.id);
+            // Urutkan dari yang terbaru (created_at atau id terbesar)
+            txs = data.transactions.sort((a,b) => {
+                // Urut berdasarkan created_at jika ada, fallback ke id
+                if (a.created_at && b.created_at) {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                }
+                return b.id - a.id;
+            });
             saveToLocalBackup();
             setSyncStatus('success');
             render();
@@ -993,14 +1022,15 @@ function exportLogs() {
 function exportToCSV() {
     if (!txs.length) { toast('Tidak ada data untuk diekspor'); return; }
     
-    let csvRows = [['Tanggal', 'Deskripsi', 'Tipe', 'Jumlah (Rp)', 'Saldo']];
+    let csvRows = [['Tanggal & Waktu', 'Deskripsi', 'Tipe', 'Jumlah (Rp)', 'Saldo']];
     let runningBalance = 0;
+    // Untuk CSV urut berdasarkan tanggal (tanpa memperhatikan waktu input)
     const sortedTxs = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
     
     for (const t of sortedTxs) {
         runningBalance += t.type === 'income' ? t.amount : -t.amount;
         csvRows.push([
-            fmtDate(t.date),
+            formatDateTime(t.date, t.created_at),
             t.desc,
             t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
             t.amount.toLocaleString('id-ID'),
@@ -1053,7 +1083,6 @@ async function syncAllToCloud(transactions) { return await syncToCloud(transacti
 function escapeHtml(s) { return s ? String(s).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;') : ''; }
 function validAmount(n) { return !isNaN(n) && n > 0 && n <= 9999999999; }
 function rp(n) { return 'Rp ' + ((n || 0).toLocaleString('id-ID')); }
-function fmtDate(d) { if (!d) return '-'; let p = d.split('-'); return p.length === 3 ? `${parseInt(p[2])} ${monthNames[parseInt(p[1]) - 1]} ${p[0]}` : d; }
 function toast(msg, duration = 2500) { let t = document.getElementById('toast'); if (t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), duration); } }
 function updateTime() { 
     let e = document.getElementById('lastUpdateTime'); 
@@ -1068,7 +1097,14 @@ function validateDate(dateString) {
     return selectedDate <= today;
 }
 
-function recalcBalances() { let bal = 0; [...txs].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => { bal += t.type === 'income' ? t.amount : -t.amount; t.balance = bal; }); }
+function recalcBalances() { 
+    let bal = 0; 
+    // Untuk saldo, urutkan berdasarkan tanggal (tanpa memperhatikan jam)
+    [...txs].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => { 
+        bal += t.type === 'income' ? t.amount : -t.amount; 
+        t.balance = bal; 
+    }); 
+}
 
 function getDisplayData() { 
     let data = [...txs]; 
@@ -1085,7 +1121,14 @@ function getDisplayData() {
     if (dateFilterStart) data = data.filter(t => t.date >= dateFilterStart);
     if (dateFilterEnd) data = data.filter(t => t.date <= dateFilterEnd);
     
-    data.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+    // Urutkan berdasarkan created_at (waktu input) dari yang terbaru
+    data.sort((a, b) => {
+        if (a.created_at && b.created_at) {
+            return new Date(b.created_at) - new Date(a.created_at);
+        }
+        return b.id - a.id;
+    });
+    
     return data; 
 }
 
@@ -1117,7 +1160,26 @@ function render() {
                 return; 
             }
             
-            tb.innerHTML = filteredData.map((t, i) => { let isInc = t.type === 'income'; return `<tr><td style="text-align:center">${i + 1}</td><td>${escapeHtml(fmtDate(t.date))}</td><td>${escapeHtml(t.desc)}</td><td class="text-right">${isInc ? rp(t.amount) : '—'}</td><td class="text-right">${!isInc ? rp(t.amount) : '—'}</td><td class="text-right">${rp(t.balance)}</td><td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">...</button></td></tr>`;
+            tb.innerHTML = filteredData.map((t, i) => { 
+                let isInc = t.type === 'income'; 
+                let isNew = (lastAddedId === t.id);
+                let rowClass = isNew ? 'new-row' : '';
+                // Hapus highlight setelah 2 detik
+                if (isNew) {
+                    setTimeout(() => {
+                        const row = document.querySelector(`tr[data-id="${t.id}"]`);
+                        if (row) row.classList.remove('new-row');
+                    }, 2000);
+                }
+                return `<tr data-id="${t.id}" class="${rowClass}">
+                    <td style="text-align:center">${i + 1}</td>
+                    <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
+                    <td>${escapeHtml(t.desc)}</td>
+                    <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right">${rp(t.balance)}</td>
+                    <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">...</button></td>
+                </tr>`;
             }).join('');
         } catch(e) { console.error(e); }
     }, 10);
@@ -1136,18 +1198,33 @@ async function handleSubmit(e) {
     if (!validAmount(amt)) { toast('Nominal harus lebih dari 0'); return; }
     if (!validateDate(date)) { toast('Tanggal tidak boleh melebihi hari ini'); return; }
     
-    const newTransaction = { id: Date.now(), date, desc, type, amount: amt };
+    const newId = Date.now();
+    const newTransaction = { 
+        id: newId, 
+        date, 
+        desc, 
+        type, 
+        amount: amt,
+        created_at: new Date().toISOString()
+    };
     
     const success = await autoSync('add', async () => {
         return await addTransactionToCloud(newTransaction);
     });
     
     if (success) {
+        lastAddedId = newId;
         closeModalTambah();
         addLog('add', `Menambah ${type === 'income' ? 'pemasukan' : 'pengeluaran'} "${desc}" sebesar ${rp(amt)}`);
         toast('Transaksi tersimpan');
+        // Scroll ke atas untuk melihat data terbaru
+        setTimeout(() => {
+            const tableWrapper = document.querySelector('.table-wrapper');
+            if (tableWrapper) tableWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     } else {
-        txs.push(newTransaction);
+        newTransaction.created_at = new Date().toISOString();
+        txs.unshift(newTransaction); // Tambah di awal array
         saveToLocalBackup();
         render();
         closeModalTambah();
@@ -1170,7 +1247,14 @@ async function handleEditSubmit(e) {
     if (!validateDate(newDate)) { toast('Tanggal tidak boleh melebihi hari ini'); return; }
     
     const oldTx = txs.find(t => t.id === id);
-    const updatedTransaction = { id, date: newDate, desc: newDesc, type: newType, amount: newAmt };
+    const updatedTransaction = { 
+        id, 
+        date: newDate, 
+        desc: newDesc, 
+        type: newType, 
+        amount: newAmt,
+        created_at: oldTx?.created_at || new Date().toISOString()
+    };
     
     const success = await autoSync('edit', async () => {
         return await updateTransactionInCloud(id, updatedTransaction);
@@ -1248,6 +1332,12 @@ async function handleImport(event) {
             else throw new Error('Format file tidak valid');
             const validTransactions = importedTransactions.filter(t => t.id && t.date && t.desc && t.type && t.amount && typeof t.amount === 'number');
             if (validTransactions.length === 0) throw new Error('Tidak ada transaksi valid dalam file');
+            
+            // Tambahkan created_at jika tidak ada
+            validTransactions.forEach(t => {
+                if (!t.created_at) t.created_at = new Date().toISOString();
+            });
+            
             let newTransactions = [], importDetails = '';
             if (mode === 'replace') { newTransactions = validTransactions; importDetails = `Mengganti semua ${txs.length} data dengan ${validTransactions.length} transaksi baru`; addLog('clear_all', `Menghapus semua ${txs.length} transaksi sebelum import (otomatis)`);
             } else { const existingIds = new Set(txs.map(t => t.id)); const newUnique = validTransactions.filter(t => !existingIds.has(t.id)); newTransactions = [...txs, ...newUnique]; importDetails = `Menambah ${newUnique.length} transaksi baru dari total ${validTransactions.length} (${validTransactions.length - newUnique.length} duplikat diabaikan)`;
@@ -1328,7 +1418,7 @@ function closeModalActionMenu() { document.getElementById('modalActionMenu').cla
 function openImportModal() { document.getElementById('importForm').reset(); document.getElementById('modalImport').classList.add('show'); }
 function closeImportModal() { document.getElementById('modalImport').classList.remove('show'); }
 
-function openActionMenu(id) { let t = txs.find(x => x.id === id); if (!t) return; actionId = id; document.getElementById('actionTransactionInfo').innerHTML = `<strong>${escapeHtml(t.desc)}</strong><br>${fmtDate(t.date)} · ${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`; document.getElementById('modalActionMenu').classList.add('show'); }
+function openActionMenu(id) { let t = txs.find(x => x.id === id); if (!t) return; actionId = id; document.getElementById('actionTransactionInfo').innerHTML = `<strong>${escapeHtml(t.desc)}</strong><br>${formatDateTime(t.date, t.created_at)} · ${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}`; document.getElementById('modalActionMenu').classList.add('show'); }
 function editAction() { if (!actionId) return; let t = txs.find(x => x.id === actionId); if (!t) return; closeModalActionMenu(); document.getElementById('editId').value = t.id; document.getElementById('editJenis').value = t.type; document.getElementById('editTanggal').value = t.date; document.getElementById('editTanggal').max = new Date().toISOString().slice(0, 10); document.getElementById('editDeskripsi').value = t.desc; 
     document.getElementById('editJumlah').value = t.amount.toLocaleString('id-ID');
     document.getElementById('modalEdit').classList.add('show'); 
@@ -1359,10 +1449,9 @@ function printReport() {
     let totalExp = data.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     let curBal = data.length ? data.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
     let printDate = new Date().toLocaleString('id-ID');
-    let rows = data.map((t, i) => { let isInc = t.type === 'income'; return `<tr><td style="padding:8px;border:1px solid #ccc;text-align:center">${i+1}</td><td style="padding:8px;border:1px solid #ccc">${fmtDate(t.date)}</td><td style="padding:8px;border:1px solid #ccc">${escapeHtml(t.desc)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td></tr>`;
-    }).join('');
+    let rows = data.map((t, i) => { let isInc = t.type === 'income'; return `<tr><td style="padding:8px;border:1px solid #ccc;text-align:center">${i+1}</td><td style="padding:8px;border:1px solid #ccc">${formatDateTime(t.date, t.created_at)}</td><td style="padding:8px;border:1px solid #ccc">${escapeHtml(t.desc)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${!isInc ? rp(t.amount) : '-'}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${rp(t.balance)}</td>`; }).join('');
     let printWindow = window.open('', '_blank');
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>ArtaFlow - Laporan Keuangan</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;padding:24px}.header{border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat-card{border:1px solid #ccc;padding:12px}.stat-label{font-size:.65rem;color:#666}.stat-value{font-size:1rem;font-weight:600}table{width:100%;border-collapse:collapse}th{background:#f5f5f5;padding:8px;border:1px solid #ccc}td{padding:8px;border:1px solid #ccc}.text-right{text-align:right}@page{size:landscape;margin:1.5cm}</style></head><body><div class="header"><h1>ARTAFLOW</h1><p>Laporan Arus Kas - ${filterText} | Dicetak: ${printDate}</p></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div><div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div><div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div><div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div></div><h3 style="margin-bottom:10px;font-size:.9rem">Detail Transaksi</h3><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th class="text-right">Pemasukan</th><th class="text-right">Pengeluaran</th><th class="text-right">Saldo</th></tr></thead><tbody>${rows}</tbody><div style="margin-top:20px;padding-top:12px;border-top:1px solid #ccc;font-size:.6rem;text-align:center">ArtaFlow - Dicetak: ${printDate}</div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>ArtaFlow - Laporan Keuangan</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;padding:24px}.header{border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat-card{border:1px solid #ccc;padding:12px}.stat-label{font-size:.65rem;color:#666}.stat-value{font-size:1rem;font-weight:600}table{width:100%;border-collapse:collapse}th{background:#f5f5f5;padding:8px;border:1px solid #ccc}td{padding:8px;border:1px solid #ccc}.text-right{text-align:right}@page{size:landscape;margin:1.5cm}</style></head><body><div class="header"><h1>ARTAFLOW</h1><p>Laporan Arus Kas - ${filterText} | Dicetak: ${printDate}</p></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div><div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div><div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div><div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${data.length}</div></div></div><h3 style="margin-bottom:10px;font-size:.9rem">Detail Transaksi</h3><thead><tr><th>No</th><th>Tanggal & Waktu</th><th>Keterangan</th><th class="text-right">Pemasukan</th><th class="text-right">Pengeluaran</th><th class="text-right">Saldo</th></tr></thead><tbody>${rows}</tbody><div style="margin-top:20px;padding-top:12px;border-top:1px solid #ccc;font-size:.6rem;text-align:center">ArtaFlow - Dicetak: ${printDate}</div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
     printWindow.document.close();
 }
 

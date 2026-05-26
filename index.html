@@ -647,12 +647,12 @@
 </div>
 
 <div id="syncLogModal" class="modal">
-    <div class="modal-content" style="max-width: 1000px; width: 100%;">
+    <div class="modal-content" style="max-width: 1200px; width: 95%;">
         <div class="modal-header">
             <h3>Jalur Audit Transaksi (Permanen)</h3>
             <button class="modal-close" onclick="closeModal('syncLogModal')">×</button>
         </div>
-        <div id="logSummaryArea" style="font-size: .7rem; color: #1a1a1a; max-height: 550px; overflow-y: auto; font-family: monospace; line-height: 1.6; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px; word-break: break-all;">
+        <div id="logSummaryArea" style="font-size: .75rem; color: #1a1a1a; max-height: 650px; overflow-y: auto; font-family: monospace; line-height: 1.6; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px; word-break: break-all;">
             Tidak ada log aktivitas saat ini.
         </div>
         <div class="modal-footer" style="margin-top: 14px;">
@@ -841,6 +841,7 @@ function recalcBalances() {
     });
 }
 
+// --- MATRIX ENGINE FILTER & VIEW CONDITIONAL ---
 function renderStats() {
     let inc = txs.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
     let exp = txs.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
@@ -881,7 +882,6 @@ function render() {
             tb.innerHTML = filteredData.map((t, i) => {
                 let isInc = t.type === 'income';
                 let isNew = (lastAddedId === t.id);
-                // Badge Modifikasi UI Mikro
                 let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
                 return `<tr data-id="${t.id}" class="${isNew ? 'new-row' : ''}">
                     <td class="text-center">${i + 1}</td>
@@ -1068,7 +1068,7 @@ async function deleteTransaction(id) {
         render();
         await autoSync('sync', async () => {
             let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-            await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
+            await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: {transactions: txs} }) });
             return true;
         });
     }
@@ -1114,7 +1114,6 @@ function editAction() {
     closeModalActionMenu(); openModal('editModal');
 }
 
-// --- MATRIX ENGINE FILTER & VIEW CONDITIONAL ---
 function setFilter(type) {
     currentFilter = type;
     document.querySelectorAll('.filters .filter-btn').forEach(b => b.classList.remove('active'));

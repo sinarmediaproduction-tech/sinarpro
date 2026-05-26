@@ -960,6 +960,7 @@ async function syncWithCloud() {
 }
 
 async function loadDataForCurrentBook() {
+    // 1. Ambil data lokal terlebih dahulu sebagai fallback utama
     txs = [];
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
@@ -969,12 +970,25 @@ async function loadDataForCurrentBook() {
     
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     try {
+        // 2. Kirim request load ke Google Sheets API
         let res = await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'load', book: bName }) });
         let d = await res.json();
+        
+        // Perbaikan Proteksi Data Kosong: Jika di cloud SUDAH ADA transaksi, 
+        // timpa data lokal agar sinkron. Jika cloud masih kosong (buku baru di cloud), 
+        // JANGAN kosongkan data lokal yang sudah berisi agar data lama tidak hilang.
         if (d.success && d.transactions && d.transactions.length > 0) {
             txs = d.transactions; 
             saveLocal(); 
             logAudit('SYSTEM', `Data mutasi kas (${bName}) berhasil dimuat sinkron dari awan.`);
+        } else if (d.success && txs.length > 0) {
+            // Skenario khusus: Device lama punya data lokal, tapi di Google Sheet lembarannya kosong/baru dibuat.
+            // Dorong data lokal secara otomatis ke cloud agar cloud terisi.
+            logAudit('SYSTEM', `Mendeteksi lembar cloud (${bName}) masih kosong. Mengunggah backup lokal otomatis...`);
+            await fetch(url, {
+                method: 'POST', mode: 'cors',
+                body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } })
+            });
         }
     } catch(e) { 
         logAudit('SYSTEM', `Gagal kontak awan untuk muat data (${bName}), memakai database lokal.`); 
@@ -1365,7 +1379,12 @@ document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e
 (async function init() {
     loadBooks();
     document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;
+    
+    // Logika Bootstrapping Aman:
+    // Ketika aplikasi dibuka di device lain/baru, muat data buku aktif langsung dari cloud 
+    // agar data lokal kosong otomatis terisi dari Google Sheets tanpa menghapus data di cloud.
     await loadDataForCurrentBook();
+    
     render();
     updateTime();
     setInterval(updateTime, 1000);

@@ -427,11 +427,192 @@
             .tab-content{ display: none; }
             .tab-content.active{ display: block; }
         }
+
+        /* ==========================================================================
+           🖨️ ADVANCED PROFESSIONAL PRINT LAYOUT (@media print)
+           ========================================================================== */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 15mm 15mm 20mm 15mm;
+            }
+            
+            /* Base reset for perfect paper rendering */
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                font-size: 9pt !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Hide interactive UI elements that do not belong on an audit paper */
+            .book-selector,
+            .nav-tabs,
+            .controls,
+            .actions,
+            .manage-books-btn,
+            #syncStatusTag,
+            .action-btn,
+            .modal,
+            th:last-child, 
+            td:last-child {
+                display: none !important;
+            }
+
+            /* Restructure Header into an elegant formal report identity */
+            .header {
+                border-bottom: 2px solid #000000 !important;
+                margin-bottom: 20px !important;
+                padding-bottom: 8px !important;
+                display: block !important;
+            }
+            
+            .header h1 {
+                font-size: 18pt !important;
+                color: #000000 !important;
+                font-weight: 700 !important;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .header h1::after {
+                content: " - LAPORAN REKONSILIASI KAS";
+                font-size: 12pt !important;
+                font-weight: 400 !important;
+                color: #444444 !important;
+            }
+
+            /* Append dynamic context metadata into the header area visually via CSS */
+            .header p {
+                font-size: 8pt !important;
+                color: #333333 !important;
+                margin-top: 6px !important;
+            }
+
+            /* Formal Minimal Grid Cards Configuration */
+            .stats-grid {
+                display: table !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+                gap: 0 !important;
+                margin-bottom: 25px !important;
+                border-collapse: collapse !important;
+            }
+
+            .stat-card {
+                display: table-cell !important;
+                width: 33.333% !important;
+                background: #fafafa !important;
+                border: 1px solid #000000 !important;
+                padding: 12px !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                text-align: left !important;
+            }
+
+            .stat-label {
+                font-size: 7.5pt !important;
+                color: #444444 !important;
+                font-weight: 700 !important;
+            }
+
+            .stat-value {
+                font-size: 13pt !important;
+                font-weight: 700 !important;
+                margin-top: 4px !important;
+                color: #000000 !important;
+            }
+            
+            /* Keep subtle tonal accents to quickly scan balances on paper matrix */
+            .stat-card.income { background-color: #f0fdf4 !important; }
+            .stat-card.income .stat-value { color: #006644 !important; }
+            .stat-card.expense { background-color: #fef2f2 !important; }
+            .stat-card.expense .stat-value { color: #bf2600 !important; }
+
+            /* Grid table rendering adjustments */
+            .table-container {
+                border: 1px solid #000000 !important;
+                background: #ffffff !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+                margin-bottom: 0 !important;
+            }
+
+            table {
+                width: 100% !important;
+                min-width: 100% !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto !important;
+            }
+
+            tr {
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
+            }
+
+            th {
+                background: #f1f1f1 !important;
+                color: #000000 !important;
+                font-size: 8pt !important;
+                font-weight: 700 !important;
+                padding: 8px 10px !important;
+                border-bottom: 2px solid #000000 !important;
+                text-transform: uppercase !important;
+            }
+
+            td {
+                padding: 7px 10px !important;
+                font-size: 8.5pt !important;
+                border-bottom: 1px solid #dddddd !important;
+                background: transparent !important;
+            }
+
+            /* Badge tweaks to fit sharp monochrome laser printing or premium PDFs */
+            .type-badge {
+                padding: 1px 4px !important;
+                font-size: 6.5pt !important;
+                border: 1px solid #000000 !important;
+                border-radius: 2px !important;
+                background: transparent !important;
+                color: #000000 !important;
+                font-weight: bold !important;
+            }
+            .badge-inc { border-color: #006644 !important; color: #006644 !important; background-color: #e3fcef !important; }
+            .badge-exp { border-color: #bf2600 !important; color: #bf2600 !important; background-color: #ffebe6 !important; }
+
+            /* Printable Footer positioning layout */
+            .footer {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                border-top: 1px solid #999999 !important;
+                padding-top: 5px !important;
+                font-size: 7pt !important;
+                color: #555555 !important;
+            }
+            
+            .footer #liveClock::before {
+                content: "Waktu Cetak Dokumen: ";
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Header -->
     <div class="header">
         <div>
             <h1>ArtaFlow</h1>
@@ -445,6 +626,7 @@
         </div>
     </div>
 
+    <!-- Stats Dashboard -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">Total Saldo</div>
@@ -460,11 +642,13 @@
         </div>
     </div>
 
+    <!-- Nav Tabs Mobile Navigation -->
     <div class="nav-tabs">
         <button class="nav-tab active" id="tabLink-records" onclick="switchTab('records')">Transaksi</button>
         <button class="nav-tab" id="tabLink-tools" onclick="switchTab('tools')">Alat & Cloud</button>
     </div>
 
+    <!-- Transactions Panel -->
     <div id="tab-records" class="tab-content active">
         <div class="controls">
             <div class="filters">
@@ -503,22 +687,25 @@
         </div>
     </div>
 
+    <!-- Tools Panel -->
     <div id="tab-tools" class="tab-content">
         <div class="controls" style="justify-content: flex-start; gap: 12px; margin-bottom: 24px;">
             <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
             <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit</button>
             <button class="btn btn-secondary" onclick="exportToJSON()">Cadangan JSON</button>
-            <button class="btn btn-secondary" onclick="printReport()">Cetak Laporan</button>
+            <button class="btn btn-secondary" onclick="window.print()">Cetak Laporan</button>
             <button class="btn btn-secondary" onclick="exportLogs()">Ekspor File Log (.json)</button>
         </div>
     </div>
 
+    <!-- Footer Counter and Clock -->
     <div class="footer">
         <div id="transactionCount">0 transaksi</div>
         <div id="liveClock">00:00:00</div>
     </div>
 </div>
 
+<!-- Modal: Add Transaction -->
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -553,6 +740,7 @@
     </div>
 </div>
 
+<!-- Modal: Edit Transaction -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -588,6 +776,7 @@
     </div>
 </div>
 
+<!-- Modal: Action Contexual Menu -->
 <div id="actionMenuModal" class="modal">
     <div class="modal-content" style="max-width: 260px; padding: 12px;">
         <div class="modal-header" style="margin-bottom: 8px; padding-bottom: 6px;">
@@ -601,6 +790,7 @@
     </div>
 </div>
 
+<!-- Modal: Multi-Book Dashboard Manager -->
 <div id="bookManagerModal" class="modal">
     <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
         <div class="modal-header">
@@ -646,6 +836,7 @@
     </div>
 </div>
 
+<!-- Modal: Secure Audit Logs Trail -->
 <div id="syncLogModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
@@ -662,6 +853,7 @@
     </div>
 </div>
 
+<!-- Modal: Rename Active Book Name -->
 <div id="editBookModal" class="modal">
     <div class="modal-content" style="max-width: 320px; z-index: 1100;">
         <div class="modal-header">
@@ -680,6 +872,7 @@
     </div>
 </div>
 
+<!-- Modal: Import Data Matrix Engine -->
 <div id="importModal" class="modal">
     <div class="modal-content" style="max-width: 360px; z-index: 1100;">
         <div class="modal-header">
@@ -881,7 +1074,6 @@ function render() {
             tb.innerHTML = filteredData.map((t, i) => {
                 let isInc = t.type === 'income';
                 let isNew = (lastAddedId === t.id);
-                // Badge Modifikasi UI Mikro
                 let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
                 return `<tr data-id="${t.id}" class="${isNew ? 'new-row' : ''}">
                     <td class="text-center">${i + 1}</td>
@@ -1070,8 +1262,10 @@ async function deleteTransaction(id) {
 async function confirmDeleteAll() {
     let bObj = books.find(b => b.id === currentBookId);
     let bName = bObj ? bObj.name : "buku kas aktif";
-    if (confirm(`PERINGATAN SEKURITAS!\nAnda akan menghapus seluruh data transaksi dari "${bName}"?`)) {
-        if(confirm(`Konfirmasi akhir:\nTindakan ini menghapus permanen rekaman lokal & cloud pada buku "${bName}". Lanjutkan?`)) {
+    if (confirm(`PERINGATAN SEKURITAS!
+Anda akan menghapus seluruh data transaksi dari "${bName}"?`)) {
+        if(confirm(`Konfirmasi akhir:
+Tindakan ini menghapus permanen rekaman lokal & cloud pada buku "${bName}". Lanjutkan?`)) {
             logAudit('HAPUS', `KOSONGKAN DATA MUTASI MENGHANCURKAN SELURUH ISI TRANSAKSI BUKU KAS: "${bName}"`);
             txs = []; saveLocal(); render();
             await autoSync('sync', async () => {
@@ -1249,7 +1443,8 @@ function handleImport() {
             let importedTxs = [];
             if (file.name.endsWith('.json')) { importedTxs = JSON.parse(e.target.result); } 
             else if (file.name.endsWith('.csv')) {
-                let lines = e.target.result.split('\n');
+                let lines = e.target.result.split('
+');
                 for (let i = 1; i < lines.length; i++) {
                     if (!lines[i].trim()) continue;
                     let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
@@ -1286,7 +1481,8 @@ function exportToCSV() {
     if (!txs.length) { alert("Tidak ada data transaksi."); return; }
     let csvRows = [["ID", "Tanggal", "Deskripsi", "Jenis", "Jumlah", "Waktu Dibuat"].join(',')];
     txs.forEach(t => { csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.created_at || ''].join(',')); });
-    let blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    let blob = new Blob([csvRows.join('
+')], { type: 'text/csv;charset=utf-8;' });
     let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
     a.href = URL.createObjectURL(blob);
     a.download = `ArtaFlow_Mutasi_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`;
@@ -1305,19 +1501,7 @@ function exportLogs() {
     let a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `ArtaFlow_AuditLogs_${new Date().toISOString().slice(0,10)}.json`);
     a.click();
 }
-function printReport() {
-    let bName = books.find(b => b.id === currentBookId)?.name || 'Buku Utama';
-    let data = getDisplayData();
-    let inc = data.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
-    let exp = data.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
-    let w = window.open();
-    w.document.write(`<html><head><title>Laporan ArtaFlow</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1a1a1a}h2{margin-bottom:4px}.meta{font-size:.8rem;color:#666;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85rem}th,td{border:1px solid #1a1a1a;padding:8px 12px}th{background:#f5f5f5}.text-right{text-align:right}.summary-box{margin-top:20px;border:1.5px solid #1a1a1a;padding:14px;border-radius:4px;display:inline-block;min-width:300px;font-size:.85rem}.summary-item{display:flex;justify-content:space-between;margin-bottom:6px}</style></head><body>`);
-    w.document.write(`<h2>LAPORAN TRANSAKSI KAS</h2><div class="meta">Buku Kas: <strong>${bName}</strong><br>Dicetak: ${new Date().toLocaleString('id-ID')}</div>`);
-    w.document.write(`<table><thead><tr><th>No</th><th>Tanggal & Jam</th><th>Deskripsi</th><th>Masuk</th><th>Keluar</th><th>Saldo</th></tr></thead><tbody>`);
-    data.forEach((t, i) => { w.document.write(`<tr><td style="text-align:center">${i+1}</td><td>${formatDateTime(t.date, t.created_at)}</td><td>${t.desc}</td><td class="text-right">${t.type==='income'?rp(t.amount):'—'}</td><td class="text-right">${t.type==='expense'?rp(t.amount):'—'}</td><td class="text-right">${rp(t.balance)}</td></tr>`); });
-    w.document.write(`</tbody></table><div class="summary-box"><div class="summary-item"><span>Transaksi Terfilter:</span> <strong>${data.length}</strong></div><div class="summary-item" style="color:#00875a"><span>Pemasukan:</span> <strong>${rp(inc)}</strong></div><div class="summary-item" style="color:#de350b"><span>Pengeluaran:</span> <strong>${rp(exp)}</strong></div><div class="summary-item" style="border-top:1px solid #1a1a1a;padding-top:6px;font-weight:700"><span>Arus Bersih:</span> <span>${rp(inc-exp)}</span></div></div></body></html>`);
-    w.document.close(); w.print();
-}
+
 function copyScriptToClipboard() {
     let el = document.getElementById('scriptCodeArea'); el.select(); el.setSelectionRange(0, 99999); document.execCommand("copy");
     let btn = document.querySelector(".copy-btn"); btn.innerText = "Tersalin!"; setTimeout(() => { btn.innerText = "Salin Kode"; }, 2000);
@@ -1337,7 +1521,6 @@ window.setFilter = setFilter;
 window.closeModalActionMenu = closeModalActionMenu;
 window.editFromActionMenu = editAction;
 window.deleteFromActionMenu = () => deleteTransaction(actionId);
-window.printReport = printReport;
 window.openActionMenu = openActionMenu;
 window.switchTab = switchTab;
 window.exportLogs = exportLogs;

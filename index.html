@@ -6,120 +6,426 @@
     <title>ArtaFlow - Multi Buku Kas (Vercel Audit Edition)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#1a1a1a;padding:24px}
-        .container{max-width:1400px;margin:0 auto}
+        /* --- RESET & BASE STYLE --- */
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body{
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            color: #1a1a1a;
+            padding: 24px;
+            transition: background 0.3s ease;
+        }
+        .container{
+            max-width: 1400px;
+            margin: 0 auto;
+        }
         
-        .header{margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #1a1a1a;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
-        .header h1{font-size:1.4rem;font-weight:600}
-        .header p{font-size:.7rem;color:#666;margin-top:4px}
+        /* --- HEADER SECTION --- */
+        .header{
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .header h1{
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        .header p{
+            font-size: .7rem;
+            color: #666;
+            margin-top: 4px;
+        }
         
-        .book-selector{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-        .book-selector label{font-size:.7rem;font-weight:600;color:#666}
-        .book-select{min-width:180px;padding:6px 12px;font-size:.8rem;font-weight:600;border:1.5px solid #1a1a1a;background:#fff;border-radius:4px;cursor:pointer}
-        .manage-books-btn{padding:6px 12px;font-size:.75rem;font-weight:600;background:#1a1a1a;color:#fff;border:none;border-radius:4px;cursor:pointer}
+        /* --- BOOK SELECTOR --- */
+        .book-selector{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .book-selector label{
+            font-size: .7rem;
+            font-weight: 600;
+            color: #666;
+        }
+        .book-select{
+            min-width: 180px;
+            padding: 6px 12px;
+            font-size: .8rem;
+            font-weight: 600;
+            border: 1.5px solid #1a1a1a;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .book-select:hover{
+            background: #fafafa;
+        }
+        .manage-books-btn{
+            padding: 6px 12px;
+            font-size: .75rem;
+            font-weight: 600;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .manage-books-btn:hover{
+            opacity: 0.9;
+        }
         
-        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:28px}
-        .stat-card{background:#fff;border:1.5px solid #1a1a1a;padding:16px;border-radius:6px;position:relative}
-        .stat-label{font-size:.7rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.5px}
-        .stat-value{font-size:1.25rem;font-weight:700;margin-top:8px}
-        .stat-card.income .stat-value{color:#00875a}
-        .stat-card.expense .stat-value{color:#de350b}
+        /* --- STATS CARD GRID --- */
+        .stats-grid{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card{
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            padding: 16px;
+            border-radius: 6px;
+            position: relative;
+        }
+        .stat-label{
+            font-size: .7rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .stat-value{
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+        .stat-card.income .stat-value{ color: #00875a; }
+        .stat-card.expense .stat-value{ color: #de350b; }
         
-        .controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
-        .filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-        .search-input{padding:6px 12px;font-size:.8rem;border:1.5px solid #1a1a1a;border-radius:4px;width:180px}
-        .filter-btn{padding:6px 12px;font-size:.75rem;font-weight:600;background:#fff;border:1.5px solid #1a1a1a;border-radius:4px;cursor:pointer}
-        .filter-btn.active{background:#1a1a1a;color:#fff}
+        /* --- CONTROLS & FILTERS --- */
+        .controls{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .filters{
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-input{
+            padding: 6px 12px;
+            font-size: .8rem;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            width: 180px;
+            font-family: inherit;
+        }
+        .search-input:focus{
+            outline: none;
+            background: #fafafa;
+        }
+        .filter-btn{
+            padding: 6px 12px;
+            font-size: .75rem;
+            font-weight: 600;
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .filter-btn:hover{
+            background: #f5f5f5;
+        }
+        .filter-btn.active{
+            background: #1a1a1a;
+            color: #fff;
+        }
         
-        .date-filter-box{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #1a1a1a;padding:4px 8px;border-radius:4px;font-size:.75rem}
-        .date-filter-box input{border:none;font-family:inherit;font-size:.75rem;outline:none;cursor:pointer}
-        .date-clear-btn{background:none;border:none;font-weight:700;color:#de350b;cursor:pointer;margin-left:4px}
+        /* --- DATE FILTER --- */
+        .date-filter-box{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: .75rem;
+        }
+        .date-filter-box input{
+            border: none;
+            font-family: inherit;
+            font-size: .75rem;
+            outline: none;
+            cursor: pointer;
+            background: transparent;
+        }
+        .date-clear-btn{
+            background: none;
+            border: none;
+            font-weight: 700;
+            color: #de350b;
+            cursor: pointer;
+            margin-left: 4px;
+        }
         
-        .actions{display:flex;gap:8px;flex-wrap:wrap}
-        .btn{padding:6px 14px;font-size:.75rem;font-weight:600;border:1.5px solid #1a1a1a;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-        .btn-primary{background:#1a1a1a;color:#fff}
-        .btn-secondary{background:#fff;color:#1a1a1a}
-        .btn-danger{background:#de350b;color:#fff;border-color:#de350b}
+        /* --- ACTION BUTTONS --- */
+        .actions{
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn{
+            padding: 6px 14px;
+            font-size: .75rem;
+            font-weight: 600;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .btn:active{ transform: scale(0.98); }
+        .btn-primary{ background: #1a1a1a; color: #fff; }
+        .btn-primary:hover{ background: #333; }
+        .btn-secondary{ background: #fff; color: #1a1a1a; }
+        .btn-secondary:hover{ background: #f5f5f5; }
+        .btn-danger{ background: #de350b; color: #fff; border-color: #de350b; }
+        .btn-danger:hover{ background: #be2e0a; }
         
-        .sync-status{font-size:.65rem;font-weight:600;padding:4px 8px;border-radius:4px;border:1.5px solid #1a1a1a;display:inline-flex;align-items:center;gap:4px}
-        .sync-status.online{background:#e3fcef;color:#006644;border-color:#006644}
-        .sync-status.offline{background:#ffebe6;color:#bf2600;border-color:#bf2600}
+        /* --- SYNC TAGS --- */
+        .sync-status{
+            font-size: .65rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1.5px solid #1a1a1a;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sync-status.online{ background: #e3fcef; color: #006644; border-color: #006644; }
+        .sync-status.offline{ background: #ffebe6; color: #bf2600; border-color: #bf2600; }
         
-        .table-container{background:#fff;border:1.5px solid #1a1a1a;border-radius:6px;overflow-x:auto;margin-bottom:16px}
-        table{width:100%;border-collapse:collapse;text-align:left;font-size:.8rem}
-        th{background:#f9f9f9;padding:10px 14px;font-weight:600;border-bottom:1.5px solid #1a1a1a;font-size:.75rem;color:#666;text-transform:uppercase}
-        td{padding:10px 14px;border-bottom:1px solid #eee;vertical-align:middle}
-        tr:last-child td{border-bottom:none}
-        tr:hover td{background:#fafafa}
+        /* --- DATA TABLE CONTAINER --- */
+        .table-container{
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+        table{
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: .8rem;
+            min-width: 750px;
+        }
+        th{
+            background: #f9f9f9;
+            padding: 12px 14px;
+            font-weight: 600;
+            border-bottom: 1.5px solid #1a1a1a;
+            font-size: .75rem;
+            color: #666;
+            text-transform: uppercase;
+        }
+        td{
+            padding: 12px 14px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+        tr:last-child td{ border-bottom: none; }
+        tr:hover td{ background: #fafafa; }
         
-        .text-right{text-align:right}
-        .text-center{text-align:center}
-        
-        .action-btn{background:none;border:none;font-weight:700;cursor:pointer;padding:4px 8px;font-size:1rem}
-        .empty-row{text-align:center;padding:40px !important;color:#666;font-style:italic}
-        
-        .footer{display:flex;justify-content:space-between;align-items:center;font-size:.7rem;color:#666}
-        
-        .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
-        .modal.show{display:flex}
-        .modal-content{background:#fff;border:2px solid #1a1a1a;border-radius:8px;padding:20px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
-        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee}
-        .modal-header h3{font-size:1rem;font-weight:600}
-        .modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;font-weight:600}
-        
-        .form-group{margin-bottom:14px}
-        .form-group label{display:block;font-size:.7rem;font-weight:600;color:#666;margin-bottom:4px;text-transform:uppercase}
-        .form-control{width:100%;padding:8px 12px;font-size:.8rem;border:1.5px solid #1a1a1a;border-radius:4px;font-family:inherit}
-        .form-control:focus{outline:none;background:#fafafa}
-        
-        .radio-group{display:flex;gap:12px;margin-top:4px}
-        .radio-label{display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer}
-        
-        .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:12px;border-top:1px solid #eee}
-        
-        .action-menu-list{list-style:none}
-        .action-menu-list li button{width:100%;padding:10px;text-align:left;background:none;border:none;font-size:.8rem;font-family:inherit;cursor:pointer;border-radius:4px}
-        .action-menu-list li button:hover{background:#f5f5f5}
-        .action-menu-list li button.delete-action{color:#de350b}
-        
-        .book-list-container{max-height:150px;overflow-y:auto;border:1.5px solid #1a1a1a;border-radius:4px;margin-bottom:14px;background:#f9f9f9}
-        .book-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #eee;font-size:.8rem}
-        .book-item:last-child{border-bottom:none}
-        .book-item-actions{display:flex;gap:6px}
-        .book-item-btn{background:none;border:none;font-size:.7rem;font-weight:600;cursor:pointer;color:#666}
-        .book-item-btn.del{color:#de350b}
-        
-        .nav-tabs{display:none;gap:4px;margin-bottom:16px;border-bottom:1.5px solid #1a1a1a}
-        .nav-tab{padding:8px 16px;font-size:.75rem;font-weight:600;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px}
-        .nav-tab.active{border-bottom-color:#1a1a1a;color:#1a1a1a}
-        
-        .code-container{position:relative;margin-top:10px}
-        .code-box{width:100%;height:100px;font-family:monospace;font-size:.65rem;padding:10px;border:1.5px solid #1a1a1a;border-radius:4px;background:#fafafa;resize:none;outline:none}
-        .copy-btn{position:absolute;top:8px;right:8px;padding:4px 8px;font-size:.6rem;font-weight:600;background:#1a1a1a;color:#fff;border:none;border-radius:3px;cursor:pointer}
-        
-        .new-row{animation:highlight 2s ease-out}
-        @keyframes highlight{0%{background:#e3fcef}100%{background:transparent}}
-        
-        .log-line {border-bottom: 1px dashed #ddd; padding: 6px 0; display: block;}
-        .log-line:last-child {border-bottom: none;}
-        .log-tag {font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff;}
-        .tag-add {background: #00875a;}
-        .tag-edit {background: #ffab00; color: #1a1a1a !important;}
-        .tag-delete {background: #de350b;}
-        .tag-system {background: #4a5568;}
+        /* --- BADGE DECORATION --- */
+        .type-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 6px;
+            display: inline-block;
+        }
+        .badge-inc { background: #e3fcef; color: #006644; }
+        .badge-exp { background: #ffebe6; color: #bf2600; }
 
+        .text-right{ text-align: right; }
+        .text-center{ text-align: center; }
+        
+        .action-btn{
+            background: none;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+        .action-btn:hover{ background: #eee; }
+        .empty-row{ text-align: center; padding: 40px !important; color: #666; font-style: italic; }
+        
+        /* --- FOOTER --- */
+        .footer{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .7rem;
+            color: #666;
+            padding-top: 8px;
+        }
+        
+        /* --- MODAL DIALOGS --- */
+        .modal{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+            backdrop-filter: blur(1px);
+        }
+        .modal.show{ display: flex; }
+        .modal-content{
+            background: #fff;
+            border: 2px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            animation: modalSlide 0.2s ease-out;
+        }
+        @keyframes modalSlide {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header h3{ font-size: 1rem; font-weight: 600; }
+        .modal-close{ background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 600; }
+        
+        /* --- FORMS STRUCTURE --- */
+        .form-group{ margin-bottom: 14px; }
+        .form-group label{
+            display: block;
+            font-size: .7rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .form-control{
+            width: 100%;
+            padding: 8px 12px;
+            font-size: .8rem;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .form-control:focus{ outline: none; background: #fafafa; }
+        
+        .radio-group{ display: flex; gap: 12px; margin-top: 4px; }
+        .radio-label{ display: flex; align-items: center; gap: 6px; font-size: .8rem; cursor: pointer; }
+        
+        .modal-footer{ display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
+        
+        .action-menu-list{ list-style: none; }
+        .action-menu-list li button{
+            width: 100%;
+            padding: 10px;
+            text-align: left;
+            background: none;
+            border: none;
+            font-size: .8rem;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .action-menu-list li button:hover{ background: #f5f5f5; }
+        .action-menu-list li button.delete-action{ color: #de350b; }
+        
+        .book-list-container{
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            margin-bottom: 14px;
+            background: #f9f9f9;
+        }
+        .book-item{ display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: .8rem; }
+        .book-item:last-child{ border-bottom: none; }
+        .book-item-actions{ display: flex; gap: 6px; }
+        .book-item-btn{ background: none; border: none; font-size: .7rem; font-weight: 600; cursor: pointer; color: #666; }
+        .book-item-btn:hover{ text-decoration: underline; }
+        .book-item-btn.del{ color: #de350b; }
+        
+        .nav-tabs{ display: none; gap: 4px; margin-bottom: 16px; border-bottom: 1.5px solid #1a1a1a; }
+        .nav-tab{ padding: 8px 16px; font-size: .75rem; font-weight: 600; background: none; border: none; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1.5px; }
+        .nav-tab.active{ border-bottom-color: #1a1a1a; color: #1a1a1a; }
+        
+        .code-container{ position: relative; margin-top: 10px; }
+        .code-box{ width: 100%; height: 100px; font-family: monospace; font-size: .65rem; padding: 10px; border: 1.5px solid #1a1a1a; border-radius: 4px; background: #fafafa; resize: none; outline: none; }
+        .copy-btn{ position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: .6rem; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+        
+        .new-row{ animation: highlight 2s ease-out; }
+        @keyframes highlight{ 0%{ background: #e3fcef; } 100%{ background: transparent; } }
+        
+        .log-line { border-bottom: 1px dashed #ddd; padding: 6px 0; display: block; }
+        .log-line:last-child { border-bottom: none; }
+        .log-tag { font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff; }
+        .tag-add { background: #00875a; }
+        .tag-edit { background: #ffab00; color: #1a1a1a !important; }
+        .tag-delete { background: #de350b; }
+        .tag-system { background: #4a5568; }
+
+        /* --- RESPONSIVE ADAPTATION --- */
         @media(max-width:768px){
-            body{padding:12px}
-            .header{flex-direction:column;align-items:flex-start;gap:12px}
-            .controls{flex-direction:column;align-items:stretch}
-            .filters{width:100%;justify-content:space-between}
-            .search-input{flex-grow:1;width:auto}
-            .actions{width:100%;justify-content:space-between}
-            .actions .btn{flex-grow:1;justify-content:center}
-            .nav-tabs{display:flex}
-            .tab-content{display:none}
-            .tab-content.active{display:block}
+            body{ padding: 12px; }
+            .header{ flex-direction: column; align-items: flex-start; gap: 12px; }
+            .controls{ flex-direction: column; align-items: stretch; gap: 12px; }
+            .filters{ width: 100%; justify-content: flex-start; gap: 6px; }
+            .search-input{ flex-grow: 1; width: 100%; }
+            .date-filter-box{ width: 100%; justify-content: space-between; }
+            .actions{ width: 100%; }
+            .actions .btn{ flex-grow: 1; justify-content: center; }
+            .nav-tabs{ display: flex; }
+            .tab-content{ display: none; }
+            .tab-content.active{ display: block; }
         }
     </style>
 </head>
@@ -132,7 +438,7 @@
             <p>Sistem Multi Buku Kas Independen Lokal & Cloud (Audit Protected)</p>
         </div>
         <div class="book-selector">
-            <span id="syncStatusTag" class="sync-status offline" style="margin-right: 4px;">OFFLINE MODE</span>
+            <span id="syncStatusTag" class="sync-status offline">OFFLINE MODE</span>
             <label for="currentBookSelect">BUKU AKTIF:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola Buku</button>
@@ -184,7 +490,7 @@
                 <thead>
                     <tr>
                         <th style="width:60px" class="text-center">No</th>
-                        <th style="width:140px">Tanggal & Jam</th>
+                        <th style="width:150px">Tanggal & Jam</th>
                         <th>Deskripsi</th>
                         <th style="width:150px" class="text-right">Pemasukan</th>
                         <th style="width:150px" class="text-right">Pengeluaran</th>
@@ -200,7 +506,7 @@
     <div id="tab-tools" class="tab-content">
         <div class="controls" style="justify-content: flex-start; gap: 12px; margin-bottom: 24px;">
             <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
-            <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit Tambah/Ubah/Hapus</button>
+            <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit</button>
             <button class="btn btn-secondary" onclick="exportToJSON()">Cadangan JSON</button>
             <button class="btn btn-secondary" onclick="printReport()">Cetak Laporan</button>
             <button class="btn btn-secondary" onclick="exportLogs()">Ekspor File Log (.json)</button>
@@ -395,6 +701,7 @@
 </div>
 
 <script>
+// --- CORE CONSTANTS & VARIABLES SETUP ---
 const BACKEND_SCRIPT = `// GOOGLE APPS SCRIPT BACKEND FOR ARTAFLOW
 function doPost(e) {
   const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
@@ -464,6 +771,7 @@ let timer = null;
 let lastAddedId = null;
 let actionId = null;
 
+// --- FORMATTER FUNCTIONS ---
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 function unRp(s) { return Number(s.replace(/[^0-9]/g, '')) || 0; }
 function formatRupiah(el) {
@@ -490,6 +798,7 @@ function formatDateTime(dtStr, createdStr) {
     } catch(e) { return dtStr; }
 }
 
+// --- SECURE AUDIT LOG ENGINE ---
 function logAudit(type, msg) {
     let time = new Date().toISOString();
     let bName = books.find(b => b.id === currentBookId)?.name || currentBookId;
@@ -522,6 +831,7 @@ function renderLogsToUI() {
     }).join('');
 }
 
+// --- CALCULATION & DATA BALANCING ---
 function recalcBalances() {
     let bal = 0;
     txs.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
@@ -552,6 +862,7 @@ function getDisplayData() {
     return src.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 }
 
+// --- DATA GRAPHIC RENDERING ---
 function render() {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
@@ -570,13 +881,15 @@ function render() {
             tb.innerHTML = filteredData.map((t, i) => {
                 let isInc = t.type === 'income';
                 let isNew = (lastAddedId === t.id);
+                // Badge Modifikasi UI Mikro
+                let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
                 return `<tr data-id="${t.id}" class="${isNew ? 'new-row' : ''}">
                     <td class="text-center">${i + 1}</td>
                     <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
-                    <td>${escapeHtml(t.desc)}</td>
-                    <td class="text-right">${isInc ? rp(t.amount) : '—'}</td>
-                    <td class="text-right">${!isInc ? rp(t.amount) : '—'}</td>
-                    <td class="text-right">${rp(t.balance)}</td>
+                    <td>${labelBadge} ${escapeHtml(t.desc)}</td>
+                    <td class="text-right" style="color: #00875a; font-weight: 500;">${isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right" style="color: #de350b; font-weight: 500;">${!isInc ? rp(t.amount) : '—'}</td>
+                    <td class="text-right" style="font-weight: 600;">${rp(t.balance)}</td>
                     <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">···</button></td>
                 </tr>`;
             }).join('');
@@ -584,6 +897,7 @@ function render() {
     }, 10);
 }
 
+// --- CLOUD CONFIGURATION & SYNC ---
 function getCloudUrl() { return cloudUrls[currentBookId] || ''; }
 function saveCloudUrl(url) {
     cloudUrls[currentBookId] = url.trim();
@@ -651,7 +965,7 @@ async function loadDataForCurrentBook() {
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
     
     let url = getCloudUrl();
-    if (!url) { return; } // Proteksi Vercel: Jangan fetch jika kolom URL kosong
+    if (!url) { return; } 
     
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     try {
@@ -670,6 +984,7 @@ async function loadDataForCurrentBook() {
 
 async function saveLocal() { localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); }
 
+// --- WRITE / MUTATE TRANSACTION OPERATIONS ---
 async function handleSubmit(e) {
     e.preventDefault();
     let submitBtn = document.getElementById('addSubmitBtn');
@@ -690,7 +1005,6 @@ async function handleSubmit(e) {
     lastAddedId = newTransaction.id;
     logAudit('TAMBAH', `Menambahkan transaksi [${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'}]. Nominal: ${rp(newTransaction.amount)} | Deskripsi: "${newTransaction.desc}" | Tanggal nota: ${newTransaction.date}`);
 
-    // Strategi Optimis Vercel: Simpan lokal dulu agar user tidak stuck menunggu fetch lambat
     txs.unshift(newTransaction); 
     saveLocal();
     render();
@@ -770,6 +1084,7 @@ async function confirmDeleteAll() {
     }
 }
 
+// --- WINDOW MODAL CONTROL CONTROLLERS ---
 function openModal(id) {
     document.getElementById(id).classList.add('show');
     if (id === 'addModal') {
@@ -791,6 +1106,8 @@ function editAction() {
     document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
     closeModalActionMenu(); openModal('editModal');
 }
+
+// --- MATRIX ENGINE FILTER & VIEW CONDITIONAL ---
 function setFilter(type) {
     currentFilter = type;
     document.querySelectorAll('.filters .filter-btn').forEach(b => b.classList.remove('active'));
@@ -822,6 +1139,7 @@ function updateTime() {
     }
 }
 
+// --- BOOK ACCOUNTS INTERACTION ---
 function loadBooks() {
     let stored = localStorage.getItem('artaflow_books');
     if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
@@ -865,7 +1183,7 @@ function openBookManager() {
         return `<div class="book-item">
             <span style="font-weight:${b.id===currentBookId?'700':'400'}">${escapeHtml(b.name)} ${b.id===currentBookId?'(Aktif)':''}</span>
             <div class="book-item-actions">
-                <button class="book-item-btn" onclick="openEditBookModal('${b.id}','${escapeHtml(b.name)}')">Edit Name</button>
+                <button class="book-item-btn" onclick="openEditBookModal('${b.id}','${escapeHtml(b.name)}')">Ubah Nama</button>
                 ${delAction}
             </div>
         </div>`;
@@ -920,6 +1238,7 @@ async function deleteBook(id) {
     }
 }
 
+// --- FILE PARSER EXTENSION (CSV/JSON IMPORT ENGINE) ---
 function openImportModalFromManager() { openModal('importModal'); }
 function closeImportModal() { closeModal('importModal'); }
 function handleImport() {
@@ -962,6 +1281,7 @@ function handleImport() {
     reader.readAsText(file);
 }
 
+// --- DATA EXPORT MATRIX ENGINE ---
 function exportToCSV() {
     if (!txs.length) { alert("Tidak ada data transaksi."); return; }
     let csvRows = [["ID", "Tanggal", "Deskripsi", "Jenis", "Jumlah", "Waktu Dibuat"].join(',')];
@@ -1003,6 +1323,7 @@ function copyScriptToClipboard() {
     let btn = document.querySelector(".copy-btn"); btn.innerText = "Tersalin!"; setTimeout(() => { btn.innerText = "Salin Kode"; }, 2000);
 }
 
+// --- GLOBAL ATTACHMENT REGISTER WINDOW OBJECT ---
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.handleSubmit = handleSubmit;
@@ -1040,6 +1361,7 @@ document.getElementById('actionEditBtn').onclick = editAction;
 document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
 document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }); });
 
+// --- CONTEXT INITIALIZATION BOOTSTRAPPER ---
 (async function init() {
     loadBooks();
     document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;

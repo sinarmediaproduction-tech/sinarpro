@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>ArtaFlow - Multi Buku Kas (Vercel Audit Edition)</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker ArtaFlow terdaftar!', reg.scope))
+            .catch(err => console.log('Service Worker gagal:', err));
+        });
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* --- RESET & BASE STYLE --- */
@@ -407,7 +423,7 @@
         
         .log-line { border-bottom: 1px dashed #ddd; padding: 6px 0; display: block; }
         .log-line:last-child { border-bottom: none; }
-        .log-tag { font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff; }
+        .log-line <span class="log-tag"> { font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff; }
         .tag-add { background: #00875a; }
         .tag-edit { background: #ffab00; color: #1a1a1a !important; }
         .tag-delete { background: #de350b; }
@@ -771,8 +787,8 @@ let timer = null;
 let lastAddedId = null;
 let actionId = null;
 
-// --- PERUBAHAN KEAMANAN: ENGINE ENKRIPSI & DEKRIPSI RINGAN (XOR + BASE64 MASKING) ---
-const _S_KEY = 42; // Salt internal key
+// --- SECURITY ENGINE: ENKRIPSI & DEKRIPSI RINGAN (XOR + BASE64 MASKING) ---
+const _S_KEY = 42; 
 function _obfuscate(str) {
     if(!str) return '';
     let result = "";
@@ -920,12 +936,10 @@ function render() {
 }
 
 // --- CLOUD CONFIGURATION & SYNC ---
-// PERUBAHAN KEAMANAN: Membaca URL cloud dengan melakukan deobfuscate terlebih dahulu
 function getCloudUrl() { 
     let b64 = cloudUrls[currentBookId] || ''; 
     return _deobfuscate(b64);
 }
-// PERUBAHAN KEAMANAN: Menyimpan URL cloud ke basis data setelah diacak (obfuscate)
 function saveCloudUrl(url) {
     cloudUrls[currentBookId] = _obfuscate(url.trim());
     localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
@@ -1199,7 +1213,6 @@ function refreshBookSelectOptions() {
     if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
     
     let cloudIn = document.getElementById('cloudUrlInput');
-    // PERUBAHAN KEAMANAN: Membuka deobfuscate saat ditampilkan di kolom input password
     if(cloudIn) cloudIn.value = getCloudUrl();
     updateSyncStatusIndicator();
 }

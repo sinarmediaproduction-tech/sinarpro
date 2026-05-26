@@ -140,76 +140,13 @@
         .new-row{background:#ecfdf5;animation:highlight 1s ease-out}
         @keyframes highlight{0%{background:#d1fae5}100%{background:transparent}}
         
-        /* ============ STYLING KHUSUS UNTUK CETAK ============ */
         @media print {
-            body {
-                padding: 0;
-                margin: 0;
-                background: white;
-            }
-            .container {
-                padding: 0;
-                margin: 0;
-                max-width: 100%;
-            }
-            .toolbar, .filter-section, .footer-tools, .action-btn, .modal, .toast, .btn,
-            .tabs, .tab-btn, .book-selector, .sync-status, .last-update-info, .filter-chip,
-            .date-filter, .filter-reset, .btn-group, #actionEditBtn, #actionDeleteBtn,
-            .action-buttons, .table-header button, .footer-tools .btn-small {
-                display: none !important;
-            }
-            .header {
-                margin-bottom: 15px;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #000;
-            }
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
-                margin-bottom: 20px;
-                page-break-inside: avoid;
-            }
-            .stat-card {
-                border: 1px solid #ccc;
-                padding: 8px 10px;
-                background: white;
-                box-shadow: none;
-                border-radius: 4px;
-            }
-            .table-wrapper {
-                border: 1px solid #ccc;
-                overflow: visible;
-                box-shadow: none;
-                margin-bottom: 15px;
-                page-break-inside: avoid;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 9pt;
-            }
-            th {
-                background: #f0f0f0;
-                padding: 8px 10px;
-                border: 1px solid #aaa;
-                font-weight: bold;
-                text-align: center;
-            }
-            td {
-                padding: 6px 10px;
-                border: 1px solid #ccc;
-            }
-            .footer {
-                margin-top: 15px;
-                padding-top: 8px;
-                border-top: 1px solid #ccc;
-                font-size: 8pt;
-            }
-            @page {
-                size: A4 landscape;
-                margin: 1.5cm;
-            }
+            body{padding:0;margin:0;background:#fff}
+            .toolbar,.filter-section,.footer-tools,.action-btn,.modal,.toast,.btn,.tabs,.tab-btn,.book-selector{display:none!important}
+            .stats-grid{grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+            .stat-card{border:1px solid #ccc;break-inside:avoid}
+            th,td{border:1px solid #ccc}
+            @page{margin:1.5cm}
         }
         
         @media (max-width:768px){
@@ -1162,6 +1099,27 @@ function recalcBalances() {
     }); 
 }
 
+// ============ FUNGSI RENDER STATISTIK (TANPA FILTER) ============
+function renderStats() {
+    // Hitung dari seluruh data (txs) tanpa filter
+    let totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    let totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    let curBal = txs.length ? txs.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
+    
+    // Hitung pengeluaran bulan ini (seluruh data)
+    let now = new Date(), curM = String(now.getMonth() + 1).padStart(2, '0'), curY = now.getFullYear();
+    let mExp = 0;
+    txs.forEach(t => { 
+        let [y, m] = t.date.split('-'); 
+        if (y == curY && m == curM && t.type === 'expense') mExp += t.amount; 
+    });
+    
+    document.getElementById('totalSaldo').innerText = rp(curBal);
+    document.getElementById('totalPemasukan').innerText = rp(totalInc);
+    document.getElementById('totalPengeluaran').innerText = rp(totalExp);
+    document.getElementById('saldoBulan').innerText = rp(mExp);
+}
+
 function getDisplayData() { 
     let data = [...txs]; 
     
@@ -1191,20 +1149,11 @@ function render() {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
         try {
-            recalcBalances();
+            // Render statistik dari SELURUH data (tanpa filter)
+            renderStats();
+            
+            // Render tabel dari data yang sudah difilter
             let filteredData = getDisplayData();
-            let totalInc = filteredData.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-            let totalExp = filteredData.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-            let curBal = filteredData.length ? filteredData.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
-            
-            let now = new Date(), curM = String(now.getMonth() + 1).padStart(2, '0'), curY = now.getFullYear();
-            let mExp = 0;
-            txs.forEach(t => { let [y, m] = t.date.split('-'); if (y == curY && m == curM && t.type === 'expense') mExp += t.amount; });
-            
-            document.getElementById('totalSaldo').innerText = rp(curBal);
-            document.getElementById('totalPemasukan').innerText = rp(totalInc);
-            document.getElementById('totalPengeluaran').innerText = rp(totalExp);
-            document.getElementById('saldoBulan').innerText = rp(mExp);
             
             let tb = document.getElementById('transactionTableBody');
             let cnt = document.getElementById('transactionCount');
@@ -1505,9 +1454,10 @@ function printReport() {
     const currentBook = books.find(b => b.id === currentBookId);
     const bookName = currentBook ? currentBook.name : 'Buku Kas';
     
-    let totalInc = data.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    let totalExp = data.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    let curBal = data.length ? data.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
+    // Untuk cetak, statistik tetap dari seluruh data
+    let totalInc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    let totalExp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    let curBal = txs.length ? txs.reduce((bal, t) => t.type === 'income' ? bal + t.amount : bal - t.amount, 0) : 0;
     let printDate = new Date().toLocaleString('id-ID');
     
     let rows = data.map((t, i) => { 
@@ -1529,144 +1479,32 @@ function printReport() {
     <meta charset="UTF-8">
     <title>Laporan ArtaFlow - ${escapeHtml(bookName)}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            padding: 15px;
-            background: white;
-            font-size: 10pt;
-            line-height: 1.4;
-        }
-        .print-container {
-            max-width: 100%;
-            margin: 0 auto;
-        }
-        .print-header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #1a1a1a;
-        }
-        .print-header h1 {
-            font-size: 20pt;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: 1px;
-        }
-        .print-header p {
-            font-size: 9pt;
-            color: #555;
-            margin-top: 4px;
-        }
-        .print-info {
-            margin-bottom: 15px;
-            font-size: 9pt;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            padding: 8px 0;
-        }
-        .print-info .left, .print-info .right {
-            background: #f5f5f5;
-            padding: 6px 12px;
-            border-radius: 4px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-        .stat-card {
-            border: 1px solid #ddd;
-            padding: 10px 12px;
-            background: #fafafa;
-            border-radius: 6px;
-        }
-        .stat-label {
-            font-size: 8pt;
-            color: #666;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .stat-value {
-            font-size: 12pt;
-            font-weight: 700;
-        }
-        .table-title {
-            font-size: 11pt;
-            font-weight: 600;
-            margin: 15px 0 8px 0;
-            padding-bottom: 6px;
-            border-bottom: 1px solid #ccc;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
-        }
-        th {
-            background: #e8e8e8;
-            padding: 8px 10px;
-            border: 1px solid #aaa;
-            font-weight: 700;
-            text-align: center;
-            font-size: 9pt;
-        }
-        td {
-            padding: 6px 10px;
-            border: 1px solid #ddd;
-            font-size: 9pt;
-        }
-        .text-right {
-            text-align: right;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .print-footer {
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px solid #ccc;
-            font-size: 8pt;
-            text-align: center;
-            color: #888;
-        }
-        @page {
-            size: A4 landscape;
-            margin: 1.2cm;
-        }
-        @media print {
-            body {
-                padding: 0;
-                margin: 0;
-            }
-            .no-print {
-                display: none;
-            }
-            th {
-                background: #e8e8e8 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .stat-card {
-                background: #fafafa !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; padding: 15px; background: white; font-size: 10pt; line-height: 1.4; }
+        .print-container { max-width: 100%; margin: 0 auto; }
+        .print-header { text-align: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #1a1a1a; }
+        .print-header h1 { font-size: 20pt; font-weight: 700; margin-bottom: 6px; }
+        .print-header p { font-size: 9pt; color: #555; margin-top: 4px; }
+        .print-info { margin-bottom: 15px; font-size: 9pt; display: flex; justify-content: space-between; flex-wrap: wrap; padding: 8px 0; }
+        .print-info .left, .print-info .right { background: #f5f5f5; padding: 6px 12px; border-radius: 4px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+        .stat-card { border: 1px solid #ddd; padding: 10px 12px; background: #fafafa; border-radius: 6px; }
+        .stat-label { font-size: 8pt; color: #666; margin-bottom: 5px; text-transform: uppercase; }
+        .stat-value { font-size: 12pt; font-weight: 700; }
+        .table-title { font-size: 11pt; font-weight: 600; margin: 15px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #e8e8e8; padding: 8px 10px; border: 1px solid #aaa; font-weight: 700; text-align: center; font-size: 9pt; }
+        td { padding: 6px 10px; border: 1px solid #ddd; font-size: 9pt; }
+        .text-right { text-align: right; }
+        .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 8pt; text-align: center; color: #888; }
+        @page { size: A4 landscape; margin: 1.2cm; }
+        @media print { body { padding: 0; margin: 0; } }
     </style>
 </head>
 <body>
     <div class="print-container">
         <div class="print-header">
             <h1>ARTAFLOW</h1>
-            <p>Sistem Pencatatan Keuangan Digital</p>
             <p>${escapeHtml(bookName)}</p>
         </div>
         
@@ -1676,44 +1514,19 @@ function printReport() {
         </div>
         
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Saldo</div>
-                <div class="stat-value">${rp(curBal)}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Pemasukan</div>
-                <div class="stat-value">${rp(totalInc)}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Pengeluaran</div>
-                <div class="stat-value">${rp(totalExp)}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Jumlah Transaksi</div>
-                <div class="stat-value">${data.length}</div>
-            </div>
+            <div class="stat-card"><div class="stat-label">Total Saldo</div><div class="stat-value">${rp(curBal)}</div></div>
+            <div class="stat-card"><div class="stat-label">Total Pemasukan</div><div class="stat-value">${rp(totalInc)}</div></div>
+            <div class="stat-card"><div class="stat-label">Total Pengeluaran</div><div class="stat-value">${rp(totalExp)}</div></div>
+            <div class="stat-card"><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">${txs.length}</div></div>
         </div>
         
-        <div class="table-title">📊 Detail Transaksi</div>
+        <div class="table-title">📊 Detail Transaksi (${filterText})</div>
         <table>
-            <thead>
-                <tr>
-                    <th style="width:5%">No</th>
-                    <th style="width:18%">Tanggal & Waktu</th>
-                    <th style="width:37%">Keterangan</th>
-                    <th style="width:15%" class="text-right">Pemasukan</th>
-                    <th style="width:15%" class="text-right">Pengeluaran</th>
-                    <th style="width:10%" class="text-right">Saldo</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${rows}
-            </tbody>
+            <thead><tr><th style="width:5%">No</th><th style="width:18%">Tanggal & Waktu</th><th style="width:37%">Keterangan</th><th style="width:15%" class="text-right">Pemasukan</th><th style="width:15%" class="text-right">Pengeluaran</th><th style="width:10%" class="text-right">Saldo</th></tr></thead>
+            <tbody>${rows}</tbody>
         </table>
         
-        <div class="print-footer">
-            ArtaFlow - Laporan Keuangan | Dicetak: ${printDate} | Halaman 1
-        </div>
+        <div class="print-footer">ArtaFlow - Laporan Keuangan | Dicetak: ${printDate}</div>
     </div>
 </body>
 </html>`);

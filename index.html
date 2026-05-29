@@ -63,13 +63,14 @@
         .book-selector {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
         }
         .book-selector label {
             font-size: .7rem;
             font-weight: 600;
             color: #666;
+            margin-left: 8px;
         }
         .book-select {
             min-width: 180px;
@@ -204,18 +205,31 @@
         .btn-secondary:hover { background: #f5f5f5; }
         .btn-danger { background: #de350b; color: #fff; border-color: #de350b; }
         
-        .sync-status {
+        .sync-status-container {
+            display: inline-flex;
+            align-items: center;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
             font-size: .65rem;
             font-weight: 600;
+        }
+        .sync-status-badge {
             padding: 4px 8px;
-            border-radius: 4px;
-            border: 1.5px solid #1a1a1a;
             display: inline-flex;
             align-items: center;
             gap: 4px;
         }
-        .sync-status.online { background: #e3fcef; color: #006644; border-color: #006644; }
-        .sync-status.offline { background: #ffebe6; color: #bf2600; border-color: #bf2600; }
+        .sync-status-container.online .sync-status-badge { background: #e3fcef; color: #006644; }
+        .sync-status-container.offline .sync-status-badge { background: #ffebe6; color: #bf2600; }
+        .device-id-badge {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 4px 8px;
+            font-family: monospace;
+            border-left: 1.5px solid #1a1a1a;
+            letter-spacing: 0.5px;
+        }
         
         .table-container {
             background: #fff;
@@ -271,6 +285,12 @@
             border-radius: 4px;
         }
         
+        .table-bottom-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 28px;
+        }
+        
         .footer {
             display: flex;
             justify-content: space-between;
@@ -278,6 +298,8 @@
             font-size: .7rem;
             color: #666;
             padding-top: 8px;
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
         }
         
         .modal {
@@ -338,13 +360,45 @@
         
         .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
         
+        /* AUDIT LOG INLINE SECTION */
+        .log-section {
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+        .log-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1.5px solid #1a1a1a;
+        }
+        .log-section-header h2 {
+            font-size: .85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .log-container-box {
+            max-height: 250px;
+            overflow-y: auto;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
         .log-line {
             border-bottom: 1px dashed #ddd;
             padding: 8px 0;
             display: block;
             font-size: .7rem;
             font-family: monospace;
+            line-height: 1.4;
         }
+        .log-line:last-child { border-bottom: none; }
         .log-tag {
             font-weight: 700;
             padding: 2px 6px;
@@ -352,6 +406,7 @@
             font-size: 0.6rem;
             margin-right: 8px;
             color: #fff;
+            display: inline-block;
         }
         .tag-add { background: #00875a; }
         .tag-edit { background: #ffab00; color: #1a1a1a !important; }
@@ -389,15 +444,10 @@
             .controls { flex-direction: column; align-items: stretch; }
             .filters { width: 100%; }
             .search-input { flex-grow: 1; }
-        }
-        
-        .device-id {
-            font-size: .65rem;
-            color: #666;
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
+            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .book-selector { width: 100%; justify-content: space-between; }
+            .table-bottom-bar { justify-content: stretch; }
+            .table-bottom-bar .btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -410,8 +460,10 @@
             <p>Sistem Multi Buku Kas dengan Audit Log Terpusat (Sync Antar Device)</p>
         </div>
         <div class="book-selector">
-            <span id="syncStatusTag" class="sync-status offline">OFFLINE MODE</span>
-            <span id="deviceIdDisplay" class="device-id"></span>
+            <div id="syncStatusWrapper" class="sync-status-container offline">
+                <span id="syncStatusTag" class="sync-status-badge">📴 OFFLINE MODE</span>
+                <span id="deviceIdDisplay" class="device-id-badge">------</span>
+            </div>
             <label for="currentBookSelect">BUKU AKTIF:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola Buku</button>
@@ -449,9 +501,6 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
-            <button class="btn btn-secondary" onclick="openModal('syncLogModal'); refreshLogsFromCloud();">Lihat Log Audit</button>
-            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
-            <button class="btn btn-secondary" onclick="syncWithCloud()">Sinkronisasi Manual</button>
         </div>
     </div>
 
@@ -472,11 +521,29 @@
         </table>
     </div>
 
+    <!-- EXPORT CSV SEKARANG DIBAWAH TABEL -->
+    <div class="table-bottom-bar">
+        <button class="btn btn-secondary" onclick="exportToCSV()">📥 Ekspor File CSV</button>
+    </div>
+
+    <!-- PINDAH LOG AUDIT MENJADI HALAMAN UTAMA / DIBAWAH TABEL -->
+    <div class="log-section">
+        <div class="log-section-header">
+            <h2>📜 Audit Log Terpusat (Semua Perangkat)</h2>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: .7rem;" onclick="refreshLogsFromCloud()">🔄 Ambil Log Terbaru</button>
+        </div>
+        <div id="logSummaryArea" class="log-container-box">
+            Memuat catatan aktivitas log cloud...
+        </div>
+    </div>
+
     <div class="footer">
         <div id="transactionCount">0 transaksi</div>
         <div id="liveClock">00:00:00</div>
     </div>
 </div>
+
+<!-- MODALS -->
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -595,22 +662,6 @@
     </div>
 </div>
 
-<div id="syncLogModal" class="modal">
-    <div class="modal-content" style="max-width: 900px;">
-        <div class="modal-header">
-            <h3>Audit Log Terpusat (Semua Device)</h3>
-            <button class="modal-close" onclick="closeModal('syncLogModal')">×</button>
-        </div>
-        <div id="logSummaryArea" style="max-height: 500px; overflow-y: auto; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px;">
-            Memuat log...
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="refreshLogsFromCloud()">Refresh dari Cloud</button>
-            <button class="btn btn-primary" onclick="closeModal('syncLogModal')">Tutup</button>
-        </div>
-    </div>
-</div>
-
 <script>
 // ==================== KONFIGURASI & VARIABEL GLOBAL ====================
 let txs = [];
@@ -627,7 +678,7 @@ let deviceId = '';
 function getDeviceId() {
     let id = localStorage.getItem('artaflow_device_id');
     if (!id) {
-        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5); // Dipendekkan agar pas di badge
         localStorage.setItem('artaflow_device_id', id);
     }
     return id;
@@ -686,7 +737,7 @@ function formatDateTime(dtStr, createdStr) {
 async function loadLogsFromCloud() {
     let url = getCloudUrl();
     if (!url) {
-        document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666;">⚠️ URL Cloud belum dikonfigurasi. Log hanya tersimpan lokal.</p>';
+        document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666; font-size:.75rem;">⚠️ URL Cloud belum dikonfigurasi di menu Kelola Buku. Mode Offline aktif.</p>';
         return [];
     }
     
@@ -711,6 +762,7 @@ async function loadLogsFromCloud() {
 }
 
 async function refreshLogsFromCloud() {
+    document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666; font-size:.75rem;">Mengambil log terbaru dari cloud...</p>';
     let logs = await loadLogsFromCloud();
     renderLogsToUI(logs);
 }
@@ -720,7 +772,10 @@ function renderLogsToUI(logs) {
     if(!area) return;
     
     if(!logs || logs.length === 0) {
-        area.innerHTML = '<p style="color:#666;">Belum ada aktivitas tercatat di cloud.</p>';
+        let url = getCloudUrl();
+        if(url) {
+            area.innerHTML = '<p style="color:#666; font-size:.75rem;">Belum ada aktivitas audit log tercatat di cloud untuk buku ini.</p>';
+        }
         return;
     }
     
@@ -734,7 +789,7 @@ function renderLogsToUI(logs) {
         return `<div class="log-line">
             <small style="color:#888;">[${timeStr}]</small>
             <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.book_name || l.book || '?')})</small>
-            <small style="color:#999;">[${escapeHtml(l.device_id || 'unknown')}]</small>
+            <small style="color:#1a1a1a; background:#e5e7eb; padding:1px 4px; border-radius:2px; font-weight:bold;">${escapeHtml(l.device_id || 'unknown')}</small>
             <span class="log-tag ${tagClass}">${l.type}</span>
             <span>${escapeHtml(l.message)}</span>
         </div>`;
@@ -754,13 +809,14 @@ function saveCloudUrl(url) {
 }
 
 function updateSyncStatusIndicator() {
+    let wrapper = document.getElementById('syncStatusWrapper');
     let tag = document.getElementById('syncStatusTag');
-    if(!tag) return;
+    if(!wrapper || !tag) return;
     if (getCloudUrl()) {
-        tag.className = "sync-status online"; 
+        wrapper.className = "sync-status-container online"; 
         tag.innerText = "☁️ CLOUD CONNECTED";
     } else {
-        tag.className = "sync-status offline"; 
+        wrapper.className = "sync-status-container offline"; 
         tag.innerText = "📴 OFFLINE MODE";
     }
 }
@@ -802,23 +858,16 @@ async function saveLocalAndSync(logType = null, logMessage = null, txId = null) 
             body: JSON.stringify(payload)
         });
         let d = await res.json();
-        if(!d.success) {
+        if(d.success) {
+            // Otomatis muat ulang log inline di bawah tabel jika berhasil
+            let logs = await loadLogsFromCloud();
+            renderLogsToUI(logs);
+        } else {
             console.error('Gagal sinkronisasi otomatis ke cloud:', d.error);
         }
     } catch(e) {
         console.error('Koneksi sinkronisasi cloud terputus:', e);
     }
-}
-
-async function syncWithCloud() {
-    let url = getCloudUrl();
-    if (!url) { 
-        alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); 
-        return; 
-    }
-    await saveLocalAndSync('SISTEM', 'Melakukan sinkronisasi data manual dari perangkat.', null);
-    alert("✅ Sinkronisasi kas dan audit log berhasil!");
-    render();
 }
 
 async function loadFromCloud() {
@@ -1009,6 +1058,7 @@ async function switchBook(id) {
     
     await loadFromCloud();
     render();
+    refreshLogsFromCloud();
 }
 
 // ==================== MODAL KELOLA BUKU LOKAL ====================
@@ -1080,7 +1130,7 @@ function resetDateFilter() {
     render();
 }
 function exportToCSV() {
-    if (!txs.length) { alert("Tidak ada data."); return; }
+    if (!txs.length) { alert("Tidak ada data transaksi untuk diekspor."); return; }
     let csvRows = [["ID","Tanggal","Deskripsi","Jenis","Jumlah"].join(',')];
     txs.forEach(t => { csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount].join(',')); });
     let blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
@@ -1106,13 +1156,6 @@ function copyScriptToClipboard() {
 
 // ==================== GOOGLE APPS SCRIPT BACKEND CODE ====================
 const BACKEND_SCRIPT = `// ==================== ARTAFLOW BACKEND - GOOGLE APPS SCRIPT ====================
-// Cara Setup / Update Deployment:
-// 1. Buka Google Spreadsheet -> Extensions -> Apps Script
-// 2. Ganti seluruh isi kode dengan kode ini
-// 3. Wajib klik Deploy -> New deployment
-// 4. Pilih Web app, set Execute as: "Me", Who has access: "Anyone"
-// 5. Salin URL Web App yang dihasilkan ke aplikasi ArtaFlow
-
 function doPost(e) {
   const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
   try {
@@ -1122,21 +1165,18 @@ function doPost(e) {
     const bookName = req.book || "default_book";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // Sheet untuk transaksi
     let txSheet = ss.getSheetByName(bookName + "_transactions");
     if (!txSheet) {
       txSheet = ss.insertSheet(bookName + "_transactions");
       txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
     }
     
-    // Sheet untuk log audit terpusat
     let logSheet = ss.getSheetByName(bookName + "_logs");
     if (!logSheet) {
       logSheet = ss.insertSheet(bookName + "_logs");
       logSheet.appendRow(["timestamp", "type", "message", "device_id", "transaction_id", "book_name"]);
     }
     
-    // ACTION: LOAD DATA
     if (action === "load_data") {
       const rows = txSheet.getDataRange().getValues();
       const transactions = [];
@@ -1154,7 +1194,6 @@ function doPost(e) {
       return res.setContent(JSON.stringify({ success: true, transactions: transactions }));
     }
     
-    // ACTION GABUNGAN: SYNC TRANSAKSI DAN LOG AUDIT TERPADU (ANTI TABRAKAN DATA)
     if (action === "full_sync_with_log" || action === "full_sync") {
       const newData = req.data.transactions;
       if (newData && Array.isArray(newData)) {
@@ -1168,7 +1207,6 @@ function doPost(e) {
         }
       }
       
-      // Catat log audit jika dikirim bersamaan dalam paket request
       const logData = req.logData;
       if (logData) {
         logSheet.appendRow([
@@ -1180,24 +1218,9 @@ function doPost(e) {
           logData.book_name || bookName
         ]);
       }
-      return res.setContent(JSON.stringify({ success: true, message: "Sync kas dan log audit berhasil disimpan bersamaan" }));
+      return res.setContent(JSON.stringify({ success: true, message: "Sync kas dan log audit berhasil" }));
     }
     
-    // ACTION: ADD LOG ONLY
-    if (action === "add_log") {
-      const logData = req.data;
-      logSheet.appendRow([
-        logData.timestamp || new Date().toISOString(),
-        logData.type,
-        logData.message,
-        logData.device_id || "unknown",
-        logData.transaction_id || "",
-        logData.book_name || bookName
-      ]);
-      return res.setContent(JSON.stringify({ success: true }));
-    }
-    
-    // ACTION: GET LOGS
     if (action === "get_logs") {
       const rows = logSheet.getDataRange().getValues();
       const logs = [];
@@ -1212,7 +1235,7 @@ function doPost(e) {
           book_name: rows[i][5]
         });
       }
-      logs.reverse(); // Mengurutkan log dari yang terbaru
+      logs.reverse();
       return res.setContent(JSON.stringify({ success: true, logs: logs }));
     }
     
@@ -1248,7 +1271,7 @@ document.querySelectorAll('.modal').forEach(m => {
 });
 
 deviceId = getDeviceId();
-document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
+document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
 
 (async function init() {
     loadBooks();
@@ -1259,6 +1282,7 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
     
     await loadFromCloud();
     render();
+    refreshLogsFromCloud();
     updateTime();
     setInterval(updateTime, 1000);
 })();
@@ -1269,7 +1293,6 @@ window.openModal = openModal;
 window.handleSubmit = handleSubmit;
 window.handleEditSubmit = handleEditSubmit;
 window.saveCloudUrl = saveCloudUrl;
-window.syncWithCloud = syncWithCloud;
 window.exportToCSV = exportToCSV;
 window.setFilter = setFilter;
 window.applyDateFilter = applyDateFilter;

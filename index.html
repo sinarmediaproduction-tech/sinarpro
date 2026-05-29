@@ -205,6 +205,8 @@
         .btn-secondary:hover { background: #f5f5f5; }
         .btn-danger { background: #de350b; color: #fff; border-color: #de350b; }
         .btn-danger:hover { background: #c52f0a; }
+        .btn-success { background: #00875a; color: #fff; border-color: #00875a; }
+        .btn-success:hover { background: #006644; }
         
         .sync-status-container {
             display: inline-flex;
@@ -261,14 +263,6 @@
             vertical-align: middle;
         }
         tr:hover td { background: #fafafa; }
-        
-        /* KOLOM YANG DILEBARKAN UNTUK NOMINAL MILYARAN */
-        th:nth-child(4), td:nth-child(4),
-        th:nth-child(5), td:nth-child(5),
-        th:nth-child(6), td:nth-child(6) {
-            min-width: 100px;
-            white-space: nowrap;
-        }
         
         .type-badge {
             font-size: 0.65rem;
@@ -517,6 +511,61 @@
             margin-top: 4px;
         }
         
+        .cloud-connect-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .cloud-connect-row .form-control {
+            flex: 1;
+        }
+        
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .7rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .connection-status.success {
+            background: #e3fcef;
+            color: #006644;
+        }
+        
+        .connection-status.error {
+            background: #ffebe6;
+            color: #bf2600;
+        }
+        
+        .connection-status.testing {
+            background: #fff3e0;
+            color: #cc7b00;
+        }
+        
+        .toast-message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: .75rem;
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .toast-message.show {
+            display: flex;
+        }
+        
         @media(max-width:768px) {
             body { padding: 12px; }
             .controls { flex-direction: column; align-items: stretch; }
@@ -524,12 +573,6 @@
             .search-input { flex-grow: 1; }
             .header { flex-direction: column; align-items: flex-start; gap: 12px; }
             .book-selector { width: 100%; justify-content: space-between; }
-            
-            th:nth-child(4), td:nth-child(4),
-            th:nth-child(5), td:nth-child(5),
-            th:nth-child(6), td:nth-child(6) {
-                min-width: 85px;
-            }
         }
     </style>
 </head>
@@ -601,7 +644,7 @@
                 </tr>
             </thead>
             <tbody id="transactionTableBody"></tbody>
-         </table>
+        </table>
     </div>
 
     <div class="log-section">
@@ -618,6 +661,12 @@
         <div id="transactionCount">0 transaksi</div>
         <div id="liveClock">00:00:00</div>
     </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toastMessage" class="toast-message">
+    <span id="toastIcon">✅</span>
+    <span id="toastText">Berhasil!</span>
 </div>
 
 <div id="addModal" class="modal">
@@ -745,8 +794,12 @@
         <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px;">
             <div class="form-group">
                 <label>URL Cloud Google Sheets</label>
-                <input type="password" id="cloudUrlInput" class="form-control" placeholder="Masukkan URL Web App Google Apps Script" oninput="saveCloudUrl(this.value)">
-                <p style="font-size: .65rem; color: #666; margin-top: 4px;">* Set URL untuk sinkronisasi antar device</p>
+                <div class="cloud-connect-row">
+                    <input type="password" id="cloudUrlInput" class="form-control" placeholder="Masukkan URL Web App Google Apps Script">
+                    <button id="testConnectionBtn" class="btn btn-primary" onclick="testCloudConnection()" style="white-space: nowrap;">🔌 Connect</button>
+                </div>
+                <div id="connectionStatus" style="margin-top: 6px;"></div>
+                <p style="font-size: .65rem; color: #666; margin-top: 4px;">* Set URL untuk sinkronisasi antar device, klik Connect setelah mengisi URL</p>
             </div>
             
             <div class="form-group">
@@ -787,6 +840,31 @@ let filterEndDate = '';
 let actionId = null;
 let deviceId = '';
 let currentAttachmentData = null;
+
+// ==================== TOAST NOTIFICATION ====================
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toastMessage');
+    const icon = document.getElementById('toastIcon');
+    const text = document.getElementById('toastText');
+    
+    if (type === 'success') {
+        icon.innerHTML = '✅';
+        toast.style.background = '#00875a';
+    } else if (type === 'error') {
+        icon.innerHTML = '❌';
+        toast.style.background = '#de350b';
+    } else if (type === 'info') {
+        icon.innerHTML = 'ℹ️';
+        toast.style.background = '#1a1a1a';
+    }
+    
+    text.innerText = message;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
 
 // ==================== DEVICE ID UNIK ====================
 function getDeviceId() {
@@ -928,11 +1006,101 @@ function downloadAttachment() {
     }
 }
 
+// ==================== TEST CLOUD CONNECTION ====================
+async function testCloudConnection() {
+    const urlInput = document.getElementById('cloudUrlInput');
+    const url = urlInput.value.trim();
+    const statusDiv = document.getElementById('connectionStatus');
+    
+    if (!url) {
+        statusDiv.innerHTML = '<div class="connection-status error">⚠️ URL tidak boleh kosong!</div>';
+        return;
+    }
+    
+    statusDiv.innerHTML = '<div class="connection-status testing">🔄 Menguji koneksi ke cloud...</div>';
+    
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'load_data', book: 'test_connection' })
+        });
+        
+        let data = await res.json();
+        
+        if (data.success !== undefined) {
+            // Simpan URL
+            saveCloudUrl(url);
+            
+            statusDiv.innerHTML = '<div class="connection-status success">✅ Koneksi berhasil! Cloud Google Sheets terhubung.</div>';
+            showToast('Cloud berhasil terhubung!', 'success');
+            
+            // Refresh sync status indicator
+            updateSyncStatusIndicator();
+            
+            // Sinkronisasi data setelah koneksi berhasil
+            setTimeout(async () => {
+                statusDiv.innerHTML = '<div class="connection-status testing">🔄 Menyinkronkan data ke cloud...</div>';
+                await syncAfterConnection();
+                statusDiv.innerHTML = '<div class="connection-status success">✅ Sinkronisasi selesai! Data Anda aman di cloud.</div>';
+                await refreshLogsFromCloud();
+            }, 500);
+            
+        } else {
+            statusDiv.innerHTML = '<div class="connection-status error">❌ Koneksi gagal! Pastikan URL sudah di-deploy dengan benar.</div>';
+            showToast('Koneksi gagal! Periksa URL Anda.', 'error');
+        }
+    } catch(e) {
+        console.error('Connection test error:', e);
+        statusDiv.innerHTML = '<div class="connection-status error">❌ Gagal terhubung! Periksa URL dan pastikan Web App sudah di-deploy.</div>';
+        showToast('Gagal terhubung ke cloud!', 'error');
+    }
+}
+
+async function syncAfterConnection() {
+    let syncSuccess = await loadFromCloud();
+    if(syncSuccess) {
+        render();
+        showToast('Data berhasil disinkronkan dengan cloud!', 'success');
+    } else {
+        // Jika tidak ada data di cloud, upload data lokal
+        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+        let cleanBookName = bName.replace(/[^a-zA-Z0-9_]/g, '_');
+        let url = getCloudUrl();
+        
+        if (url && txs.length > 0) {
+            try {
+                let payload = {
+                    action: 'full_sync_with_log',
+                    book: cleanBookName,
+                    data: {
+                        transactions: txs,
+                        device_id: deviceId,
+                        sync_time: new Date().toISOString()
+                    }
+                };
+                
+                let res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                    showToast('Data lokal berhasil diupload ke cloud!', 'success');
+                }
+            } catch(e) {
+                console.log('Upload data ke cloud gagal:', e);
+            }
+        }
+    }
+}
+
 // ==================== LOG TERPUSAT KE CLOUD ====================
 async function loadLogsFromCloud() {
     let url = getCloudUrl();
     if (!url) {
-        document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666; font-size:.75rem;">⚠️ URL Cloud belum dikonfigurasi di menu Kelola Buku. Mode Offline aktif.</p>';
+        document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666; font-size:.75rem;">⚠️ URL Cloud belum dikonfigurasi di menu Kelola Buku. Klik "Connect" setelah mengisi URL.</p>';
         return [];
     }
     
@@ -970,6 +1138,8 @@ function renderLogsToUI(logs) {
         let url = getCloudUrl();
         if(url) {
             area.innerHTML = '<p style="color:#666; font-size:.75rem;">Belum ada aktivitas audit log tercatat di cloud untuk buku ini.</p>';
+        } else {
+            area.innerHTML = '<p style="color:#666; font-size:.75rem;">⚠️ URL Cloud belum dikonfigurasi. Buka menu Kelola Buku dan klik "Connect" setelah mengisi URL Google Apps Script.</p>';
         }
         return;
     }
@@ -1191,6 +1361,7 @@ async function handleSubmit(e) {
     closeModal('addModal');
     document.getElementById('addForm').reset();
     document.getElementById('attachmentPreview').style.display = 'none';
+    showToast('Transaksi berhasil ditambahkan!', 'success');
 }
 
 async function handleEditSubmit(e) {
@@ -1220,6 +1391,7 @@ async function handleEditSubmit(e) {
         await saveLocalAndSync('UBAH', msg, id);
         
         render();
+        showToast('Transaksi berhasil diubah!', 'success');
     }
     closeModal('editModal');
 }
@@ -1234,6 +1406,7 @@ async function deleteTransaction(id) {
             await saveLocalAndSync('HAPUS', msg, id);
             
             render();
+            showToast('Transaksi berhasil dihapus!', 'info');
         }
     }
     closeModal('actionMenuModal');
@@ -1261,6 +1434,10 @@ function refreshBookSelectOptions() {
     let cloudIn = document.getElementById('cloudUrlInput');
     if(cloudIn) cloudIn.value = getCloudUrl();
     updateSyncStatusIndicator();
+    
+    // Clear connection status when opening modal
+    const statusDiv = document.getElementById('connectionStatus');
+    if(statusDiv) statusDiv.innerHTML = '';
 }
 
 async function switchBook(id) {
@@ -1277,6 +1454,7 @@ async function switchBook(id) {
     let syncSuccess = await loadFromCloud();
     if(syncSuccess) {
         render();
+        showToast('Data berhasil disinkronkan!', 'success');
     }
     await refreshLogsFromCloud();
 }
@@ -1301,6 +1479,10 @@ function openBookManager() {
     let panelTitle = document.querySelector('.data-management-panel .panel-title');
     if(panelTitle) panelTitle.innerText = 'Cadangan Data (' + bActive + ')';
     
+    // Clear previous connection status
+    const statusDiv = document.getElementById('connectionStatus');
+    if(statusDiv) statusDiv.innerHTML = '';
+    
     openModal('bookManagerModal');
 }
 
@@ -1315,6 +1497,7 @@ function addNewBook(e) {
     nameIn.value = '';
     openBookManager();
     refreshBookSelectOptions();
+    showToast('Buku baru berhasil dibuat!', 'success');
 }
 
 async function deleteBook(id) {
@@ -1367,6 +1550,7 @@ function exportToCSV() {
     a.href = URL.createObjectURL(blob);
     a.download = 'ArtaFlow_' + bName.replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
+    showToast('Data berhasil diekspor ke CSV!', 'success');
 }
 
 function exportToJSON() {
@@ -1378,6 +1562,7 @@ function exportToJSON() {
     a.href = URL.createObjectURL(blob);
     a.download = 'ArtaFlow_' + bName.replace(/\s+/g, '_') + '_Backup_' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
+    showToast('Data berhasil diekspor ke JSON!', 'success');
 }
 
 function triggerJsonImport() {
@@ -1415,6 +1600,7 @@ function handleJsonImport(e) {
                 render();
                 alert('✅ Berhasil memuat ' + importedData.length + ' data transaksi ke dalam ' + bName + '!');
                 closeModal('bookManagerModal');
+                showToast('Impor data berhasil!', 'success');
             }
         } catch (err) {
             alert("❌ Gagal Impor File: " + err.message);
@@ -1460,7 +1646,7 @@ function copyScriptToClipboard() {
     let el = document.getElementById('scriptCodeArea');
     el.select();
     document.execCommand("copy");
-    alert("Kode backend telah disalin ke clipboard!");
+    showToast('Kode backend berhasil disalin!', 'success');
 }
 
 // ==================== GOOGLE APPS SCRIPT BACKEND CODE ====================
@@ -1646,6 +1832,7 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
     let syncSuccess = await loadFromCloud();
     if(syncSuccess) {
         render();
+        showToast('Data berhasil dimuat dari cloud!', 'success');
     }
     await refreshLogsFromCloud();
     updateTime();
@@ -1677,6 +1864,7 @@ window.viewAttachment = viewAttachment;
 window.downloadAttachment = downloadAttachment;
 window.previewAttachment = previewAttachment;
 window.previewEditAttachment = previewEditAttachment;
+window.testCloudConnection = testCloudConnection;
 </script>
 </body>
 </html>

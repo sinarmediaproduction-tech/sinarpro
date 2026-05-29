@@ -20,385 +20,82 @@
         });
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2=family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f5f5f5;
-            color: #1a1a1a;
-            padding: 24px;
-            transition: background 0.3s ease;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            margin-bottom: 28px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #1a1a1a;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .header h1 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-        }
-        .header p {
-            font-size: .7rem;
-            color: #666;
-            margin-top: 4px;
-        }
-        
-        .book-selector {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .book-selector label {
-            font-size: .7rem;
-            font-weight: 600;
-            color: #666;
-        }
-        .book-select {
-            min-width: 180px;
-            padding: 6px 12px;
-            font-size: .8rem;
-            font-weight: 600;
-            border: 1.5px solid #1a1a1a;
-            background: #fff;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .manage-books-btn {
-            padding: 6px 12px;
-            font-size: .75rem;
-            font-weight: 600;
-            background: #1a1a1a;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-        .stat-card {
-            background: #fff;
-            border: 1.5px solid #1a1a1a;
-            padding: 16px;
-            border-radius: 6px;
-        }
-        .stat-label {
-            font-size: .7rem;
-            font-weight: 600;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-        .stat-value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-top: 8px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a1a; padding: 24px; transition: background 0.3s ease; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid #1a1a1a; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+        .header h1 { font-size: 1.4rem; font-weight: 600; letter-spacing: -0.5px; }
+        .header p { font-size: .7rem; color: #666; margin-top: 4px; }
+        .book-selector { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .book-selector label { font-size: .7rem; font-weight: 600; color: #666; }
+        .book-select { min-width: 180px; padding: 6px 12px; font-size: .8rem; font-weight: 600; border: 1.5px solid #1a1a1a; background: #fff; border-radius: 4px; cursor: pointer; }
+        .manage-books-btn { padding: 6px 12px; font-size: .75rem; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: #fff; border: 1.5px solid #1a1a1a; padding: 16px; border-radius: 6px; }
+        .stat-label { font-size: .7rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: .5px; }
+        .stat-value { font-size: 1.25rem; font-weight: 700; margin-top: 8px; }
         .stat-card.income .stat-value { color: #00875a; }
         .stat-card.expense .stat-value { color: #de350b; }
-        
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .filters {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .search-input {
-            padding: 6px 12px;
-            font-size: .8rem;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 4px;
-            width: 180px;
-            font-family: inherit;
-        }
-        .filter-btn {
-            padding: 6px 12px;
-            font-size: .75rem;
-            font-weight: 600;
-            background: #fff;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .filter-btn.active {
-            background: #1a1a1a;
-            color: #fff;
-        }
-        
-        .date-filter-box {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: #fff;
-            border: 1.5px solid #1a1a1a;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: .75rem;
-        }
-        .date-filter-box input {
-            border: none;
-            font-family: inherit;
-            font-size: .75rem;
-            outline: none;
-            background: transparent;
-        }
-        .date-clear-btn {
-            background: none;
-            border: none;
-            font-weight: 700;
-            color: #de350b;
-            cursor: pointer;
-            margin-left: 4px;
-        }
-        
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 6px 14px;
-            font-size: .75rem;
-            font-weight: 600;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 4px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+        .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .search-input { padding: 6px 12px; font-size: .8rem; border: 1.5px solid #1a1a1a; border-radius: 4px; width: 180px; font-family: inherit; }
+        .filter-btn { padding: 6px 12px; font-size: .75rem; font-weight: 600; background: #fff; border: 1.5px solid #1a1a1a; border-radius: 4px; cursor: pointer; }
+        .filter-btn.active { background: #1a1a1a; color: #fff; }
+        .date-filter-box { display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid #1a1a1a; padding: 4px 8px; border-radius: 4px; font-size: .75rem; }
+        .date-filter-box input { border: none; font-family: inherit; font-size: .75rem; outline: none; background: transparent; }
+        .date-clear-btn { background: none; border: none; font-weight: 700; color: #de350b; cursor: pointer; margin-left: 4px; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { padding: 6px 14px; font-size: .75rem; font-weight: 600; border: 1.5px solid #1a1a1a; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease; }
         .btn-primary { background: #1a1a1a; color: #fff; }
         .btn-primary:hover { background: #333; }
         .btn-secondary { background: #fff; color: #1a1a1a; }
         .btn-secondary:hover { background: #f5f5f5; }
         .btn-danger { background: #de350b; color: #fff; border-color: #de350b; }
-        
-        .sync-status {
-            font-size: .65rem;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1.5px solid #1a1a1a;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .sync-status { font-size: .65rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; border: 1.5px solid #1a1a1a; display: inline-flex; align-items: center; gap: 4px; }
         .sync-status.online { background: #e3fcef; color: #006644; border-color: #006644; }
         .sync-status.offline { background: #ffebe6; color: #bf2600; border-color: #bf2600; }
-        
-        .table-container {
-            background: #fff;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 6px;
-            overflow-x: auto;
-            margin-bottom: 16px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: .8rem;
-            min-width: 750px;
-        }
-        th {
-            background: #f9f9f9;
-            padding: 12px 14px;
-            font-weight: 600;
-            border-bottom: 1.5px solid #1a1a1a;
-            font-size: .75rem;
-            color: #666;
-            text-transform: uppercase;
-        }
-        td {
-            padding: 12px 14px;
-            border-bottom: 1px solid #eee;
-            vertical-align: middle;
-        }
+        .table-container { background: #fff; border: 1.5px solid #1a1a1a; border-radius: 6px; overflow-x: auto; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: .8rem; min-width: 750px; }
+        th { background: #f9f9f9; padding: 12px 14px; font-weight: 600; border-bottom: 1.5px solid #1a1a1a; font-size: .75rem; color: #666; text-transform: uppercase; }
+        td { padding: 12px 14px; border-bottom: 1px solid #eee; vertical-align: middle; }
         tr:hover td { background: #fafafa; }
-        
-        .type-badge {
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 3px;
-            margin-right: 6px;
-            display: inline-block;
-        }
+        .type-badge { font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-right: 6px; display: inline-block; }
         .badge-inc { background: #e3fcef; color: #006644; }
         .badge-exp { background: #ffebe6; color: #bf2600; }
-        
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        
-        .action-btn {
-            background: none;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 4px 8px;
-            font-size: 1rem;
-            border-radius: 4px;
-        }
-        
-        .footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: .7rem;
-            color: #666;
-            padding-top: 8px;
-        }
-        
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 16px;
-        }
+        .action-btn { background: none; border: none; font-weight: 700; cursor: pointer; padding: 4px 8px; font-size: 1rem; border-radius: 4px; }
+        .footer { display: flex; justify-content: space-between; align-items: center; font-size: .7rem; color: #666; padding-top: 8px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
         .modal.show { display: flex; }
-        .modal-content {
-            background: #fff;
-            border: 2px solid #1a1a1a;
-            border-radius: 8px;
-            padding: 20px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
+        .modal-content { background: #fff; border: 2px solid #1a1a1a; border-radius: 8px; padding: 20px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
         .modal-header h3 { font-size: 1rem; font-weight: 600; }
         .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
-        
         .form-group { margin-bottom: 14px; }
-        .form-group label {
-            display: block;
-            font-size: .7rem;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-        .form-control {
-            width: 100%;
-            padding: 8px 12px;
-            font-size: .8rem;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 4px;
-            font-family: inherit;
-        }
-        
+        .form-group label { display: block; font-size: .7rem; font-weight: 600; color: #666; margin-bottom: 4px; text-transform: uppercase; }
+        .form-control { width: 100%; padding: 8px 12px; font-size: .8rem; border: 1.5px solid #1a1a1a; border-radius: 4px; font-family: inherit; }
         .radio-group { display: flex; gap: 12px; margin-top: 4px; }
         .radio-label { display: flex; align-items: center; gap: 6px; font-size: .8rem; cursor: pointer; }
-        
         .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
-        
-        .log-line {
-            border-bottom: 1px dashed #ddd;
-            padding: 8px 0;
-            display: block;
-            font-size: .7rem;
-            font-family: monospace;
-        }
-        .log-tag {
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.6rem;
-            margin-right: 8px;
-            color: #fff;
-        }
+        .log-line { border-bottom: 1px dashed #ddd; padding: 8px 0; display: block; font-size: .7rem; font-family: monospace; }
+        .log-tag { font-weight: 700; padding: 2px 6px; border-radius: 3px; font-size: 0.6rem; margin-right: 8px; color: #fff; }
         .tag-add { background: #00875a; }
         .tag-edit { background: #ffab00; color: #1a1a1a !important; }
         .tag-delete { background: #de350b; }
         .tag-system { background: #4a5568; }
-        
         .code-container { position: relative; margin-top: 10px; }
-        .code-box {
-            width: 100%;
-            height: 150px;
-            font-family: monospace;
-            font-size: .65rem;
-            padding: 10px;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 4px;
-            background: #fafafa;
-            resize: vertical;
-        }
-        .copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 4px 8px;
-            font-size: .6rem;
-            font-weight: 600;
-            background: #1a1a1a;
-            color: #fff;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        
+        .code-box { width: 100%; height: 150px; font-family: monospace; font-size: .65rem; padding: 10px; border: 1.5px solid #1a1a1a; border-radius: 4px; background: #fafafa; resize: vertical; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: .6rem; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
         @media(max-width:768px) {
             body { padding: 12px; }
             .controls { flex-direction: column; align-items: stretch; }
             .filters { width: 100%; }
             .search-input { flex-grow: 1; }
         }
-        
-        .device-id {
-            font-size: .65rem;
-            color: #666;
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
+        .device-id { font-size: .65rem; color: #666; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -477,8 +174,6 @@
         <div id="liveClock">00:00:00</div>
     </div>
 </div>
-
-<!-- MODALS -->
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -703,11 +398,7 @@ async function addLogToCloud(bookName, type, message, transactionId = null) {
     };
     
     try {
-        await fetch(url, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(logEntry)
-        });
+        await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify(logEntry) });
         return true;
     } catch(e) {
         console.log('Gagal kirim log:', e);
@@ -721,9 +412,7 @@ async function loadLogsFromCloud() {
         document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666;">⚠️ URL Cloud belum dikonfigurasi. Log hanya tersimpan lokal.</p>';
         return [];
     }
-    
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    
     try {
         let res = await fetch(url, {
             method: 'POST',
@@ -731,11 +420,7 @@ async function loadLogsFromCloud() {
             body: JSON.stringify({ action: 'get_logs', book: bName })
         });
         let data = await res.json();
-        
-        if (data.success && data.logs) {
-            return data.logs;
-        }
-        return [];
+        return data.success && data.logs ? data.logs : [];
     } catch(e) {
         console.log('Gagal ambil log:', e);
         return [];
@@ -750,12 +435,10 @@ async function refreshLogsFromCloud() {
 function renderLogsToUI(logs) {
     let area = document.getElementById('logSummaryArea');
     if(!area) return;
-    
     if(!logs || logs.length === 0) {
         area.innerHTML = '<p style="color:#666;">Belum ada aktivitas tercatat di cloud.</p>';
         return;
     }
-    
     area.innerHTML = logs.map(l => {
         let d = new Date(l.timestamp);
         let timeStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
@@ -773,7 +456,7 @@ function renderLogsToUI(logs) {
     }).join('');
 }
 
-// ==================== CLOUD SYNC UTAMA ====================
+// ==================== CLOUD SYNC INCREMENTAL UTAMA ====================
 function getCloudUrl() { 
     let b64 = cloudUrls[currentBookId] || ''; 
     return _deobfuscate(b64);
@@ -797,35 +480,82 @@ function updateSyncStatusIndicator() {
     }
 }
 
-async function syncWithCloud() {
+// Push 1 data secara incremental ke cloud (Cegah Race Condition)
+async function pushTransactionToCloud(tx, isDeleted = false) {
     let url = getCloudUrl();
-    if (!url) { 
-        alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); 
-        return; 
-    }
-    
+    if (!url) return false;
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     
     try {
         let res = await fetch(url, {
             method: 'POST',
             mode: 'cors',
-            body: JSON.stringify({ 
-                action: 'full_sync', 
-                book: bName, 
-                data: { 
-                    transactions: txs,
-                    device_id: deviceId,
-                    sync_time: new Date().toISOString()
-                } 
+            body: JSON.stringify({
+                action: 'upsert_transaction',
+                book: bName,
+                data: { ...tx, is_deleted: isDeleted ? 1 : 0, device_id: deviceId }
             })
         });
         let d = await res.json();
-        if(d.success) {
-            alert("✅ Sinkronisasi berhasil!\n" + (d.message || "Data terpusat telah diperbarui."));
-        } else {
-            alert("⚠️ Gagal sinkronisasi: " + d.error);
-        }
+        return d.success;
+    } catch(e) {
+        console.error("Gagal push ke cloud:", e);
+        return false;
+    }
+}
+
+// Sinkronisasi Manual: Menggabungkan data Cloud dan Lokal secara cerdas
+async function syncWithCloud() {
+    let url = getCloudUrl();
+    if (!url) { alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); return; }
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    
+    try {
+        // 1. Ambil data dari cloud
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ action: 'load_data', book: bName })
+        });
+        let d = await res.json();
+        if(!d.success) { alert("Gagal memuat data cloud."); return; }
+        
+        let cloudTxs = d.transactions || [];
+        
+        // 2. Gabungkan data lokal dan cloud dengan membandingkan updated_at
+        let localMap = new Map(txs.map(t => [String(t.id), t]));
+        
+        cloudTxs.forEach(c => {
+            let cid = String(c.id);
+            if (c.is_deleted === 1 || c.is_deleted === "1") {
+                if (localMap.has(cid)) localMap.delete(cid);
+            } else {
+                if (!localMap.has(cid)) {
+                    localMap.set(cid, c);
+                } else {
+                    let localTime = new Date(localMap.get(cid).updated_at || 0).getTime();
+                    let cloudTime = new Date(c.updated_at || 0).getTime();
+                    if (cloudTime > localTime) { localMap.set(cid, c); }
+                }
+            }
+        });
+        
+        txs = Array.from(localMap.values());
+        saveLocal();
+        
+        // 3. Kirim kembali data lokal yang belum ada di cloud
+        res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ 
+                action: 'full_sync', 
+                book: bName, 
+                data: { transactions: txs, device_id: deviceId } 
+            })
+        });
+        
+        render();
+        alert("✅ Sinkronisasi 2-Arah berhasil secara cerdas!");
     } catch(e) {
         alert("❌ Koneksi gagal: " + e.toString());
     }
@@ -834,9 +564,7 @@ async function syncWithCloud() {
 async function loadFromCloud() {
     let url = getCloudUrl();
     if (!url) return false;
-    
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    
     try {
         let res = await fetch(url, {
             method: 'POST',
@@ -844,15 +572,14 @@ async function loadFromCloud() {
             body: JSON.stringify({ action: 'load_data', book: bName })
         });
         let d = await res.json();
-        
         if (d.success && d.transactions) {
-            txs = d.transactions;
+            // Filter yang tidak dihapus
+            txs = d.transactions.filter(t => t.is_deleted !== 1 && t.is_deleted !== "1");
             saveLocal();
             return true;
         }
         return false;
     } catch(e) {
-        console.log('Gagal load dari cloud:', e);
         return false;
     }
 }
@@ -862,37 +589,18 @@ function saveLocal() {
     localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); 
 }
 
-async function saveLocalAndSync() {
-    saveLocal();
-    let url = getCloudUrl();
-    if (url) {
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-        try {
-            await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                body: JSON.stringify({ 
-                    action: 'full_sync', 
-                    book: bName, 
-                    data: { transactions: txs, device_id: deviceId } 
-                })
-            });
-        } catch(e) {}
-    }
-}
-
 function recalcBalances() {
     let bal = 0;
-    txs.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
+    txs.sort((a, b) => new Date(a.date) - new Date(b.date) || Number(a.id) - Number(b.id));
     txs.forEach(t => {
-        bal += (t.type === 'income' ? t.amount : -t.amount);
+        bal += (t.type === 'income' ? Number(t.amount) : -Number(t.amount));
         t.balance = bal;
     });
 }
 
 function renderStats() {
-    let inc = txs.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
-    let exp = txs.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
+    let inc = txs.reduce((s, t) => s + (t.type === 'income' ? Number(t.amount) : 0), 0);
+    let exp = txs.reduce((s, t) => s + (t.type === 'expense' ? Number(t.amount) : 0), 0);
     document.getElementById('statBalance').innerText = rp(inc - exp);
     document.getElementById('statIncome').innerText = rp(inc);
     document.getElementById('statExpense').innerText = rp(exp);
@@ -907,7 +615,7 @@ function getDisplayData() {
         if (filterEndDate && t.date.split('T')[0] > filterEndDate) return false;
         if (q && !t.desc.toLowerCase().includes(q)) return false;
         return true;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+    }).sort((a, b) => new Date(b.date) - new Date(a.date) || Number(b.id) - Number(a.id));
 }
 
 function render() {
@@ -940,27 +648,31 @@ function render() {
 // ==================== CRUD OPERATIONS ====================
 async function handleSubmit(e) {
     e.preventDefault();
-    
     let amt = unRp(document.getElementById('txAmount').value);
     if (amt <= 0) { alert("Jumlah harus lebih dari 0!"); return; }
     
+    let nowStr = new Date().toISOString();
     let newTransaction = {
         id: Date.now() + Math.floor(Math.random() * 10000),
         type: document.querySelector('input[name="type"]:checked').value,
         date: document.getElementById('txDate').value,
         desc: document.getElementById('txDesc').value.trim(),
         amount: amt,
-        created_at: new Date().toISOString()
+        created_at: nowStr,
+        updated_at: nowStr,
+        is_deleted: 0
     };
     
     txs.unshift(newTransaction);
-    await saveLocalAndSync();
+    saveLocal();
+    render();
+    closeModal('addModal');
     
+    // Incremental Cloud Sync & Logging
+    await pushTransactionToCloud(newTransaction);
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     await addLogToCloud(bName, 'TAMBAH', `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`, newTransaction.id);
     
-    render();
-    closeModal('addModal');
     document.getElementById('addForm').reset();
 }
 
@@ -972,31 +684,38 @@ async function handleEditSubmit(e) {
     
     let t = txs.find(x => x.id === id);
     if (t) {
-        let oldDesc = t.desc;
-        let oldAmt = t.amount;
-        let oldType = t.type;
+        let oldDesc = t.desc; let oldAmt = t.amount; let oldType = t.type;
+        let nowStr = new Date().toISOString();
         
         t.type = document.querySelector('input[name="editType"]:checked').value;
         t.date = document.getElementById('editTxDate').value;
         t.desc = document.getElementById('editTxDesc').value.trim();
         t.amount = amt;
+        t.updated_at = nowStr;
         
-        await saveLocalAndSync();
+        saveLocal();
+        render();
+        closeModal('editModal');
         
+        await pushTransactionToCloud(t);
         let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
         await addLogToCloud(bName, 'UBAH', `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`, id);
-        
-        render();
     }
-    closeModal('editModal');
 }
 
 async function deleteTransaction(id) {
     if (confirm("Yakin ingin menghapus transaksi ini?")) {
         let t = txs.find(x => x.id === id);
         if(t) {
-            txs = txs.filter(t => t.id !== id);
-            await saveLocalAndSync();
+            t.is_deleted = 1;
+            t.updated_at = new Date().toISOString();
+            
+            // Push ke cloud info penghapusannya
+            await pushTransactionToCloud(t, true);
+            
+            // Hapus dari data lokal setelah dipush
+            txs = txs.filter(x => x.id !== id);
+            saveLocal();
             
             let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
             await addLogToCloud(bName, 'HAPUS', `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"`, id);
@@ -1105,8 +824,7 @@ function applyDateFilter() {
 function resetDateFilter() {
     document.getElementById('dateFilterStart').value = '';
     document.getElementById('dateFilterEnd').value = '';
-    filterStartDate = '';
-    filterEndDate = '';
+    filterStartDate = ''; filterEndDate = '';
     document.getElementById('clearDateBtn').style.display = 'none';
     render();
 }
@@ -1137,14 +855,6 @@ function copyScriptToClipboard() {
 
 // ==================== GOOGLE APPS SCRIPT BACKEND CODE ====================
 const BACKEND_SCRIPT = `// ==================== ARTAFLOW BACKEND - GOOGLE APPS SCRIPT ====================
-// Cara Setup:
-// 1. Buat Google Spreadsheet baru
-// 2. Buka menu Extensions > Apps Script
-// 3. Hapus kode default dan paste kode ini
-// 4. Simpan dan klik Deploy > New deployment > Web app
-// 5. Set "Execute as" = Me, "Who has access" = Anyone
-// 6. Copy URL dan masukkan ke aplikasi ArtaFlow
-
 function doPost(e) {
   const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
   try {
@@ -1154,87 +864,101 @@ function doPost(e) {
     const bookName = req.book || "default_book";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // Sheet untuk transaksi
     let txSheet = ss.getSheetByName(bookName + "_transactions");
     if (!txSheet) {
       txSheet = ss.insertSheet(bookName + "_transactions");
-      txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
+      txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at", "updated_at", "is_deleted"]);
     }
     
-    // Sheet untuk log audit terpusat
     let logSheet = ss.getSheetByName(bookName + "_logs");
     if (!logSheet) {
       logSheet = ss.insertSheet(bookName + "_logs");
       logSheet.appendRow(["timestamp", "type", "message", "device_id", "transaction_id", "book_name"]);
     }
     
-    // ACTION: LOAD DATA
     if (action === "load_data") {
       const rows = txSheet.getDataRange().getValues();
       const transactions = [];
       for (let i = 1; i < rows.length; i++) {
         if (!rows[i][0]) continue;
         transactions.push({
-          id: Number(rows[i][0]),
+          id: String(rows[i][0]),
           date: rows[i][1],
           desc: rows[i][2],
           type: rows[i][3],
           amount: Number(rows[i][4]),
-          created_at: rows[i][5]
+          created_at: rows[i][5],
+          updated_at: rows[i][6],
+          is_deleted: Number(rows[i][7] || 0)
         });
       }
       return res.setContent(JSON.stringify({ success: true, transactions: transactions }));
     }
     
-    // ACTION: FULL SYNC
+    if (action === "upsert_transaction") {
+      const t = req.data;
+      const dataRange = txSheet.getDataRange();
+      const rows = dataRange.getValues();
+      let foundRowIndex = -1;
+      
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(t.id)) {
+          foundRowIndex = i + 1;
+          break;
+        }
+      }
+      
+      const newRowValues = [
+        String(t.id), t.date, t.desc, t.type, Number(t.amount), 
+        t.created_at, t.updated_at || new Date().toISOString(), Number(t.is_deleted || 0)
+      ];
+      
+      if (foundRowIndex > -1) {
+        txSheet.getRange(foundRowIndex, 1, 1, 8).setValues([newRowValues]);
+      } else {
+        txSheet.appendRow(newRowValues);
+      }
+      return res.setContent(JSON.stringify({ success: true }));
+    }
+
     if (action === "full_sync") {
       const newData = req.data.transactions;
       if (newData && Array.isArray(newData)) {
         txSheet.clear();
-        txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
+        txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at", "updated_at", "is_deleted"]);
         if (newData.length > 0) {
           const values = newData.map(function(t) {
-            return [t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()];
+            return [String(t.id), t.date, t.desc, t.type, Number(t.amount), t.created_at, t.updated_at, Number(t.is_deleted || 0)];
           });
-          txSheet.getRange(2, 1, values.length, 6).setValues(values);
+          txSheet.getRange(2, 1, values.length, 8).setValues(values);
         }
       }
-      return res.setContent(JSON.stringify({ success: true, message: "Sync berhasil" }));
+      return res.setContent(JSON.stringify({ success: true }));
     }
     
-    // ACTION: ADD LOG
     if (action === "add_log") {
       const logData = req.data;
       logSheet.appendRow([
         logData.timestamp || new Date().toISOString(),
-        logData.type,
-        logData.message,
-        logData.device_id || "unknown",
-        logData.transaction_id || "",
-        logData.book_name || bookName
+        logData.type, logData.message, logData.device_id || "unknown",
+        String(logData.transaction_id || ""), logData.book_name || bookName
       ]);
       return res.setContent(JSON.stringify({ success: true }));
     }
     
-    // ACTION: GET LOGS
     if (action === "get_logs") {
       const rows = logSheet.getDataRange().getValues();
       const logs = [];
       for (let i = 1; i < rows.length; i++) {
         if (!rows[i][0]) continue;
         logs.push({
-          timestamp: rows[i][0],
-          type: rows[i][1],
-          message: rows[i][2],
-          device_id: rows[i][3],
-          transaction_id: rows[i][4],
-          book_name: rows[i][5]
+          timestamp: rows[i][0], type: rows[i][1], message: rows[i][2],
+          device_id: rows[i][3], transaction_id: String(rows[i][4]), book_name: rows[i][5]
         });
       }
-      logs.reverse(); // Tampilkan yang terbaru di atas
+      logs.reverse();
       return res.setContent(JSON.stringify({ success: true, logs: logs }));
     }
-    
     return res.setContent(JSON.stringify({ success: false, error: "Aksi tidak dikenal" }));
   } catch(err) {
     return res.setContent(JSON.stringify({ success: false, error: err.toString() }));
@@ -1248,14 +972,14 @@ function doGet() {
 
 // ==================== INITIALIZATION ====================
 document.getElementById('actionEditBtn').onclick = () => {
-    let t = txs.find(x => x.id === actionId);
+    let t = txs.find(x => x.id == actionId);
     if (t) {
         document.getElementById('editId').value = t.id;
         if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
         else document.getElementById('editTypeExpense').checked = true;
         document.getElementById('editTxDate').value = t.date;
         document.getElementById('editTxDesc').value = t.desc;
-        document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
+        document.getElementById('editTxAmount').value = Number(t.amount).toLocaleString('id-ID');
         closeModal('actionMenuModal');
         openModal('editModal');
     }
@@ -1282,25 +1006,7 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
     setInterval(updateTime, 1000);
 })();
 
-// Export fungsi ke global
-window.closeModal = closeModal;
-window.openModal = openModal;
-window.handleSubmit = handleSubmit;
-window.handleEditSubmit = handleEditSubmit;
-window.saveCloudUrl = saveCloudUrl;
-window.syncWithCloud = syncWithCloud;
-window.exportToCSV = exportToCSV;
-window.setFilter = setFilter;
-window.applyDateFilter = applyDateFilter;
-window.resetDateFilter = resetDateFilter;
-window.openActionMenu = openActionMenu;
-window.formatRupiah = formatRupiah;
-window.openBookManager = openBookManager;
-window.addNewBook = addNewBook;
-window.deleteBook = deleteBook;
-window.switchBook = switchBook;
-window.copyScriptToClipboard = copyScriptToClipboard;
-window.refreshLogsFromCloud = refreshLogsFromCloud;
+window.closeModal = closeModal; window.openModal = openModal; window.handleSubmit = handleSubmit; window.handleEditSubmit = handleEditSubmit; window.saveCloudUrl = saveCloudUrl; window.syncWithCloud = syncWithCloud; window.exportToCSV = exportToCSV; window.setFilter = setFilter; window.applyDateFilter = applyDateFilter; window.resetDateFilter = resetDateFilter; window.openActionMenu = openActionMenu; window.formatRupiah = formatRupiah; window.openBookManager = openBookManager; window.addNewBook = addNewBook; window.deleteBook = deleteBook; window.switchBook = switchBook; window.copyScriptToClipboard = copyScriptToClipboard; window.refreshLogsFromCloud = refreshLogsFromCloud;
 </script>
 </body>
 </html>

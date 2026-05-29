@@ -649,7 +649,6 @@
             font-weight: 600;
         }
         
-        /* Report Chart Styles */
         .report-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -695,7 +694,6 @@
         .report-table th {
             background: #f5f5f5;
         }
-        .text-right { text-align: right; }
         
         @media(max-width:768px) {
             body { padding: 12px; }
@@ -977,6 +975,26 @@ const _S_KEY = 42;
 function _obfuscate(str) { if(!str) return ''; let r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return btoa(r); }
 function _deobfuscate(b64) { if(!b64) return ''; try { let str=atob(b64), r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return r; } catch(e){ return ''; } }
 
+// ==================== DATA INITIALIZATION WITH SAMPLE DATA ====================
+function initSampleData() {
+    let existing = localStorage.getItem('artaflow_txs_' + currentBookId);
+    if (!existing || JSON.parse(existing).length === 0) {
+        let now = new Date();
+        let sampleTxs = [
+            { id: 1001, type: 'income', category: null, date: now.toISOString().slice(0,16), desc: 'Gaji Bulanan', amount: 5000000, created_at: new Date().toISOString(), attachment: '', balance: 5000000 },
+            { id: 1002, type: 'expense', category: 'Makanan & Minuman', date: now.toISOString().slice(0,16), desc: 'Belanja Bulanan', amount: 1500000, created_at: new Date().toISOString(), attachment: '', balance: 3500000 },
+            { id: 1003, type: 'expense', category: 'Transportasi', date: now.toISOString().slice(0,16), desc: 'Bensin & Tol', amount: 500000, created_at: new Date().toISOString(), attachment: '', balance: 3000000 },
+            { id: 1004, type: 'expense', category: 'Tagihan', date: now.toISOString().slice(0,16), desc: 'Listrik & Internet', amount: 700000, created_at: new Date().toISOString(), attachment: '', balance: 2300000 },
+            { id: 1005, type: 'income', category: null, date: now.toISOString().slice(0,16), desc: 'Freelance', amount: 2000000, created_at: new Date().toISOString(), attachment: '', balance: 4300000 }
+        ];
+        txs = sampleTxs;
+        saveLocal();
+        render();
+        renderBudget();
+        showToast('Data contoh telah ditambahkan!', 'info');
+    }
+}
+
 // ==================== MONTHLY REPORT FUNCTIONS ====================
 function openMonthlyReport() {
     let now = new Date();
@@ -1238,14 +1256,6 @@ function getActualExpensesByCategory(month, year, category) {
     return total;
 }
 
-function getTotalActualExpenses(month, year) {
-    let total = 0;
-    EXPENSE_CATEGORIES.forEach(cat => {
-        total += getActualExpensesByCategory(month, year, cat);
-    });
-    return total;
-}
-
 function renderBudget() {
     let month = parseInt(document.getElementById('budgetMonth').value);
     let year = parseInt(document.getElementById('budgetYear').value);
@@ -1431,7 +1441,7 @@ function generatePDFReport() {
             <div style="font-size:14px; font-weight:700; margin-bottom:10px;">📊 REALISASI ANGGARAN PER KATEGORI</div>
             <table style="width:100%; border-collapse:collapse; font-size:10px;">
                 <thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Kategori</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Target</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Realisasi</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Sisa/(Over)</th></tr></thead>
-                <tbody>${categoryReport || '<tr><td colspan="4" style="text-align:center;">Belum ada anggaran</td>'}</tbody>
+                <tbody>${categoryReport || '<td><td colspan="4" style="text-align:center;">Belum ada anggaran</td></tr>'}</tbody>
             </table>
         </div>
         <div>
@@ -1443,7 +1453,8 @@ function generatePDFReport() {
         html += `<tr><td style="border:1px solid #ddd; padding:6px;">${formatDateTime(t.date)}</td><td style="border:1px solid #ddd; padding:6px;">${t.category || '-'}</td><td style="border:1px solid #ddd; padding:6px;">${escapeHtml(t.desc)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right; ${t.type==='income'?'color:#00875a':'color:#de350b'}">${rp(t.amount)}</td></tr>`;
     });
     if(monthTx.length === 0) html += '<tr><td colspan="4" style="text-align:center; padding:20px;">Tidak ada transaksi</td></tr>';
-    html += `</tbody></table>
+    html += `</tbody>
+            </table>
         </div>
         <div style="margin-top:20px; text-align:center; font-size:9px; color:#999; padding-top:10px; border-top:1px solid #ddd;">Laporan dibuat otomatis oleh ArtaFlow</div>
     </div>`;
@@ -1530,7 +1541,6 @@ async function testCloudConnection() {
     }
     
     statusDiv.innerHTML = '<div class="connection-status testing">🔄 Menguji koneksi...</div>';
-    console.log("Testing connection ke:", url);
     
     try {
         let res = await fetch(url, {
@@ -1540,7 +1550,6 @@ async function testCloudConnection() {
         });
         
         let data = await res.json();
-        console.log("Response test:", data);
         
         if (data.success !== undefined) {
             saveCloudUrl(url);
@@ -1556,7 +1565,6 @@ async function testCloudConnection() {
             showToast('Koneksi gagal!', 'error');
         }
     } catch(e) {
-        console.error("Error test connection:", e);
         statusDiv.innerHTML = '<div class="connection-status error">❌ Gagal terhubung! Cek URL dan pastikan sudah dideploy dengan benar.</div>';
         showToast('Gagal koneksi: ' + e.message, 'error');
     }
@@ -1683,16 +1691,28 @@ function render() {
     let data = getDisplayData();
     let tb = document.getElementById('transactionTableBody');
     document.getElementById('transactionCount').innerText = data.length + ' transaksi';
+    
     if (!data.length) {
         tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px;">Tidak ada data</td></tr>';
         return;
     }
+    
     tb.innerHTML = data.map((t, i) => {
         let isInc = t.type === 'income';
         let badge = isInc ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
         let att = t.attachment ? `<span class="attachment-link" onclick="viewAttachment(\`${t.attachment.replace(/`/g, "\\`")}\`)">📎</span>` : '<span class="no-attachment">—</span>';
         let categoryHtml = (t.type === 'expense' && t.category) ? `<span class="category-badge">${escapeHtml(t.category)}</span>` : '-';
-        return `<tr><td class="text-center">${i+1}</td><td>${escapeHtml(formatDateTime(t.date))}</td><td class="text-center">${categoryHtml}</td><td>${badge} ${escapeHtml(t.desc)}</td><td class="text-right" style="color:#00875a;">${isInc ? rp(t.amount) : '—'}</td><td class="text-right" style="color:#de350b;">${!isInc ? rp(t.amount) : '—'}</td><td class="text-right" style="font-weight:600;">${rp(t.balance)}</td><td class="text-center">${att}</td><td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td></tr>`;
+        return `<tr>
+            <td class="text-center">${i+1}</td>
+            <td>${escapeHtml(formatDateTime(t.date))}</td>
+            <td class="text-center">${categoryHtml}</td>
+            <td>${badge} ${escapeHtml(t.desc)}</td>
+            <td class="text-right" style="color:#00875a;">${isInc ? rp(t.amount) : '—'}</td>
+            <td class="text-right" style="color:#de350b;">${!isInc ? rp(t.amount) : '—'}</td>
+            <td class="text-right" style="font-weight:600;">${rp(t.balance)}</td>
+            <td class="text-center">${att}</td>
+            <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td>
+        </tr>`;
     }).join('');
 }
 
@@ -2013,8 +2033,24 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUppe
     document.getElementById('editTxDate').value = dt;
     toggleCategoryField();
     toggleEditCategoryField();
+    
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) try { txs = JSON.parse(local); } catch(e) { txs = []; }
+    
+    // Jika tidak ada data, tambahkan sample data
+    if (txs.length === 0) {
+        let sampleTxs = [
+            { id: 1001, type: 'income', category: null, date: dt, desc: 'Gaji Bulanan', amount: 5000000, created_at: new Date().toISOString(), attachment: '' },
+            { id: 1002, type: 'expense', category: 'Makanan & Minuman', date: dt, desc: 'Belanja Bulanan', amount: 1500000, created_at: new Date().toISOString(), attachment: '' },
+            { id: 1003, type: 'expense', category: 'Transportasi', date: dt, desc: 'Bensin & Tol', amount: 500000, created_at: new Date().toISOString(), attachment: '' },
+            { id: 1004, type: 'expense', category: 'Tagihan', date: dt, desc: 'Listrik & Internet', amount: 700000, created_at: new Date().toISOString(), attachment: '' },
+            { id: 1005, type: 'income', category: null, date: dt, desc: 'Freelance', amount: 2000000, created_at: new Date().toISOString(), attachment: '' }
+        ];
+        txs = sampleTxs;
+        saveLocal();
+        showToast('Data contoh telah ditambahkan!', 'info');
+    }
+    
     render();
     renderBudget();
     let sync = await loadFromCloud();

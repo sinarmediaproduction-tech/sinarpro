@@ -262,6 +262,14 @@
         }
         tr:hover td { background: #fafafa; }
         
+        /* KOLOM YANG DILEBARKAN UNTUK NOMINAL MILYARAN */
+        th:nth-child(4), td:nth-child(4),
+        th:nth-child(5), td:nth-child(5),
+        th:nth-child(6), td:nth-child(6) {
+            min-width: 100px;
+            white-space: nowrap;
+        }
+        
         .type-badge {
             font-size: 0.65rem;
             font-weight: 700;
@@ -370,7 +378,6 @@
         
         .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
         
-        /* DATA EXPORT IMPORT PANEL IN BOOK MANAGER */
         .data-management-panel {
             background: #f9f9f9;
             border: 1.5px solid #1a1a1a;
@@ -393,7 +400,6 @@
             flex-wrap: wrap;
         }
         
-        /* BOOK LIST ITEM */
         .book-list-item {
             display: flex;
             justify-content: space-between;
@@ -418,7 +424,6 @@
             border-radius: 3px;
         }
         
-        /* AUDIT LOG INLINE SECTION */
         .log-section {
             background: #fff;
             border: 1.5px solid #1a1a1a;
@@ -519,6 +524,12 @@
             .search-input { flex-grow: 1; }
             .header { flex-direction: column; align-items: flex-start; gap: 12px; }
             .book-selector { width: 100%; justify-content: space-between; }
+            
+            th:nth-child(4), td:nth-child(4),
+            th:nth-child(5), td:nth-child(5),
+            th:nth-child(6), td:nth-child(6) {
+                min-width: 85px;
+            }
         }
     </style>
 </head>
@@ -579,18 +590,18 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width:50px" class="text-center">No</th>
-                    <th style="width:130px">Tanggal & Jam</th>
+                    <th class="text-center">No</th>
+                    <th>Tanggal & Jam</th>
                     <th>Deskripsi</th>
-                    <th style="width:100px" class="text-right">Pemasukan</th>
-                    <th style="width:100px" class="text-right">Pengeluaran</th>
-                    <th style="width:120px" class="text-right">Saldo</th>
-                    <th style="width:50px" class="text-center">Nota</th>
-                    <th style="width:50px" class="text-center">Aksi</th>
+                    <th class="text-right">Pemasukan</th>
+                    <th class="text-right">Pengeluaran</th>
+                    <th class="text-right">Saldo</th>
+                    <th class="text-center">Nota</th>
+                    <th class="text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody id="transactionTableBody"></tbody>
-        </table>
+         </table>
     </div>
 
     <div class="log-section">
@@ -1130,20 +1141,20 @@ function render() {
     
     tb.innerHTML = filteredData.map((t, i) => {
         let isInc = t.type === 'income';
-        let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
+        let labelBadge = isInc ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
         let attachmentIcon = t.attachment ? 
-            `<span class="attachment-link" onclick="viewAttachment('${t.attachment.replace(/'/g, "\\'")}')" title="Lihat Nota">📎</span>` : 
-            `<span class="no-attachment">—</span>`;
-        return `<tr>
-            <td class="text-center">${i + 1}</td>
-            <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
-            <td>${labelBadge} ${escapeHtml(t.desc)}</td>
-            <td class="text-right" style="color: #00875a;">${isInc ? rp(t.amount) : '—'}</td>
-            <td class="text-right" style="color: #de350b;">${!isInc ? rp(t.amount) : '—'}</td>
-            <td class="text-right" style="font-weight: 600;">${rp(t.balance)}</td>
-            <td class="text-center">${attachmentIcon}</td>
-            <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td>
-        </tr>`;
+            '<span class="attachment-link" onclick="viewAttachment(\'' + t.attachment.replace(/'/g, "\\'") + '\')" title="Lihat Nota">📎</span>' : 
+            '<span class="no-attachment">—</span>';
+        return '<tr>' +
+            '<td class="text-center">' + (i + 1) + '</td>' +
+            '<td>' + escapeHtml(formatDateTime(t.date, t.created_at)) + '</td>' +
+            '<td>' + labelBadge + ' ' + escapeHtml(t.desc) + '</td>' +
+            '<td class="text-right" style="color: #00875a;">' + (isInc ? rp(t.amount) : '—') + '</td>' +
+            '<td class="text-right" style="color: #de350b;">' + (!isInc ? rp(t.amount) : '—') + '</td>' +
+            '<td class="text-right" style="font-weight: 600;">' + rp(t.balance) + '</td>' +
+            '<td class="text-center">' + attachmentIcon + '</td>' +
+            '<td class="text-center"><button class="action-btn" onclick="openActionMenu(' + t.id + ')">⋯</button></td>' +
+        '</tr>';
     }).join('');
 }
 
@@ -1173,7 +1184,7 @@ async function handleSubmit(e) {
     
     txs.unshift(newTransaction);
     
-    let msg = `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"${attachment ? ' (dengan lampiran nota)' : ''}`;
+    let msg = 'Menambah transaksi: ' + (newTransaction.type === 'income' ? 'MASUK' : 'KELUAR') + ' ' + rp(newTransaction.amount) + ' - "' + newTransaction.desc + '"' + (attachment ? ' (dengan lampiran nota)' : '');
     await saveLocalAndSync('TAMBAH', msg, newTransaction.id);
     
     render();
@@ -1205,7 +1216,7 @@ async function handleEditSubmit(e) {
             t.attachment = await compressImage(base64, 800, 0.7);
         }
         
-        let msg = `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`;
+        let msg = 'Mengubah transaksi ID:' + id + ' dari [' + (oldType==='income'?'MASUK':'KELUAR') + ' ' + rp(oldAmt) + ' "' + oldDesc + '"] menjadi [' + (t.type==='income'?'MASUK':'KELUAR') + ' ' + rp(t.amount) + ' "' + t.desc + '"]';
         await saveLocalAndSync('UBAH', msg, id);
         
         render();
@@ -1219,7 +1230,7 @@ async function deleteTransaction(id) {
         if(t) {
             txs = txs.filter(t => t.id !== id);
             
-            let msg = `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"${t.attachment ? ' (dengan lampiran nota)' : ''}`;
+            let msg = 'Menghapus transaksi: [' + (t.type==='income'?'MASUK':'KELUAR') + ' ' + rp(t.amount) + '] "' + t.desc + '"' + (t.attachment ? ' (dengan lampiran nota)' : '');
             await saveLocalAndSync('HAPUS', msg, id);
             
             render();
@@ -1246,7 +1257,7 @@ function loadBooks() {
 
 function refreshBookSelectOptions() {
     let sel = document.getElementById('currentBookSelect');
-    if (sel) sel.innerHTML = books.map(b => `<option value="${b.id}" ${b.id===currentBookId?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
+    if (sel) sel.innerHTML = books.map(b => '<option value="' + b.id + '" ' + (b.id===currentBookId?'selected':'') + '>' + escapeHtml(b.name) + '</option>').join('');
     let cloudIn = document.getElementById('cloudUrlInput');
     if(cloudIn) cloudIn.value = getCloudUrl();
     updateSyncStatusIndicator();
@@ -1277,18 +1288,18 @@ function openBookManager() {
     
     container.innerHTML = books.map(b => {
         let isCurrent = b.id === currentBookId;
-        return `<div class="book-list-item" style="${isCurrent ? 'border-color: #00875a; background: #f4fbf7;' : ''}">
-            <span class="book-list-name" style="font-weight:${isCurrent ? '700' : '500'}">
-                ${escapeHtml(b.name)} ${isCurrent ? '<small style="color:#00875a;">(Aktif)</small>' : ''}
-            </span>
-            <div class="book-list-actions">
-                <button class="btn btn-mini btn-danger" onclick="deleteBook('${b.id}')">Hapus Buku</button>
-            </div>
-        </div>`;
+        return '<div class="book-list-item" style="' + (isCurrent ? 'border-color: #00875a; background: #f4fbf7;' : '') + '">' +
+            '<span class="book-list-name" style="font-weight:' + (isCurrent ? '700' : '500') + '">' +
+                escapeHtml(b.name) + (isCurrent ? ' <small style="color:#00875a;">(Aktif)</small>' : '') +
+            '</span>' +
+            '<div class="book-list-actions">' +
+                '<button class="btn btn-mini btn-danger" onclick="deleteBook(\'' + b.id + '\')">Hapus Buku</button>' +
+            '</div>' +
+        '</div>';
     }).join('');
     
     let panelTitle = document.querySelector('.data-management-panel .panel-title');
-    if(panelTitle) panelTitle.innerText = `Cadangan Data (${bActive})`;
+    if(panelTitle) panelTitle.innerText = 'Cadangan Data (' + bActive + ')';
     
     openModal('bookManagerModal');
 }
@@ -1315,10 +1326,10 @@ async function deleteBook(id) {
         return;
     }
     
-    let confirm1 = confirm(`Apakah Anda yakin ingin menghapus buku kas "${bTarget.name}"?\nTindakan ini akan menghapus permanen data lokal transaksi di dalam perangkat ini.`);
+    let confirm1 = confirm('Apakah Anda yakin ingin menghapus buku kas "' + bTarget.name + '"?\nTindakan ini akan menghapus permanen data lokal transaksi di dalam perangkat ini.');
     if (!confirm1) return;
     
-    let confirm2 = prompt(`⚠️ PERINGATAN TERAKHIR!\nData transaksi dari "${bTarget.name}" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik 'SETUJU' (huruf besar) untuk menghapus.`);
+    let confirm2 = prompt('⚠️ PERINGATAN TERAKHIR!\nData transaksi dari "' + bTarget.name + '" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik \'SETUJU\' (huruf besar) untuk menghapus.');
     if (confirm2 === 'SETUJU') {
         localStorage.removeItem('artaflow_txs_' + id);
         if (cloudUrls[id]) {
@@ -1349,12 +1360,12 @@ function exportToCSV() {
     let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
     let csvRows = [["ID","Tanggal","Deskripsi","Jenis","Jumlah","MemilikiLampiran"].join(',')];
     txs.forEach(t => { 
-        csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.attachment ? 'Ya' : 'Tidak'].join(','));
+        csvRows.push([t.id, t.date, '"' + t.desc.replace(/"/g, '""') + '"', t.type, t.amount, t.attachment ? 'Ya' : 'Tidak'].join(','));
     });
     let blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `ArtaFlow_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = 'ArtaFlow_' + bName.replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
 }
 
@@ -1365,7 +1376,7 @@ function exportToJSON() {
     let blob = new Blob([dataStr], { type: 'application/json' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `ArtaFlow_${bName.replace(/\s+/g, '_')}_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = 'ArtaFlow_' + bName.replace(/\s+/g, '_') + '_Backup_' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
 }
 
@@ -1394,15 +1405,15 @@ function handleJsonImport(e) {
             }
             
             let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-            let confirmImport = confirm(`Apakah Anda yakin ingin mengimpor ${importedData.length} data transaksi ke dalam buku "${bName}"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.`);
+            let confirmImport = confirm('Apakah Anda yakin ingin mengimpor ' + importedData.length + ' data transaksi ke dalam buku "' + bName + '"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.');
             
             if (confirmImport) {
                 txs = importedData;
-                let msg = `Melakukan impor cadangan data JSON (${importedData.length} transaksi) secara manual ke aplikasi.`;
+                let msg = 'Melakukan impor cadangan data JSON (' + importedData.length + ' transaksi) secara manual ke aplikasi.';
                 await saveLocalAndSync('SISTEM', msg, null);
                 
                 render();
-                alert(`✅ Berhasil memuat ${importedData.length} data transaksi ke dalam ${bName}!`);
+                alert('✅ Berhasil memuat ' + importedData.length + ' data transaksi ke dalam ' + bName + '!');
                 closeModal('bookManagerModal');
             }
         } catch (err) {
@@ -1442,7 +1453,7 @@ function updateTime() {
     if (clock) {
         let now = new Date();
         let pad = n => String(n).padStart(2, '0');
-        clock.innerText = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        clock.innerText = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
     }
 }
 function copyScriptToClipboard() {
@@ -1624,7 +1635,7 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
     const day = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    const defaultDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    const defaultDateTime = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
     document.getElementById('txDate').value = defaultDateTime;
     document.getElementById('editTxDate').value = defaultDateTime;
     

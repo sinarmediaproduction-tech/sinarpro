@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ArtaFlow - Multi Buku Kas (Vercel Audit Edition)</title>
+    <title>ArtaFlow - Multi Buku Kas dengan Audit Log Terpusat</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
@@ -22,26 +22,24 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* --- RESET & BASE STYLE --- */
-        *{
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        body{
+        body {
             font-family: 'Inter', sans-serif;
             background: #f5f5f5;
             color: #1a1a1a;
             padding: 24px;
             transition: background 0.3s ease;
         }
-        .container{
+        .container {
             max-width: 1400px;
             margin: 0 auto;
         }
         
-        /* --- HEADER SECTION --- */
-        .header{
+        .header {
             margin-bottom: 28px;
             padding-bottom: 16px;
             border-bottom: 2px solid #1a1a1a;
@@ -51,30 +49,29 @@
             flex-wrap: wrap;
             gap: 16px;
         }
-        .header h1{
+        .header h1 {
             font-size: 1.4rem;
             font-weight: 600;
             letter-spacing: -0.5px;
         }
-        .header p{
+        .header p {
             font-size: .7rem;
             color: #666;
             margin-top: 4px;
         }
         
-        /* --- BOOK SELECTOR --- */
-        .book-selector{
+        .book-selector {
             display: flex;
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
         }
-        .book-selector label{
+        .book-selector label {
             font-size: .7rem;
             font-weight: 600;
             color: #666;
         }
-        .book-select{
+        .book-select {
             min-width: 180px;
             padding: 6px 12px;
             font-size: .8rem;
@@ -83,12 +80,8 @@
             background: #fff;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        .book-select:hover{
-            background: #fafafa;
-        }
-        .manage-books-btn{
+        .manage-books-btn {
             padding: 6px 12px;
             font-size: .75rem;
             font-weight: 600;
@@ -97,43 +90,36 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .manage-books-btn:hover{
-            opacity: 0.9;
         }
         
-        /* --- STATS CARD GRID --- */
-        .stats-grid{
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 16px;
             margin-bottom: 28px;
         }
-        .stat-card{
+        .stat-card {
             background: #fff;
             border: 1.5px solid #1a1a1a;
             padding: 16px;
             border-radius: 6px;
-            position: relative;
         }
-        .stat-label{
+        .stat-label {
             font-size: .7rem;
             font-weight: 600;
             color: #666;
             text-transform: uppercase;
             letter-spacing: .5px;
         }
-        .stat-value{
+        .stat-value {
             font-size: 1.25rem;
             font-weight: 700;
             margin-top: 8px;
         }
-        .stat-card.income .stat-value{ color: #00875a; }
-        .stat-card.expense .stat-value{ color: #de350b; }
+        .stat-card.income .stat-value { color: #00875a; }
+        .stat-card.expense .stat-value { color: #de350b; }
         
-        /* --- CONTROLS & FILTERS --- */
-        .controls{
+        .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -141,13 +127,13 @@
             gap: 12px;
             flex-wrap: wrap;
         }
-        .filters{
+        .filters {
             display: flex;
             gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
-        .search-input{
+        .search-input {
             padding: 6px 12px;
             font-size: .8rem;
             border: 1.5px solid #1a1a1a;
@@ -155,11 +141,7 @@
             width: 180px;
             font-family: inherit;
         }
-        .search-input:focus{
-            outline: none;
-            background: #fafafa;
-        }
-        .filter-btn{
+        .filter-btn {
             padding: 6px 12px;
             font-size: .75rem;
             font-weight: 600;
@@ -167,18 +149,13 @@
             border: 1.5px solid #1a1a1a;
             border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
-        .filter-btn:hover{
-            background: #f5f5f5;
-        }
-        .filter-btn.active{
+        .filter-btn.active {
             background: #1a1a1a;
             color: #fff;
         }
         
-        /* --- DATE FILTER --- */
-        .date-filter-box{
+        .date-filter-box {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -188,15 +165,14 @@
             border-radius: 4px;
             font-size: .75rem;
         }
-        .date-filter-box input{
+        .date-filter-box input {
             border: none;
             font-family: inherit;
             font-size: .75rem;
             outline: none;
-            cursor: pointer;
             background: transparent;
         }
-        .date-clear-btn{
+        .date-clear-btn {
             background: none;
             border: none;
             font-weight: 700;
@@ -205,13 +181,12 @@
             margin-left: 4px;
         }
         
-        /* --- ACTION BUTTONS --- */
-        .actions{
+        .actions {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
-        .btn{
+        .btn {
             padding: 6px 14px;
             font-size: .75rem;
             font-weight: 600;
@@ -223,16 +198,13 @@
             gap: 6px;
             transition: all 0.2s ease;
         }
-        .btn:active{ transform: scale(0.98); }
-        .btn-primary{ background: #1a1a1a; color: #fff; }
-        .btn-primary:hover{ background: #333; }
-        .btn-secondary{ background: #fff; color: #1a1a1a; }
-        .btn-secondary:hover{ background: #f5f5f5; }
-        .btn-danger{ background: #de350b; color: #fff; border-color: #de350b; }
-        .btn-danger:hover{ background: #be2e0a; }
+        .btn-primary { background: #1a1a1a; color: #fff; }
+        .btn-primary:hover { background: #333; }
+        .btn-secondary { background: #fff; color: #1a1a1a; }
+        .btn-secondary:hover { background: #f5f5f5; }
+        .btn-danger { background: #de350b; color: #fff; border-color: #de350b; }
         
-        /* --- SYNC TAGS --- */
-        .sync-status{
+        .sync-status {
             font-size: .65rem;
             font-weight: 600;
             padding: 4px 8px;
@@ -242,25 +214,24 @@
             align-items: center;
             gap: 4px;
         }
-        .sync-status.online{ background: #e3fcef; color: #006644; border-color: #006644; }
-        .sync-status.offline{ background: #ffebe6; color: #bf2600; border-color: #bf2600; }
+        .sync-status.online { background: #e3fcef; color: #006644; border-color: #006644; }
+        .sync-status.offline { background: #ffebe6; color: #bf2600; border-color: #bf2600; }
         
-        /* --- DATA TABLE CONTAINER --- */
-        .table-container{
+        .table-container {
             background: #fff;
             border: 1.5px solid #1a1a1a;
             border-radius: 6px;
             overflow-x: auto;
             margin-bottom: 16px;
         }
-        table{
+        table {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
             font-size: .8rem;
             min-width: 750px;
         }
-        th{
+        th {
             background: #f9f9f9;
             padding: 12px 14px;
             font-weight: 600;
@@ -269,15 +240,13 @@
             color: #666;
             text-transform: uppercase;
         }
-        td{
+        td {
             padding: 12px 14px;
             border-bottom: 1px solid #eee;
             vertical-align: middle;
         }
-        tr:last-child td{ border-bottom: none; }
-        tr:hover td{ background: #fafafa; }
+        tr:hover td { background: #fafafa; }
         
-        /* --- BADGE DECORATION --- */
         .type-badge {
             font-size: 0.65rem;
             font-weight: 700;
@@ -288,11 +257,11 @@
         }
         .badge-inc { background: #e3fcef; color: #006644; }
         .badge-exp { background: #ffebe6; color: #bf2600; }
-
-        .text-right{ text-align: right; }
-        .text-center{ text-align: center; }
         
-        .action-btn{
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        .action-btn {
             background: none;
             border: none;
             font-weight: 700;
@@ -301,11 +270,8 @@
             font-size: 1rem;
             border-radius: 4px;
         }
-        .action-btn:hover{ background: #eee; }
-        .empty-row{ text-align: center; padding: 40px !important; color: #666; font-style: italic; }
         
-        /* --- FOOTER --- */
-        .footer{
+        .footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -314,8 +280,7 @@
             padding-top: 8px;
         }
         
-        /* --- MODAL DIALOGS --- */
-        .modal{
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -327,24 +292,19 @@
             justify-content: center;
             z-index: 1000;
             padding: 16px;
-            backdrop-filter: blur(1px);
         }
-        .modal.show{ display: flex; }
-        .modal-content{
+        .modal.show { display: flex; }
+        .modal-content {
             background: #fff;
             border: 2px solid #1a1a1a;
             border-radius: 8px;
             padding: 20px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            animation: modalSlide 0.2s ease-out;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
-        @keyframes modalSlide {
-            from { transform: translateY(10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .modal-header{
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -352,12 +312,11 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
-        .modal-header h3{ font-size: 1rem; font-weight: 600; }
-        .modal-close{ background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 600; }
+        .modal-header h3 { font-size: 1rem; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
         
-        /* --- FORMS STRUCTURE --- */
-        .form-group{ margin-bottom: 14px; }
-        .form-group label{
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
             display: block;
             font-size: .7rem;
             font-weight: 600;
@@ -365,7 +324,7 @@
             margin-bottom: 4px;
             text-transform: uppercase;
         }
-        .form-control{
+        .form-control {
             width: 100%;
             padding: 8px 12px;
             font-size: .8rem;
@@ -373,75 +332,72 @@
             border-radius: 4px;
             font-family: inherit;
         }
-        .form-control:focus{ outline: none; background: #fafafa; }
         
-        .radio-group{ display: flex; gap: 12px; margin-top: 4px; }
-        .radio-label{ display: flex; align-items: center; gap: 6px; font-size: .8rem; cursor: pointer; }
+        .radio-group { display: flex; gap: 12px; margin-top: 4px; }
+        .radio-label { display: flex; align-items: center; gap: 6px; font-size: .8rem; cursor: pointer; }
         
-        .modal-footer{ display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
         
-        .action-menu-list{ list-style: none; }
-        .action-menu-list li button{
-            width: 100%;
-            padding: 10px;
-            text-align: left;
-            background: none;
-            border: none;
-            font-size: .8rem;
-            font-family: inherit;
-            cursor: pointer;
-            border-radius: 4px;
+        .log-line {
+            border-bottom: 1px dashed #ddd;
+            padding: 8px 0;
+            display: block;
+            font-size: .7rem;
+            font-family: monospace;
         }
-        .action-menu-list li button:hover{ background: #f5f5f5; }
-        .action-menu-list li button.delete-action{ color: #de350b; }
-        
-        .book-list-container{
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1.5px solid #1a1a1a;
-            border-radius: 4px;
-            margin-bottom: 14px;
-            background: #f9f9f9;
+        .log-tag {
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.6rem;
+            margin-right: 8px;
+            color: #fff;
         }
-        .book-item{ display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: .8rem; }
-        .book-item:last-child{ border-bottom: none; }
-        .book-item-actions{ display: flex; gap: 6px; }
-        .book-item-btn{ background: none; border: none; font-size: .7rem; font-weight: 600; cursor: pointer; color: #666; }
-        .book-item-btn:hover{ text-decoration: underline; }
-        .book-item-btn.del{ color: #de350b; }
-        
-        .nav-tabs{ display: none; gap: 4px; margin-bottom: 16px; border-bottom: 1.5px solid #1a1a1a; }
-        .nav-tab{ padding: 8px 16px; font-size: .75rem; font-weight: 600; background: none; border: none; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1.5px; }
-        .nav-tab.active{ border-bottom-color: #1a1a1a; color: #1a1a1a; }
-        
-        .code-container{ position: relative; margin-top: 10px; }
-        .code-box{ width: 100%; height: 100px; font-family: monospace; font-size: .65rem; padding: 10px; border: 1.5px solid #1a1a1a; border-radius: 4px; background: #fafafa; resize: none; outline: none; }
-        .copy-btn{ position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: .6rem; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
-        
-        .new-row{ animation: highlight 2s ease-out; }
-        @keyframes highlight{ 0%{ background: #e3fcef; } 100%{ background: transparent; } }
-        
-        .log-line { border-bottom: 1px dashed #ddd; padding: 6px 0; display: block; }
-        .log-line:last-child { border-bottom: none; }
-        .log-line <span class="log-tag"> { font-weight: 700; padding: 2px 4px; border-radius: 3px; font-size: 0.6rem; margin-right: 4px; color: #fff; }
         .tag-add { background: #00875a; }
         .tag-edit { background: #ffab00; color: #1a1a1a !important; }
         .tag-delete { background: #de350b; }
         .tag-system { background: #4a5568; }
-
-        /* --- RESPONSIVE ADAPTATION --- */
-        @media(max-width:768px){
-            body{ padding: 12px; }
-            .header{ flex-direction: column; align-items: flex-start; gap: 12px; }
-            .controls{ flex-direction: column; align-items: stretch; gap: 12px; }
-            .filters{ width: 100%; justify-content: flex-start; gap: 6px; }
-            .search-input{ flex-grow: 1; width: 100%; }
-            .date-filter-box{ width: 100%; justify-content: space-between; }
-            .actions{ width: 100%; }
-            .actions .btn{ flex-grow: 1; justify-content: center; }
-            .nav-tabs{ display: flex; }
-            .tab-content{ display: none; }
-            .tab-content.active{ display: block; }
+        
+        .code-container { position: relative; margin-top: 10px; }
+        .code-box {
+            width: 100%;
+            height: 150px;
+            font-family: monospace;
+            font-size: .65rem;
+            padding: 10px;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 4px;
+            background: #fafafa;
+            resize: vertical;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            font-size: .6rem;
+            font-weight: 600;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        @media(max-width:768px) {
+            body { padding: 12px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .filters { width: 100%; }
+            .search-input { flex-grow: 1; }
+        }
+        
+        .device-id {
+            font-size: .65rem;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -451,10 +407,11 @@
     <div class="header">
         <div>
             <h1>ArtaFlow</h1>
-            <p>Sistem Multi Buku Kas Independen Lokal & Cloud (Audit Protected)</p>
+            <p>Sistem Multi Buku Kas dengan Audit Log Terpusat (Sync Antar Device)</p>
         </div>
         <div class="book-selector">
             <span id="syncStatusTag" class="sync-status offline">OFFLINE MODE</span>
+            <span id="deviceIdDisplay" class="device-id"></span>
             <label for="currentBookSelect">BUKU AKTIF:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola Buku</button>
@@ -476,57 +433,43 @@
         </div>
     </div>
 
-    <div class="nav-tabs">
-        <button class="nav-tab active" id="tabLink-records" onclick="switchTab('records')">Transaksi</button>
-        <button class="nav-tab" id="tabLink-tools" onclick="switchTab('tools')">Alat & Cloud</button>
-    </div>
-
-    <div id="tab-records" class="tab-content active">
-        <div class="controls">
-            <div class="filters">
-                <input type="text" id="searchInput" class="search-input" placeholder="Cari deskripsi..." oninput="render()">
-                <button id="filter-all" class="filter-btn active" onclick="setFilter('all')">Semua</button>
-                <button id="filter-income" class="filter-btn" onclick="setFilter('income')">Masuk</button>
-                <button id="filter-expense" class="filter-btn" onclick="setFilter('expense')">Keluar</button>
-                
-                <div class="date-filter-box">
-                    <input type="date" id="dateFilterStart" onchange="applyDateFilter()">
-                    <span>s/d</span>
-                    <input type="date" id="dateFilterEnd" onchange="applyDateFilter()">
-                    <button id="clearDateBtn" class="date-clear-btn" style="display:none;" onclick="resetDateFilter()">×</button>
-                </div>
-            </div>
-            <div class="actions">
-                <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
+    <div class="controls">
+        <div class="filters">
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari deskripsi..." oninput="render()">
+            <button id="filter-all" class="filter-btn active" onclick="setFilter('all')">Semua</button>
+            <button id="filter-income" class="filter-btn" onclick="setFilter('income')">Masuk</button>
+            <button id="filter-expense" class="filter-btn" onclick="setFilter('expense')">Keluar</button>
+            
+            <div class="date-filter-box">
+                <input type="date" id="dateFilterStart" onchange="applyDateFilter()">
+                <span>s/d</span>
+                <input type="date" id="dateFilterEnd" onchange="applyDateFilter()">
+                <button id="clearDateBtn" class="date-clear-btn" style="display:none;" onclick="resetDateFilter()">×</button>
             </div>
         </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:60px" class="text-center">No</th>
-                        <th style="width:150px">Tanggal & Jam</th>
-                        <th>Deskripsi</th>
-                        <th style="width:150px" class="text-right">Pemasukan</th>
-                        <th style="width:150px" class="text-right">Pengeluaran</th>
-                        <th style="width:160px" class="text-right">Saldo</th>
-                        <th style="width:60px" class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="transactionTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="tab-tools" class="tab-content">
-        <div class="controls" style="justify-content: flex-start; gap: 12px; margin-bottom: 24px;">
-            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
             <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit</button>
-            <button class="btn btn-secondary" onclick="exportToJSON()">Cadangan JSON</button>
-            <button class="btn btn-secondary" onclick="printReport()">Cetak Laporan</button>
-            <button class="btn btn-secondary" onclick="exportLogs()">Ekspor File Log (.json)</button>
+            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
+            <button class="btn btn-secondary" onclick="syncWithCloud()">Sinkronisasi Manual</button>
         </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:60px" class="text-center">No</th>
+                    <th style="width:150px">Tanggal & Jam</th>
+                    <th>Deskripsi</th>
+                    <th style="width:150px" class="text-right">Pemasukan</th>
+                    <th style="width:150px" class="text-right">Pengeluaran</th>
+                    <th style="width:160px" class="text-right">Saldo</th>
+                    <th style="width:60px" class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="transactionTableBody"></tbody>
+        </table>
     </div>
 
     <div class="footer">
@@ -534,6 +477,8 @@
         <div id="liveClock">00:00:00</div>
     </div>
 </div>
+
+<!-- MODALS -->
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -563,7 +508,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Batal</button>
-                <button type="submit" id="addSubmitBtn" class="btn btn-primary">Simpan</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
             </div>
         </form>
     </div>
@@ -598,197 +543,100 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Batal</button>
-                <button type="submit" id="editSubmitBtn" class="btn btn-primary">Simpan Perubahan</button>
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
             </div>
         </form>
     </div>
 </div>
 
 <div id="actionMenuModal" class="modal">
-    <div class="modal-content" style="max-width: 260px; padding: 12px;">
-        <div class="modal-header" style="margin-bottom: 8px; padding-bottom: 6px;">
-            <h3 style="font-size: .85rem;">Pilihan Aksi</h3>
-            <button class="modal-close" onclick="closeModalActionMenu()">×</button>
+    <div class="modal-content" style="max-width: 260px;">
+        <div class="modal-header">
+            <h3>Pilihan Aksi</h3>
+            <button class="modal-close" onclick="closeModal('actionMenuModal')">×</button>
         </div>
-        <ul class="action-menu-list">
-            <li><button id="actionEditBtn">Ubah Data</button></li>
-            <li><button id="actionDeleteBtn" class="delete-action">Hapus Transaksi</button></li>
+        <ul style="list-style: none;">
+            <li style="margin-bottom: 8px;"><button id="actionEditBtn" style="width:100%; padding:8px; text-align:left; background:none; border:none; cursor:pointer;">Ubah Data</button></li>
+            <li><button id="actionDeleteBtn" style="width:100%; padding:8px; text-align:left; background:none; border:none; cursor:pointer; color:#de350b;">Hapus Transaksi</button></li>
         </ul>
     </div>
 </div>
 
 <div id="bookManagerModal" class="modal">
-    <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-content">
         <div class="modal-header">
             <h3>Kelola Daftar Buku Kas</h3>
-            <button class="modal-close" onclick="closeBookManager()">×</button>
+            <button class="modal-close" onclick="closeModal('bookManagerModal')">×</button>
         </div>
         
-        <div class="book-list-container" id="bookListContainer"></div>
+        <div id="bookListContainer"></div>
         
         <form onsubmit="addNewBook(event)" style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 16px;">
             <div class="form-group" style="margin-bottom: 8px;">
                 <label for="newBookName">Tambah Buku Baru</label>
                 <input type="text" id="newBookName" class="form-control" placeholder="Nama buku kas baru..." required>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 6px;">Buat Buku Baru</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Buat Buku Baru</button>
         </form>
 
-        <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px; margin-bottom: 14px;">
-            <div class="form-group" style="margin-bottom: 10px;">
-                <label style="color: #1a1a1a; font-weight:700;">URL Cloud Web App (<span id="cloudSettingBookName" style="text-transform:none; color:#666;">Buku Aktif</span>)</label>
-                <input type="password" id="cloudUrlInput" class="form-control" placeholder="••••••••••••••••••••••••••••••••••••" oninput="saveCloudUrl(this.value)">
-            </div>
-            <div style="display:flex; justify-content: flex-end; margin-bottom: 14px;">
-                <button type="button" id="forceSyncBtn" class="btn btn-primary" style="padding: 6px 12px; font-size: .7rem;" onclick="syncWithCloud()">Paksa Sinkronisasi Sekarang</button>
+        <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px;">
+            <div class="form-group">
+                <label>URL Cloud Google Sheets</label>
+                <input type="password" id="cloudUrlInput" class="form-control" placeholder="Masukkan URL Web App Google Apps Script" oninput="saveCloudUrl(this.value)">
+                <p style="font-size: .65rem; color: #666; margin-top: 4px;">* Set URL untuk sinkronisasi antar device</p>
             </div>
             
-            <div class="form-group" style="margin-bottom: 14px;">
-                <label style="font-weight: 700;">Setup Google Apps Script Backend</label>
+            <div class="form-group">
+                <label>Google Apps Script Backend (Copy ke Google Apps Script)</label>
                 <div class="code-container">
                     <button class="copy-btn" onclick="copyScriptToClipboard()">Salin Kode</button>
                     <textarea id="scriptCodeArea" class="code-box" readonly></textarea>
                 </div>
             </div>
         </div>
-
-        <div style="border-top: 1px solid #1a1a1a; padding-top: 14px; background: #fffbfb; padding: 12px; border-radius: 6px; border: 1.5px solid #de350b;">
-            <label style="font-weight: 700; color: #de350b; font-size: .75rem; display: block; margin-bottom: 10px; text-transform: uppercase;">Zona Keamanan & Data Buku Aktif</label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-secondary" style="flex: 1; min-width: 130px; font-size: .7rem; border-color: #1a1a1a;" onclick="openImportModalFromManager()">Impor File (.json/.csv)</button>
-                <button class="btn btn-danger" style="flex: 1; min-width: 130px; font-size: .7rem;" onclick="confirmDeleteAll()">Kosongkan Buku Aktif</button>
-            </div>
-        </div>
     </div>
 </div>
 
 <div id="syncLogModal" class="modal">
-    <div class="modal-content" style="max-width: 1200px; width: 95%;">
+    <div class="modal-content" style="max-width: 900px;">
         <div class="modal-header">
-            <h3>Jalur Audit Transaksi (Permanen)</h3>
+            <h3>Audit Log Terpusat (Semua Device)</h3>
             <button class="modal-close" onclick="closeModal('syncLogModal')">×</button>
         </div>
-        <div id="logSummaryArea" style="font-size: .75rem; color: #1a1a1a; max-height: 650px; overflow-y: auto; font-family: monospace; line-height: 1.6; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px; word-break: break-all;">
-            Tidak ada log aktivitas saat ini.
-        </div>
-        <div class="modal-footer" style="margin-top: 14px;">
-            <p style="font-size:.65rem; color:#666; text-align:left; flex-grow:1; font-style:italic; align-self:center;">* Sistem Penguncian Audit Aktif: Log tidak diizinkan untuk dibersihkan.</p>
-            <button type="button" class="btn btn-primary" style="font-size: .7rem;" onclick="closeModal('syncLogModal')">Tutup Jendela</button>
-        </div>
-    </div>
-</div>
-
-<div id="editBookModal" class="modal">
-    <div class="modal-content" style="max-width: 320px; z-index: 1100;">
-        <div class="modal-header">
-            <h3>Ubah Nama Buku</h3>
-            <button class="modal-close" onclick="closeEditBookModal()">×</button>
-        </div>
-        <input type="hidden" id="editBookId">
-        <div class="form-group">
-            <label for="editBookNameField">Nama Baru</label>
-            <input type="text" id="editBookNameField" class="form-control" required>
+        <div id="logSummaryArea" style="max-height: 500px; overflow-y: auto; background: #fafafa; border: 1.5px solid #1a1a1a; padding: 12px; border-radius: 4px;">
+            Memuat log...
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEditBookModal()">Batal</button>
-            <button type="button" class="btn btn-primary" onclick="saveBookEdit()">Simpan</button>
-        </div>
-    </div>
-</div>
-
-<div id="importModal" class="modal">
-    <div class="modal-content" style="max-width: 360px; z-index: 1100;">
-        <div class="modal-header">
-            <h3>Impor Data Kas</h3>
-            <button class="modal-close" onclick="closeImportModal()">×</button>
-        </div>
-        <div class="form-group">
-            <label for="importFile">Pilih File (.json atau .csv)</label>
-            <input type="file" id="importFile" class="form-control" accept=".json,.csv">
-            <p style="font-size: .65rem; color: #666; margin-top: 6px; line-height: 1.3;">
-                * Catatan: Mengimpor file akan menggabungkan data file dengan data aktif saat ini berdasarkan ID unik transaksi.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Batal</button>
-            <button type="button" class="btn btn-primary" onclick="handleImport()">Proses Impor</button>
+            <button class="btn btn-secondary" onclick="refreshLogsFromCloud()">Refresh dari Cloud</button>
+            <button class="btn btn-primary" onclick="closeModal('syncLogModal')">Tutup</button>
         </div>
     </div>
 </div>
 
 <script>
-// --- CORE CONSTANTS & VARIABLES SETUP ---
-const BACKEND_SCRIPT = `// GOOGLE APPS SCRIPT BACKEND FOR ARTAFLOW
-function doPost(e) {
-  const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
-  try {
-    const raw = e.postData.contents;
-    const req = JSON.parse(raw);
-    const action = req.action;
-    const book = req.book || "default_book";
-    const data = req.data;
-    
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(book);
-    if (!sheet) {
-      sheet = ss.insertSheet(book);
-      sheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
-    }
-    
-    if (action === "load") {
-      const rows = sheet.getDataRange().getValues();
-      const txs = [];
-      for (let i = 1; i < rows.length; i++) {
-        if(!rows[i][0]) continue;
-        txs.push({
-          id: Number(rows[i][0]),
-          date: rows[i][1],
-          desc: rows[i][2],
-          type: rows[i][3],
-          amount: Number(rows[i][4]),
-          created_at: rows[i][5]
-        });
-      }
-      return res.setContent(JSON.stringify({ success: true, transactions: txs }));
-    }
-    
-    if (action === "sync" && data.transactions) {
-      sheet.clear();
-      sheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
-      if (data.transactions.length > 0) {
-        const values = data.transactions.map(function(t) {
-          return [t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()];
-        });
-        sheet.getRange(2, 1, values.length, 6).setValues(values);
-      }
-      return res.setContent(JSON.stringify({ success: true }));
-    }
-    
-    if (action === "add") {
-      sheet.appendRow([data.id, data.date, data.desc, data.type, data.amount, data.created_at || new Date().toISOString()]);
-      return res.setContent(JSON.stringify({ success: true }));
-    }
-    
-    return res.setContent(JSON.stringify({ success: false, error: "Aksi tidak dikenal" }));
-  } catch(err) {
-    return res.setContent(JSON.stringify({ success: false, error: err.toString() }));
-  }
-}`;
-
+// ==================== KONFIGURASI & VARIABEL GLOBAL ====================
 let txs = [];
 let books = [];
 let currentBookId = 'b_default';
 let cloudUrls = {};
-let syncLogs = [];
 let currentFilter = 'all';
 let filterStartDate = '';
 let filterEndDate = '';
-let timer = null;
-let lastAddedId = null;
 let actionId = null;
+let deviceId = '';
 
-// --- SECURITY ENGINE: ENKRIPSI & DEKRIPSI RINGAN (XOR + BASE64 MASKING) ---
-const _S_KEY = 42; 
+// ==================== DEVICE ID UNIK ====================
+function getDeviceId() {
+    let id = localStorage.getItem('artaflow_device_id');
+    if (!id) {
+        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('artaflow_device_id', id);
+    }
+    return id;
+}
+
+// ==================== ENKRIPSI RINGAN ====================
+const _S_KEY = 42;
 function _obfuscate(str) {
     if(!str) return '';
     let result = "";
@@ -809,7 +657,7 @@ function _deobfuscate(b64) {
     } catch(e) { return ''; }
 }
 
-// --- FORMATTER FUNCTIONS ---
+// ==================== FORMATTER ====================
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 function unRp(s) { return Number(s.replace(/[^0-9]/g, '')) || 0; }
 function formatRupiah(el) {
@@ -836,40 +684,203 @@ function formatDateTime(dtStr, createdStr) {
     } catch(e) { return dtStr; }
 }
 
-// --- SECURE AUDIT LOG ENGINE ---
-function logAudit(type, msg) {
-    let time = new Date().toISOString();
-    let bName = books.find(b => b.id === currentBookId)?.name || currentBookId;
-    syncLogs.unshift({ time, type, msg, bookName: bName });
-    if(syncLogs.length > 2000) syncLogs.pop();
-    localStorage.setItem('artaflow_logs', JSON.stringify(syncLogs));
-    renderLogsToUI();
+// ==================== LOG TERPUSAT KE CLOUD ====================
+async function addLogToCloud(bookName, type, message, transactionId = null) {
+    let url = getCloudUrl();
+    if (!url) return false;
+    
+    let logEntry = {
+        action: 'add_log',
+        book: bookName,
+        data: {
+            timestamp: new Date().toISOString(),
+            type: type,
+            message: message,
+            device_id: deviceId,
+            transaction_id: transactionId,
+            book_name: bookName
+        }
+    };
+    
+    try {
+        await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(logEntry)
+        });
+        return true;
+    } catch(e) {
+        console.log('Gagal kirim log:', e);
+        return false;
+    }
 }
 
-function renderLogsToUI() {
+async function loadLogsFromCloud() {
+    let url = getCloudUrl();
+    if (!url) {
+        document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666;">⚠️ URL Cloud belum dikonfigurasi. Log hanya tersimpan lokal.</p>';
+        return [];
+    }
+    
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ action: 'get_logs', book: bName })
+        });
+        let data = await res.json();
+        
+        if (data.success && data.logs) {
+            return data.logs;
+        }
+        return [];
+    } catch(e) {
+        console.log('Gagal ambil log:', e);
+        return [];
+    }
+}
+
+async function refreshLogsFromCloud() {
+    let logs = await loadLogsFromCloud();
+    renderLogsToUI(logs);
+}
+
+function renderLogsToUI(logs) {
     let area = document.getElementById('logSummaryArea');
     if(!area) return;
-    if(!syncLogs.length) {
-        area.innerHTML = "Belum ada rekaman aktivitas audit.";
+    
+    if(!logs || logs.length === 0) {
+        area.innerHTML = '<p style="color:#666;">Belum ada aktivitas tercatat di cloud.</p>';
         return;
     }
-    area.innerHTML = syncLogs.map(l => {
-        let d = new Date(l.time);
+    
+    area.innerHTML = logs.map(l => {
+        let d = new Date(l.timestamp);
         let timeStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
         let tagClass = 'tag-system';
         if (l.type === 'TAMBAH') tagClass = 'tag-add';
         if (l.type === 'UBAH') tagClass = 'tag-edit';
         if (l.type === 'HAPUS') tagClass = 'tag-delete';
-        return `<span class="log-line">
-            <small style="color:#888;">[${timeStr}]</small> 
-            <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.bookName)})</small> 
-            <span class="log-tag ${tagClass}">${l.type}</span> 
-            <span>${escapeHtml(l.msg)}</span>
-        </span>`;
+        return `<div class="log-line">
+            <small style="color:#888;">[${timeStr}]</small>
+            <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.book_name || l.book || '?')})</small>
+            <small style="color:#999;">[${escapeHtml(l.device_id || 'unknown')}]</small>
+            <span class="log-tag ${tagClass}">${l.type}</span>
+            <span>${escapeHtml(l.message)}</span>
+        </div>`;
     }).join('');
 }
 
-// --- CALCULATION & DATA BALANCING ---
+// ==================== CLOUD SYNC UTAMA ====================
+function getCloudUrl() { 
+    let b64 = cloudUrls[currentBookId] || ''; 
+    return _deobfuscate(b64);
+}
+
+function saveCloudUrl(url) {
+    cloudUrls[currentBookId] = _obfuscate(url.trim());
+    localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
+    updateSyncStatusIndicator();
+}
+
+function updateSyncStatusIndicator() {
+    let tag = document.getElementById('syncStatusTag');
+    if(!tag) return;
+    if (getCloudUrl()) {
+        tag.className = "sync-status online"; 
+        tag.innerText = "☁️ CLOUD CONNECTED";
+    } else {
+        tag.className = "sync-status offline"; 
+        tag.innerText = "📴 OFFLINE MODE";
+    }
+}
+
+async function syncWithCloud() {
+    let url = getCloudUrl();
+    if (!url) { 
+        alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); 
+        return; 
+    }
+    
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ 
+                action: 'full_sync', 
+                book: bName, 
+                data: { 
+                    transactions: txs,
+                    device_id: deviceId,
+                    sync_time: new Date().toISOString()
+                } 
+            })
+        });
+        let d = await res.json();
+        if(d.success) {
+            alert("✅ Sinkronisasi berhasil!\n" + (d.message || "Data terpusat telah diperbarui."));
+        } else {
+            alert("⚠️ Gagal sinkronisasi: " + d.error);
+        }
+    } catch(e) {
+        alert("❌ Koneksi gagal: " + e.toString());
+    }
+}
+
+async function loadFromCloud() {
+    let url = getCloudUrl();
+    if (!url) return false;
+    
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ action: 'load_data', book: bName })
+        });
+        let d = await res.json();
+        
+        if (d.success && d.transactions) {
+            txs = d.transactions;
+            saveLocal();
+            return true;
+        }
+        return false;
+    } catch(e) {
+        console.log('Gagal load dari cloud:', e);
+        return false;
+    }
+}
+
+// ==================== MANAJEMEN DATA LOKAL ====================
+function saveLocal() { 
+    localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); 
+}
+
+async function saveLocalAndSync() {
+    saveLocal();
+    let url = getCloudUrl();
+    if (url) {
+        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+        try {
+            await fetch(url, {
+                method: 'POST',
+                mode: 'cors',
+                body: JSON.stringify({ 
+                    action: 'full_sync', 
+                    book: bName, 
+                    data: { transactions: txs, device_id: deviceId } 
+                })
+            });
+        } catch(e) {}
+    }
+}
+
 function recalcBalances() {
     let bal = 0;
     txs.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
@@ -879,7 +890,6 @@ function recalcBalances() {
     });
 }
 
-// --- MATRIX ENGINE FILTER & VIEW CONDITIONAL ---
 function renderStats() {
     let inc = txs.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
     let exp = txs.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
@@ -890,159 +900,52 @@ function renderStats() {
 
 function getDisplayData() {
     let q = document.getElementById('searchInput').value.toLowerCase().trim();
-    let src = txs.filter(t => {
+    return txs.filter(t => {
         if (currentFilter === 'income' && t.type !== 'income') return false;
         if (currentFilter === 'expense' && t.type !== 'expense') return false;
         if (filterStartDate && t.date.split('T')[0] < filterStartDate) return false;
         if (filterEndDate && t.date.split('T')[0] > filterEndDate) return false;
         if (q && !t.desc.toLowerCase().includes(q)) return false;
         return true;
-    });
-    return src.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+    }).sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 }
 
-// --- DATA GRAPHIC RENDERING ---
 function render() {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-        try {
-            recalcBalances();
-            renderStats();
-            let filteredData = getDisplayData();
-            let tb = document.getElementById('transactionTableBody');
-            if (document.getElementById('transactionCount')) {
-                document.getElementById('transactionCount').innerText = filteredData.length + ' transaksi';
-            }
-            if (!filteredData.length) {
-                tb.innerHTML = '<tr><td colspan="7" class="empty-row">Tidak ada data transaksi sesuai filter</td></tr>';
-                return;
-            }
-            tb.innerHTML = filteredData.map((t, i) => {
-                let isInc = t.type === 'income';
-                let isNew = (lastAddedId === t.id);
-                let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
-                return `<tr data-id="${t.id}" class="${isNew ? 'new-row' : ''}">
-                    <td class="text-center">${i + 1}</td>
-                    <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
-                    <td>${labelBadge} ${escapeHtml(t.desc)}</td>
-                    <td class="text-right" style="color: #00875a; font-weight: 500;">${isInc ? rp(t.amount) : '—'}</td>
-                    <td class="text-right" style="color: #de350b; font-weight: 500;">${!isInc ? rp(t.amount) : '—'}</td>
-                    <td class="text-right" style="font-weight: 600;">${rp(t.balance)}</td>
-                    <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">···</button></td>
-                </tr>`;
-            }).join('');
-        } catch(e) { console.error(e); }
-    }, 10);
-}
-
-// --- CLOUD CONFIGURATION & SYNC ---
-function getCloudUrl() { 
-    let b64 = cloudUrls[currentBookId] || ''; 
-    return _deobfuscate(b64);
-}
-function saveCloudUrl(url) {
-    cloudUrls[currentBookId] = _obfuscate(url.trim());
-    localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
-    updateSyncStatusIndicator();
-}
-function updateSyncStatusIndicator() {
-    let tag = document.getElementById('syncStatusTag');
-    if(!tag) return;
-    if (getCloudUrl()) {
-        tag.className = "sync-status online"; tag.innerText = "CLOUD CONNECTED";
-    } else {
-        tag.className = "sync-status offline"; tag.innerText = "OFFLINE MODE";
-    }
-}
-async function autoSync(action, onlineFn) {
-    if (!getCloudUrl()) return false;
-    try { return await onlineFn(); } catch(e) {
-        logAudit('SYSTEM', `Otomatis-sinkronisasi [${action}] gagal terkirim ke cloud backend: ${e.toString()}`);
-        return false;
-    }
-}
-async function addTransactionToCloud(t) {
-    let url = getCloudUrl(); if(!url) return false;
-    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    let res = await fetch(url, {
-        method: 'POST', mode: 'cors',
-        body: JSON.stringify({ action: 'add', book: bName, data: t })
-    });
-    let d = await res.json();
-    if(d.success) logAudit('SYSTEM', `Sukses sinkronisasi transaksi baru ID ${t.id} ke lembar awan.`);
-    return d.success;
-}
-async function syncWithCloud() {
-    let url = getCloudUrl();
-    if (!url) { alert("Masukkan URL Web App Deployment terlebih dahulu di kolom atas!"); return; }
-    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    try {
-        let btn = document.getElementById('forceSyncBtn');
-        if(btn) { btn.disabled = true; btn.innerText = "Proses..."; }
-        let res = await fetch(url, {
-            method: 'POST', mode: 'cors',
-            body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } })
-        });
-        let d = await res.json();
-        if(d.success) {
-            alert("Sinkronisasi data lokal ke Google Sheets Berhasil!");
-            logAudit('SYSTEM', `Sinkronisasi menyeluruh manual berhasil didorong ke Google Sheets.`);
-        } else {
-            alert("Gagal sinkronisasi: " + d.error);
-            logAudit('SYSTEM', `Gagal dorong data manual. Cloud menolak: ${d.error}`);
-        }
-        if(btn) { btn.disabled = false; btn.innerText = "Paksa Sinkronisasi Sekarang"; }
-    } catch(e) {
-        alert("Koneksi gagal: " + e.toString());
-        logAudit('SYSTEM', `Gagal koneksi sinkronisasi manual: ${e.toString()}`);
-        let btn = document.getElementById('forceSyncBtn');
-        if(btn) { btn.disabled = false; btn.innerText = "Paksa Sinkronisasi Sekarang"; }
-    }
-}
-
-async function loadDataForCurrentBook() {
-    txs = [];
-    let local = localStorage.getItem('artaflow_txs_' + currentBookId);
-    if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    recalcBalances();
+    renderStats();
+    let filteredData = getDisplayData();
+    let tb = document.getElementById('transactionTableBody');
+    document.getElementById('transactionCount').innerText = filteredData.length + ' transaksi';
     
-    let url = getCloudUrl();
-    if (!url) { return; } 
-    
-    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    try {
-        let res = await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'load', book: bName }) });
-        let d = await res.json();
-        
-        if (d.success && d.transactions && d.transactions.length > 0) {
-            txs = d.transactions; 
-            saveLocal(); 
-            logAudit('SYSTEM', `Data mutasi kas (${bName}) berhasil dimuat sinkron dari awan.`);
-        } else if (d.success && txs.length > 0) {
-            logAudit('SYSTEM', `Mendeteksi lembar cloud (${bName}) masih kosong. Mengunggah backup lokal otomatis...`);
-            await fetch(url, {
-                method: 'POST', mode: 'cors',
-                body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } })
-            });
-        }
-    } catch(e) { 
-        logAudit('SYSTEM', `Gagal kontak awan untuk muat data (${bName}), memakai database lokal.`); 
+    if (!filteredData.length) {
+        tb.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px; color:#666;">Tidak ada data transaksi</td></tr>';
+        return;
     }
-    lastAddedId = null;
+    
+    tb.innerHTML = filteredData.map((t, i) => {
+        let isInc = t.type === 'income';
+        let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
+        return `<tr>
+            <td class="text-center">${i + 1}</td>
+            <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
+            <td>${labelBadge} ${escapeHtml(t.desc)}</td>
+            <td class="text-right" style="color: #00875a;">${isInc ? rp(t.amount) : '—'}</td>
+            <td class="text-right" style="color: #de350b;">${!isInc ? rp(t.amount) : '—'}</td>
+            <td class="text-right" style="font-weight: 600;">${rp(t.balance)}</td>
+            <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td>
+        </tr>`;
+    }).join('');
 }
 
-async function saveLocal() { localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); }
-
-// --- WRITE / MUTATE TRANSACTION OPERATIONS ---
+// ==================== CRUD OPERATIONS ====================
 async function handleSubmit(e) {
     e.preventDefault();
-    let submitBtn = document.getElementById('addSubmitBtn');
-    submitBtn.disabled = true; submitBtn.innerText = "Menyimpan...";
     
     let amt = unRp(document.getElementById('txAmount').value);
-    if (amt <= 0) { alert("Jumlah harus lebih dari 0!"); submitBtn.disabled = false; submitBtn.innerText = "Simpan"; return; }
+    if (amt <= 0) { alert("Jumlah harus lebih dari 0!"); return; }
     
     let newTransaction = {
-        id: Date.now() + Math.floor(Math.random() * 100),
+        id: Date.now() + Math.floor(Math.random() * 10000),
         type: document.querySelector('input[name="type"]:checked').value,
         date: document.getElementById('txDate').value,
         desc: document.getElementById('txDesc').value.trim(),
@@ -1050,18 +953,15 @@ async function handleSubmit(e) {
         created_at: new Date().toISOString()
     };
     
-    lastAddedId = newTransaction.id;
-    logAudit('TAMBAH', `Menambahkan transaksi [${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'}]. Nominal: ${rp(newTransaction.amount)} | Deskripsi: "${newTransaction.desc}" | Tanggal nota: ${newTransaction.date}`);
-
-    txs.unshift(newTransaction); 
-    saveLocal();
-    render();
+    txs.unshift(newTransaction);
+    await saveLocalAndSync();
     
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    await addLogToCloud(bName, 'TAMBAH', `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`, newTransaction.id);
+    
+    render();
     closeModal('addModal');
     document.getElementById('addForm').reset();
-    submitBtn.disabled = false; submitBtn.innerText = "Simpan";
-
-    await autoSync('add', async () => { return await addTransactionToCloud(newTransaction); });
 }
 
 async function handleEditSubmit(e) {
@@ -1072,92 +972,127 @@ async function handleEditSubmit(e) {
     
     let t = txs.find(x => x.id === id);
     if (t) {
-        let oldType = t.type === 'income' ? 'MASUK' : 'KELUAR';
-        let oldAmt = t.amount;
         let oldDesc = t.desc;
-        let oldDate = t.date;
-        let newType = document.querySelector('input[name="editType"]:checked').value;
-        let newTypeLabel = newType === 'income' ? 'MASUK' : 'KELUAR';
-
-        t.type = newType;
+        let oldAmt = t.amount;
+        let oldType = t.type;
+        
+        t.type = document.querySelector('input[name="editType"]:checked').value;
         t.date = document.getElementById('editTxDate').value;
         t.desc = document.getElementById('editTxDesc').value.trim();
         t.amount = amt;
-        saveLocal();
+        
+        await saveLocalAndSync();
+        
+        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+        await addLogToCloud(bName, 'UBAH', `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`, id);
+        
         render();
-
-        logAudit('UBAH', `Mengubah transaksi ID:${id}. SEBELUMNYA: [${oldType}] ${rp(oldAmt)} "${oldDesc}" (${oldDate}) -> MENJADI: [${newTypeLabel}] ${rp(t.amount)} "${t.desc}" (${t.date})`);
-
-        await autoSync('sync', async () => {
-            let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-            await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
-            return true;
-        });
     }
     closeModal('editModal');
 }
 
 async function deleteTransaction(id) {
-    if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+    if (confirm("Yakin ingin menghapus transaksi ini?")) {
         let t = txs.find(x => x.id === id);
         if(t) {
-            logAudit('HAPUS', `Menghapus transaksi ID:${id}. Data terhapus: [${t.type==='income'?'MASUK':'KELUAR'}] ${rp(t.amount)} | Deskripsi: "${t.desc}" | Tanggal nota: ${t.date}`);
+            txs = txs.filter(t => t.id !== id);
+            await saveLocalAndSync();
+            
+            let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+            await addLogToCloud(bName, 'HAPUS', `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"`, id);
+            
+            render();
         }
-        txs = txs.filter(t => t.id !== id);
-        saveLocal();
-        closeModalActionMenu();
-        render();
-        await autoSync('sync', async () => {
-            let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-            await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: {transactions: txs} }) });
-            return true;
-        });
+    }
+    closeModal('actionMenuModal');
+}
+
+// ==================== MANAJEMEN BUKU ====================
+function loadBooks() {
+    let stored = localStorage.getItem('artaflow_books');
+    if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
+    if (!books.length) {
+        books = [{ id: 'b_default', name: 'Buku Utama' }];
+        localStorage.setItem('artaflow_books', JSON.stringify(books));
+    }
+    let storedUrls = localStorage.getItem('artaflow_cloud_urls');
+    if (storedUrls) { try { cloudUrls = JSON.parse(storedUrls); } catch(e) { cloudUrls = {}; } }
+    
+    let active = localStorage.getItem('artaflow_active_book_id');
+    currentBookId = (active && books.some(b => b.id === active)) ? active : books[0].id;
+    refreshBookSelectOptions();
+}
+
+function refreshBookSelectOptions() {
+    let sel = document.getElementById('currentBookSelect');
+    if (sel) sel.innerHTML = books.map(b => `<option value="${b.id}" ${b.id===currentBookId?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
+    let cloudIn = document.getElementById('cloudUrlInput');
+    if(cloudIn) cloudIn.value = getCloudUrl();
+    updateSyncStatusIndicator();
+}
+
+async function switchBook(id) {
+    currentBookId = id;
+    localStorage.setItem('artaflow_active_book_id', id);
+    refreshBookSelectOptions();
+    
+    let local = localStorage.getItem('artaflow_txs_' + currentBookId);
+    if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    
+    await loadFromCloud();
+    render();
+}
+
+function openBookManager() {
+    let container = document.getElementById('bookListContainer');
+    container.innerHTML = books.map(b => {
+        let isDefault = b.id === 'b_default';
+        return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+            <span style="font-weight:${b.id===currentBookId?'700':'400'}">${escapeHtml(b.name)} ${b.id===currentBookId?'(Aktif)':''}</span>
+            <div>
+                ${!isDefault ? `<button class="btn btn-secondary" style="padding:2px 8px; margin-right:4px;" onclick="deleteBook('${b.id}')">Hapus</button>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+    openModal('bookManagerModal');
+}
+
+function addNewBook(e) {
+    e.preventDefault();
+    let nameIn = document.getElementById('newBookName');
+    let name = nameIn.value.trim();
+    if (!name) return;
+    let id = 'b_' + Date.now();
+    books.push({ id, name });
+    localStorage.setItem('artaflow_books', JSON.stringify(books));
+    nameIn.value = '';
+    openBookManager();
+    refreshBookSelectOptions();
+}
+
+function deleteBook(id) {
+    if (id === 'b_default') return;
+    if (confirm(`Hapus buku "${books.find(b=>b.id===id)?.name}" beserta semua datanya?`)) {
+        books = books.filter(b => b.id !== id);
+        localStorage.setItem('artaflow_books', JSON.stringify(books));
+        localStorage.removeItem('artaflow_txs_' + id);
+        if (currentBookId === id) {
+            currentBookId = 'b_default';
+            localStorage.setItem('artaflow_active_book_id', 'b_default');
+            switchBook('b_default');
+        }
+        openBookManager();
+        refreshBookSelectOptions();
     }
 }
 
-async function confirmDeleteAll() {
-    let bObj = books.find(b => b.id === currentBookId);
-    let bName = bObj ? bObj.name : "buku kas aktif";
-    if (confirm(`PERINGATAN SEKURITAS!\nAnda akan menghapus seluruh data transaksi dari "${bName}"?`)) {
-        if(confirm(`Konfirmasi akhir:\nTindakan ini menghapus permanen rekaman lokal & cloud pada buku "${bName}". Lanjutkan?`)) {
-            logAudit('HAPUS', `KOSONGKAN DATA MUTASI MENGHANCURKAN SELURUH ISI TRANSAKSI BUKU KAS: "${bName}"`);
-            txs = []; saveLocal(); render();
-            await autoSync('sync', async () => {
-                let url = getCloudUrl();
-                await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: [] } }) });
-                return true;
-            });
-            alert(`Buku kas "${bName}" berhasil dikosongkan.`);
-        }
-    }
-}
-
-// --- WINDOW MODAL CONTROL CONTROLLERS ---
-function openModal(id) {
-    document.getElementById(id).classList.add('show');
-    if (id === 'addModal') {
-        let now = new Date(); let offset = now.getTimezoneOffset() * 60000;
-        document.getElementById('txDate').value = (new Date(now - offset)).toISOString().slice(0, 16);
-    }
-}
+// ==================== UTILITY FUNCTIONS ====================
+function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 function openActionMenu(id) { actionId = id; openModal('actionMenuModal'); }
-function closeModalActionMenu() { closeModal('actionMenuModal'); }
-
-function editAction() {
-    let t = txs.find(x => x.id === actionId); if (!t) return;
-    document.getElementById('editId').value = t.id;
-    if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
-    else document.getElementById('editTypeExpense').checked = true;
-    document.getElementById('editTxDate').value = t.date;
-    document.getElementById('editTxDesc').value = t.desc;
-    document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
-    closeModalActionMenu(); openModal('editModal');
-}
-
 function setFilter(type) {
     currentFilter = type;
-    document.querySelectorAll('.filters .filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('filter-' + type).classList.add('active');
     render();
 }
@@ -1168,255 +1103,204 @@ function applyDateFilter() {
     render();
 }
 function resetDateFilter() {
-    document.getElementById('dateFilterStart').value = ''; document.getElementById('dateFilterEnd').value = '';
-    filterStartDate = ''; filterEndDate = ''; document.getElementById('clearDateBtn').style.display = 'none';
+    document.getElementById('dateFilterStart').value = '';
+    document.getElementById('dateFilterEnd').value = '';
+    filterStartDate = '';
+    filterEndDate = '';
+    document.getElementById('clearDateBtn').style.display = 'none';
     render();
 }
-function switchTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    document.getElementById('tabLink-' + tab).classList.add('active');
+function exportToCSV() {
+    if (!txs.length) { alert("Tidak ada data."); return; }
+    let csvRows = [["ID","Tanggal","Deskripsi","Jenis","Jumlah"].join(',')];
+    txs.forEach(t => { csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount].join(',')); });
+    let blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ArtaFlow_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
 }
 function updateTime() {
     let clock = document.getElementById('liveClock');
     if (clock) {
-        let now = new Date(); let pad = n => String(n).padStart(2, '0');
+        let now = new Date();
+        let pad = n => String(n).padStart(2, '0');
         clock.innerText = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
 }
-
-// --- BOOK ACCOUNTS INTERACTION ---
-function loadBooks() {
-    let stored = localStorage.getItem('artaflow_books');
-    if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
-    if (!books.length) {
-        books = [{ id: 'b_default', name: 'Buku Utama' }];
-        localStorage.setItem('artaflow_books', JSON.stringify(books));
-    }
-    let storedUrls = localStorage.getItem('artaflow_cloud_urls');
-    if (storedUrls) { try { cloudUrls = JSON.parse(storedUrls); } catch(e) { cloudUrls = {}; } }
-    let storedLogs = localStorage.getItem('artaflow_logs');
-    if (storedLogs) { try { syncLogs = JSON.parse(storedLogs); } catch(e) { syncLogs = []; } }
-    
-    let active = localStorage.getItem('artaflow_active_book_id');
-    currentBookId = (active && books.some(b => b.id === active)) ? active : books[0].id;
-    refreshBookSelectOptions();
-    renderLogsToUI();
-}
-function refreshBookSelectOptions() {
-    let sel = document.getElementById('currentBookSelect');
-    if (sel) sel.innerHTML = books.map(b => `<option value="${b.id}" ${b.id===currentBookId?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
-    
-    let activeBookObj = books.find(b => b.id === currentBookId);
-    let lblName = document.getElementById('cloudSettingBookName');
-    if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
-    
-    let cloudIn = document.getElementById('cloudUrlInput');
-    if(cloudIn) cloudIn.value = getCloudUrl();
-    updateSyncStatusIndicator();
-}
-async function switchBook(id) {
-    currentBookId = id; localStorage.setItem('artaflow_active_book_id', id);
-    refreshBookSelectOptions();
-    await loadDataForCurrentBook();
-    render();
-}
-function openBookManager() {
-    let container = document.getElementById('bookListContainer');
-    container.innerHTML = books.map(b => {
-        let isDefault = b.id === 'b_default';
-        let delAction = isDefault ? `<span style="color:#ccc;font-size:.65rem">Sistem</span>` : `<button class="book-item-btn del" onclick="deleteBook('${b.id}')">Hapus</button>`;
-        return `<div class="book-item">
-            <span style="font-weight:${b.id===currentBookId?'700':'400'}">${escapeHtml(b.name)} ${b.id===currentBookId?'(Aktif)':''}</span>
-            <div class="book-item-actions">
-                <button class="book-item-btn" onclick="openEditBookModal('${b.id}','${escapeHtml(b.name)}')">Ubah Nama</button>
-                ${delAction}
-            </div>
-        </div>`;
-    }).join('');
-    
-    let activeBookObj = books.find(b => b.id === currentBookId);
-    let lblName = document.getElementById('cloudSettingBookName');
-    if(lblName) lblName.innerText = activeBookObj ? activeBookObj.name : 'Buku Aktif';
-    let cloudIn = document.getElementById('cloudUrlInput');
-    if(cloudIn) cloudIn.value = getCloudUrl();
-    openModal('bookManagerModal');
-}
-function closeBookManager() { closeModal('bookManagerModal'); }
-function addNewBook(e) {
-    e.preventDefault();
-    let nameIn = document.getElementById('newBookName'); let name = nameIn.value.trim(); if (!name) return;
-    let id = 'b_' + Date.now(); books.push({ id, name });
-    localStorage.setItem('artaflow_books', JSON.stringify(books));
-    logAudit('SYSTEM', `Membuat buku kas baru dengan identitas nama: "${name}"`);
-    nameIn.value = ''; openBookManager(); refreshBookSelectOptions();
-}
-function openEditBookModal(id, name) {
-    document.getElementById('editBookId').value = id;
-    document.getElementById('editBookNameField').value = name;
-    openModal('editBookModal');
-}
-function closeEditBookModal() { closeModal('editBookModal'); }
-function saveBookEdit() {
-    let id = document.getElementById('editBookId').value;
-    let name = document.getElementById('editBookNameField').value.trim(); if (!name) return;
-    let b = books.find(x => x.id === id);
-    if (b) { 
-        let oldName = b.name;
-        b.name = name; 
-        localStorage.setItem('artaflow_books', JSON.stringify(books)); 
-        logAudit('SYSTEM', `Mengubah nama buku kas dari "${oldName}" menjadi "${name}"`);
-    }
-    closeEditBookModal(); openBookManager(); refreshBookSelectOptions();
-}
-async function deleteBook(id) {
-    if (id === 'b_default') return;
-    let b = books.find(x => x.id === id);
-    let oldBookName = b ? b.name : id;
-    if (confirm(`Hapus seluruh buku kas "${oldBookName}" beserta seluruh riwayat lokal di dalamnya?`)) {
-        books = books.filter(b => b.id !== id);
-        localStorage.setItem('artaflow_books', JSON.stringify(books));
-        localStorage.removeItem('artaflow_txs_' + id);
-        logAudit('HAPUS', `MENGHAPUS PERMANEN SATU BUKU KAS BESERTA SELURUH TRANSAKSINYA: "${oldBookName}"`);
-        if (cloudUrls[id]) { delete cloudUrls[id]; localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls)); }
-        if (currentBookId === id) { currentBookId = 'b_default'; localStorage.setItem('artaflow_active_book_id', 'b_default'); }
-        openBookManager(); refreshBookSelectOptions(); await loadDataForCurrentBook(); render();
-    }
-}
-
-// --- FILE PARSER EXTENSION (CSV/JSON IMPORT ENGINE) ---
-function openImportModalFromManager() { openModal('importModal'); }
-function closeImportModal() { closeModal('importModal'); }
-function handleImport() {
-    let fileIn = document.getElementById('importFile'); if (!fileIn.files.length) return;
-    let file = fileIn.files[0]; let reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            let importedTxs = [];
-            if (file.name.endsWith('.json')) { importedTxs = JSON.parse(e.target.result); } 
-            else if (file.name.endsWith('.csv')) {
-                let lines = e.target.result.split('\n');
-                for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
-                    let cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    if (cols.length >= 5) {
-                        importedTxs.push({
-                            id: Number(cols[0]) || (Date.now() + i), date: cols[1],
-                            desc: cols[2].replace(/^"|"$/g, '').replace(/""/g, '"'),
-                            type: cols[3], amount: Number(cols[4]) || 0, created_at: cols[5] ? cols[5].trim() : new Date().toISOString()
-                        });
-                    }
-                }
-            }
-            if (Array.isArray(importedTxs)) {
-                importedTxs.forEach(imp => {
-                    let idx = txs.findIndex(x => x.id === imp.id);
-                    if (idx > -1) txs[idx] = imp; else txs.push(imp);
-                });
-                saveLocal(); render(); closeImportModal(); fileIn.value = ''; 
-                logAudit('TAMBAH', `Mengimpor eksternal database transaksi sebanyak: ${importedTxs.length} baris dari file "${file.name}"`);
-                await autoSync('sync', async () => {
-                    let url = getCloudUrl(); let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-                    await fetch(url, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'sync', book: bName, data: { transactions: txs } }) });
-                    return true;
-                });
-                alert("Data berhasil diimpor dan disinkronkan.");
-            }
-        } catch(err) { alert("File rusak atau tidak kompatibel: " + err.toString()); }
-    };
-    reader.readAsText(file);
-}
-
-// --- DATA EXPORT MATRIX ENGINE ---
-function exportToCSV() {
-    if (!txs.length) { alert("Tidak ada data transaksi."); return; }
-    let csvRows = [["ID", "Tanggal", "Deskripsi", "Jenis", "Jumlah", "Waktu Dibuat"].join(',')];
-    txs.forEach(t => { csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.created_at || ''].join(',')); });
-    let blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-    a.href = URL.createObjectURL(blob);
-    a.download = `ArtaFlow_Mutasi_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-}
-function exportToJSON() {
-    if (!txs.length) { alert("Tidak ada data."); return; }
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
-    let a = document.createElement('a'); let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-    a.setAttribute("href", dataStr); a.setAttribute("download", `ArtaFlow_Backup_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`);
-    a.click();
-}
-function exportLogs() {
-    if (!syncLogs.length) { alert("Log kosong."); return; }
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(syncLogs, null, 2));
-    let a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `ArtaFlow_AuditLogs_${new Date().toISOString().slice(0,10)}.json`);
-    a.click();
-}
-function printReport() {
-    let bName = books.find(b => b.id === currentBookId)?.name || 'Buku Utama';
-    let data = getDisplayData();
-    let inc = data.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
-    let exp = data.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
-    let w = window.open();
-    w.document.write(`<html><head><title>Laporan ArtaFlow</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1a1a1a}h2{margin-bottom:4px}.meta{font-size:.8rem;color:#666;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85rem}th,td{border:1px solid #1a1a1a;padding:8px 12px}th{background:#f5f5f5}.text-right{text-align:right}.summary-box{margin-top:20px;border:1.5px solid #1a1a1a;padding:14px;border-radius:4px;display:inline-block;min-width:300px;font-size:.85rem}.summary-item{display:flex;justify-content:space-between;margin-bottom:6px}</style></head><body>`);
-    w.document.write(`<h2>LAPORAN TRANSAKSI KAS</h2><div class="meta">Buku Kas: <strong>${bName}</strong><br>Dicetak: ${new Date().toLocaleString('id-ID')}</div>`);
-    w.document.write(`<table><thead><tr><th>No</th><th>Tanggal & Jam</th><th>Deskripsi</th><th>Masuk</th><th>Keluar</th><th>Saldo</th></tr></thead><tbody>`);
-    data.forEach((t, i) => { w.document.write(`<tr><td style="text-align:center">${i+1}</td><td>${formatDateTime(t.date, t.created_at)}</td><td>${t.desc}</td><td class="text-right">${t.type==='income'?rp(t.amount):'—'}</td><td class="text-right">${t.type==='expense'?rp(t.amount):'—'}</td><td class="text-right">${rp(t.balance)}</td></tr>`); });
-    w.document.write(`</tbody></table><div class="summary-box"><div class="summary-item"><span>Transaksi Terfilter:</span> <strong>${data.length}</strong></div><div class="summary-item" style="color:#00875a"><span>Pemasukan:</span> <strong>${rp(inc)}</strong></div><div class="summary-item" style="color:#de350b"><span>Pengeluaran:</span> <strong>${rp(exp)}</strong></div><div class="summary-item" style="border-top:1px solid #1a1a1a;padding-top:6px;font-weight:700"><span>Arus Bersih:</span> <span>${rp(inc-exp)}</span></div></div></body></html>`);
-    w.document.close(); w.print();
-}
 function copyScriptToClipboard() {
-    let el = document.getElementById('scriptCodeArea'); el.select(); el.setSelectionRange(0, 99999); document.execCommand("copy");
-    let btn = document.querySelector(".copy-btn"); btn.innerText = "Tersalin!"; setTimeout(() => { btn.innerText = "Salin Kode"; }, 2000);
+    let el = document.getElementById('scriptCodeArea');
+    el.select();
+    document.execCommand("copy");
+    alert("Kode backend telah disalin ke clipboard!");
 }
 
-// --- GLOBAL ATTACHMENT REGISTER WINDOW OBJECT ---
+// ==================== GOOGLE APPS SCRIPT BACKEND CODE ====================
+const BACKEND_SCRIPT = `// ==================== ARTAFLOW BACKEND - GOOGLE APPS SCRIPT ====================
+// Cara Setup:
+// 1. Buat Google Spreadsheet baru
+// 2. Buka menu Extensions > Apps Script
+// 3. Hapus kode default dan paste kode ini
+// 4. Simpan dan klik Deploy > New deployment > Web app
+// 5. Set "Execute as" = Me, "Who has access" = Anyone
+// 6. Copy URL dan masukkan ke aplikasi ArtaFlow
+
+function doPost(e) {
+  const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
+  try {
+    const raw = e.postData.contents;
+    const req = JSON.parse(raw);
+    const action = req.action;
+    const bookName = req.book || "default_book";
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // Sheet untuk transaksi
+    let txSheet = ss.getSheetByName(bookName + "_transactions");
+    if (!txSheet) {
+      txSheet = ss.insertSheet(bookName + "_transactions");
+      txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
+    }
+    
+    // Sheet untuk log audit terpusat
+    let logSheet = ss.getSheetByName(bookName + "_logs");
+    if (!logSheet) {
+      logSheet = ss.insertSheet(bookName + "_logs");
+      logSheet.appendRow(["timestamp", "type", "message", "device_id", "transaction_id", "book_name"]);
+    }
+    
+    // ACTION: LOAD DATA
+    if (action === "load_data") {
+      const rows = txSheet.getDataRange().getValues();
+      const transactions = [];
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][0]) continue;
+        transactions.push({
+          id: Number(rows[i][0]),
+          date: rows[i][1],
+          desc: rows[i][2],
+          type: rows[i][3],
+          amount: Number(rows[i][4]),
+          created_at: rows[i][5]
+        });
+      }
+      return res.setContent(JSON.stringify({ success: true, transactions: transactions }));
+    }
+    
+    // ACTION: FULL SYNC
+    if (action === "full_sync") {
+      const newData = req.data.transactions;
+      if (newData && Array.isArray(newData)) {
+        txSheet.clear();
+        txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
+        if (newData.length > 0) {
+          const values = newData.map(function(t) {
+            return [t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()];
+          });
+          txSheet.getRange(2, 1, values.length, 6).setValues(values);
+        }
+      }
+      return res.setContent(JSON.stringify({ success: true, message: "Sync berhasil" }));
+    }
+    
+    // ACTION: ADD LOG
+    if (action === "add_log") {
+      const logData = req.data;
+      logSheet.appendRow([
+        logData.timestamp || new Date().toISOString(),
+        logData.type,
+        logData.message,
+        logData.device_id || "unknown",
+        logData.transaction_id || "",
+        logData.book_name || bookName
+      ]);
+      return res.setContent(JSON.stringify({ success: true }));
+    }
+    
+    // ACTION: GET LOGS
+    if (action === "get_logs") {
+      const rows = logSheet.getDataRange().getValues();
+      const logs = [];
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][0]) continue;
+        logs.push({
+          timestamp: rows[i][0],
+          type: rows[i][1],
+          message: rows[i][2],
+          device_id: rows[i][3],
+          transaction_id: rows[i][4],
+          book_name: rows[i][5]
+        });
+      }
+      logs.reverse(); // Tampilkan yang terbaru di atas
+      return res.setContent(JSON.stringify({ success: true, logs: logs }));
+    }
+    
+    return res.setContent(JSON.stringify({ success: false, error: "Aksi tidak dikenal" }));
+  } catch(err) {
+    return res.setContent(JSON.stringify({ success: false, error: err.toString() }));
+  }
+}
+
+function doGet() {
+  return ContentService.createTextOutput("ArtaFlow Backend is Running!");
+}
+`;
+
+// ==================== INITIALIZATION ====================
+document.getElementById('actionEditBtn').onclick = () => {
+    let t = txs.find(x => x.id === actionId);
+    if (t) {
+        document.getElementById('editId').value = t.id;
+        if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
+        else document.getElementById('editTypeExpense').checked = true;
+        document.getElementById('editTxDate').value = t.date;
+        document.getElementById('editTxDesc').value = t.desc;
+        document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
+        closeModal('actionMenuModal');
+        openModal('editModal');
+    }
+};
+document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
+
+document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+deviceId = getDeviceId();
+document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
+
+(async function init() {
+    loadBooks();
+    document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;
+    
+    let local = localStorage.getItem('artaflow_txs_' + currentBookId);
+    if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    
+    await loadFromCloud();
+    render();
+    updateTime();
+    setInterval(updateTime, 1000);
+})();
+
+// Export fungsi ke global
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.handleSubmit = handleSubmit;
 window.handleEditSubmit = handleEditSubmit;
 window.saveCloudUrl = saveCloudUrl;
 window.syncWithCloud = syncWithCloud;
-window.confirmDeleteAll = confirmDeleteAll;
-window.exportToJSON = exportToJSON;
 window.exportToCSV = exportToCSV;
 window.setFilter = setFilter;
-window.closeModalActionMenu = closeModalActionMenu;
-window.editFromActionMenu = editAction;
-window.deleteFromActionMenu = () => deleteTransaction(actionId);
-window.printReport = printReport;
-window.openActionMenu = openActionMenu;
-window.switchTab = switchTab;
-window.exportLogs = exportLogs;
-window.openImportModalFromManager = openImportModalFromManager;
-window.closeImportModal = closeImportModal;
-window.handleImport = handleImport;
 window.applyDateFilter = applyDateFilter;
 window.resetDateFilter = resetDateFilter;
+window.openActionMenu = openActionMenu;
+window.formatRupiah = formatRupiah;
 window.openBookManager = openBookManager;
-window.closeBookManager = closeBookManager;
 window.addNewBook = addNewBook;
-window.editBook = saveBookEdit;
-window.closeEditBookModal = closeEditBookModal;
-window.saveBookEdit = saveBookEdit;
 window.deleteBook = deleteBook;
 window.switchBook = switchBook;
 window.copyScriptToClipboard = copyScriptToClipboard;
-window.formatRupiah = formatRupiah;
-
-document.getElementById('actionEditBtn').onclick = editAction;
-document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
-document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }); });
-
-// --- CONTEXT INITIALIZATION BOOTSTRAPPER ---
-(async function init() {
-    loadBooks();
-    document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;
-    await loadDataForCurrentBook();
-    render();
-    updateTime();
-    setInterval(updateTime, 1000);
-})();
+window.refreshLogsFromCloud = refreshLogsFromCloud;
 </script>
 </body>
 </html>

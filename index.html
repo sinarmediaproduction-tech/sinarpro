@@ -903,6 +903,9 @@ async function saveLocalAndSync(logType = null, logMessage = null, txId = null) 
         });
         let d = await res.json();
         if(d.success) {
+            // OPTIMASI GABUNGAN: Tarik data terbaru dari Cloud agar input Telegram langsung masuk ke Web
+            await loadFromCloud();
+            render();
             await refreshLogsFromCloud();
         } else {
             console.error('Gagal sinkronisasi otomatis ke cloud:', d.error);
@@ -1319,12 +1322,12 @@ function doPost(e) {
     }
     
     if (action === "load_data") {
-      const rows = txSheet.getDataRange().getDisplayValues(); // Menggunakan getDisplayValues menghindari Invalid Date
+      const rows = txSheet.getDataRange().getDisplayValues();
       const transactions = [];
       for (let i = 1; i < rows.length; i++) {
         if (!rows[i][0]) continue;
         transactions.push({
-          id: Number(rows[i][0]),
+          id: isNaN(rows[i][0]) ? rows[i][0] : Number(rows[i][0]),
           date: rows[i][1],
           desc: rows[i][2],
           type: rows[i][3],
@@ -1338,10 +1341,37 @@ function doPost(e) {
     if (action === "full_sync_with_log" || action === "full_sync") {
       const newData = req.data.transactions;
       if (newData && Array.isArray(newData)) {
+        const existingRows = txSheet.getDataRange().getDisplayValues();
+        const sheetMap = {};
+        
+        for (let i = 1; i < existingRows.length; i++) {
+          if (!existingRows[i][0]) continue;
+          const sId = String(existingRows[i][0]);
+          sheetMap[sId] = {
+            id: isNaN(sId) ? sId : Number(sId),
+            date: existingRows[i][1],
+            desc: existingRows[i][2],
+            type: existingRows[i][3],
+            amount: Number(existingRows[i][4]),
+            created_at: existingRows[i][5]
+          };
+        }
+        
+        newData.forEach(function(t) {
+          sheetMap[String(t.id)] = t;
+        });
+        
+        const logData = req.logData;
+        if (logData && logData.type === 'HAPUS' && logData.transaction_id) {
+          delete sheetMap[String(logData.transaction_id)];
+        }
+        
+        const finalData = Object.keys(sheetMap).map(function(k) { return sheetMap[k]; });
+        
         txSheet.clearContents();
         txSheet.getRange(1, 1, 1, 6).setValues([["id", "date", "desc", "type", "amount", "created_at"]]);
-        if (newData.length > 0) {
-          const values = newData.map(function(t) {
+        if (finalData.length > 0) {
+          const values = finalData.map(function(t) {
             return [String(t.id), String(t.date), String(t.desc), String(t.type), Number(t.amount), String(t.created_at || "")];
           });
           txSheet.getRange(2, 1, values.length, 6).setValues(values);
@@ -1359,7 +1389,7 @@ function doPost(e) {
           String(logData.book_name || bookName)
         ]);
       }
-      return res.setContent(JSON.stringify({ success: true, message: "Sync kas dan log audit berhasil" }));
+      return res.setContent(JSON.stringify({ success: true, message: "Sync gabungan kas berhasil" }));
     }
     
     if (action === "get_logs") {

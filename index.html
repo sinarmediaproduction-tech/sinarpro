@@ -957,6 +957,7 @@ function showToast(msg, type = 'success') {
     let text = document.getElementById('toastText');
     if (type === 'success') { icon.innerHTML = '✅'; toast.style.background = '#00875a'; }
     else if (type === 'error') { icon.innerHTML = '❌'; toast.style.background = '#de350b'; }
+    else if (type === 'warning') { icon.innerHTML = '⚠️'; toast.style.background = '#cc7b00'; }
     else { icon.innerHTML = 'ℹ️'; toast.style.background = '#1a1a1a'; }
     text.innerText = msg;
     toast.classList.add('show');
@@ -1196,6 +1197,10 @@ function saveBudget() {
 
 // ==================== PDF REPORT FUNCTIONS (DIPERBAIKI) ====================
 function generatePDFReport() {
+    if (typeof html2pdf === 'undefined') {
+        showToast('Library PDF tidak tersedia. Buka file ini di browser langsung (bukan di sandbox).', 'error');
+        return;
+    }
     let month = parseInt(document.getElementById('budgetMonth').value);
     let year = parseInt(document.getElementById('budgetYear').value);
     let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -1468,6 +1473,10 @@ function generateMonthlyReport() {
 }
 
 function exportReportAsPDF() {
+    if (typeof html2pdf === 'undefined') {
+        showToast('Library PDF tidak tersedia. Buka file ini di browser langsung (bukan di sandbox).', 'error');
+        return;
+    }
     let month = parseInt(document.getElementById('reportMonth').value);
     let year = parseInt(document.getElementById('reportYear').value);
     let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -1528,17 +1537,25 @@ function viewAttachment(att){ if(att){ currentAttachmentData=att; document.getEl
 function downloadAttachment(){ if(currentAttachmentData){ let a=document.createElement('a'); a.href=currentAttachmentData; a.download='nota_'+Date.now()+'.jpg'; a.click(); } }
 
 // ==================== BACKUP FUNCTIONS ====================
-function createBackup(){
-    let key = 'artaflow_backup_'+currentBookId+'_'+Date.now();
-    let data = {timestamp:new Date().toISOString(), bookId:currentBookId, bookName:books.find(b=>b.id===currentBookId)?.name, transactions:JSON.parse(JSON.stringify(txs)), budgets:JSON.parse(JSON.stringify(budgets)), totalTransactions:txs.length, deviceId:deviceId};
-    localStorage.setItem(key,JSON.stringify(data));
-    let backups = getBackupList();
-    backups.push({key, timestamp:data.timestamp, bookId:currentBookId, bookName:data.bookName, totalTransactions:data.totalTransactions});
-    backups.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-    while(backups.length>10){ let old=backups.shift(); localStorage.removeItem(old.key); }
-    localStorage.setItem('artaflow_backup_metadata_'+currentBookId,JSON.stringify(backups));
-    showToast('Cadangan dibuat!','success');
-    refreshBackupList();
+async function createBackup(){
+    return new Promise((resolve) => {
+        let key = 'artaflow_backup_'+currentBookId+'_'+Date.now();
+        let data = {timestamp:new Date().toISOString(), bookId:currentBookId, bookName:books.find(b=>b.id===currentBookId)?.name, transactions:JSON.parse(JSON.stringify(txs)), budgets:JSON.parse(JSON.stringify(budgets)), totalTransactions:txs.length, deviceId:deviceId};
+        try {
+            localStorage.setItem(key,JSON.stringify(data));
+        } catch(e) {
+            showToast('Cadangan gagal: penyimpanan penuh!', 'error');
+            resolve(false); return;
+        }
+        let backups = getBackupList();
+        backups.push({key, timestamp:data.timestamp, bookId:currentBookId, bookName:data.bookName, totalTransactions:data.totalTransactions});
+        backups.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+        while(backups.length>10){ let old=backups.shift(); localStorage.removeItem(old.key); }
+        localStorage.setItem('artaflow_backup_metadata_'+currentBookId,JSON.stringify(backups));
+        showToast('Cadangan dibuat!','success');
+        refreshBackupList();
+        resolve(true);
+    });
 }
 function getBackupList(){ let s=localStorage.getItem('artaflow_backup_metadata_'+currentBookId); if(s) try{ return JSON.parse(s); }catch(e){ return []; } return []; }
 function refreshBackupList(){
@@ -1697,7 +1714,13 @@ async function loadFromCloud() {
     } catch(e) { return false; }
 }
 
-function saveLocal() { localStorage.setItem('artaflow_txs_'+currentBookId, JSON.stringify(txs)); }
+function saveLocal() {
+    try {
+        localStorage.setItem('artaflow_txs_'+currentBookId, JSON.stringify(txs));
+    } catch(e) {
+        showToast('Penyimpanan penuh! Hapus lampiran atau transaksi lama.', 'error');
+    }
+}
 
 function recalcBalances() {
     let bal = 0;
@@ -1720,7 +1743,7 @@ function getDisplayData() {
         if (currentFilter === 'expense' && t.type !== 'expense') return false;
         if (filterStartDate && t.date.split('T')[0] < filterStartDate) return false;
         if (filterEndDate && t.date.split('T')[0] > filterEndDate) return false;
-        if (q && !t.desc.toLowerCase().includes(q)) return false;
+        if (q && !t.desc.toLowerCase().includes(q) && !(t.category || '').toLowerCase().includes(q)) return false;
         return true;
     }).sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 }
@@ -1968,9 +1991,19 @@ function updateTime() {
 }
 function copyScriptToClipboard() {
     let el = document.getElementById('scriptCodeArea');
-    el.select();
-    document.execCommand('copy');
-    showToast('Kode disalin!', 'success');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.value).then(() => {
+            showToast('Kode disalin!', 'success');
+        }).catch(() => {
+            el.select();
+            document.execCommand('copy');
+            showToast('Kode disalin!', 'success');
+        });
+    } else {
+        el.select();
+        document.execCommand('copy');
+        showToast('Kode disalin!', 'success');
+    }
 }
 
 const BACKEND_SCRIPT = `function doPost(e) {

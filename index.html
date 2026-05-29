@@ -11,15 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker ArtaFlow terdaftar!', reg.scope))
-            .catch(err => console.log('Service Worker gagal:', err));
-        });
-      }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -119,6 +111,72 @@
         }
         .stat-card.income .stat-value { color: #00875a; }
         .stat-card.expense .stat-value { color: #de350b; }
+        
+        /* Budget Card */
+        .budget-card {
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .budget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .budget-header h3 {
+            font-size: .85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .budget-progress {
+            margin-bottom: 8px;
+        }
+        .progress-bar-bg {
+            background: #eee;
+            border-radius: 10px;
+            height: 24px;
+            overflow: hidden;
+            margin: 4px 0;
+        }
+        .progress-bar-fill {
+            background: #00875a;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: white;
+            font-size: .7rem;
+            font-weight: 600;
+        }
+        .progress-bar-fill.warning {
+            background: #cc7b00;
+        }
+        .progress-bar-fill.danger {
+            background: #de350b;
+        }
+        .budget-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: .7rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        .budget-remaining {
+            font-weight: 700;
+            color: #00875a;
+        }
+        .budget-remaining.negative {
+            color: #de350b;
+        }
         
         .controls {
             display: flex;
@@ -339,6 +397,9 @@
             max-width: 520px;
             max-height: 85vh;
             overflow-y: auto;
+        }
+        .modal-content.wide {
+            max-width: 700px;
         }
         .modal-header {
             display: flex;
@@ -598,19 +659,30 @@
             display: flex;
         }
         
-        .password-input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .password-input-group .form-control {
-            flex: 1;
+        .budget-item {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #eee;
         }
         
-        .warning-text {
-            color: #de350b;
-            font-size: .65rem;
-            margin-top: 4px;
+        .budget-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .budget-category {
+            font-weight: 700;
+            font-size: .85rem;
+        }
+        
+        .budget-actions {
+            display: flex;
+            gap: 6px;
         }
         
         @media(max-width:768px) {
@@ -620,6 +692,82 @@
             .search-input { flex-grow: 1; }
             .header { flex-direction: column; align-items: flex-start; gap: 12px; }
             .book-selector { width: 100%; justify-content: space-between; }
+        }
+        
+        /* PDF Report Styles */
+        .pdf-report {
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .pdf-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .pdf-subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .pdf-section {
+            margin-bottom: 20px;
+        }
+        .pdf-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .pdf-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .pdf-stat-card {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .pdf-stat-label {
+            font-size: 11px;
+            color: #666;
+        }
+        .pdf-stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        .pdf-table th,
+        .pdf-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+        .pdf-table th {
+            background: #f5f5f5;
+            font-weight: 700;
+        }
+        .pdf-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 9px;
+            color: #999;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
         }
     </style>
 </head>
@@ -639,6 +787,35 @@
             <label for="currentBookSelect">BUKU AKTIF:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola Buku</button>
+        </div>
+    </div>
+
+    <!-- Budget Section -->
+    <div class="budget-card" id="budgetSection">
+        <div class="budget-header">
+            <h3>📊 Anggaran Bulanan</h3>
+            <div>
+                <select id="budgetMonth" class="btn btn-secondary" style="padding: 4px 8px;" onchange="renderBudget()">
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+                <select id="budgetYear" class="btn btn-secondary" style="padding: 4px 8px;" onchange="renderBudget()"></select>
+                <button class="btn btn-primary" style="padding: 4px 12px;" onclick="openBudgetModal()">✏️ Atur Anggaran</button>
+                <button class="btn btn-success" style="padding: 4px 12px;" onclick="generatePDFReport()">📄 Laporan PDF</button>
+            </div>
+        </div>
+        <div id="budgetListContainer">
+            <div style="text-align: center; padding: 20px; color: #666;">Memuat data anggaran...</div>
         </div>
     </div>
 
@@ -717,89 +894,37 @@
     <span id="toastText">Berhasil!</span>
 </div>
 
-<!-- Password Modal -->
-<div id="passwordModal" class="modal">
-    <div class="modal-content">
+<!-- Budget Modal -->
+<div id="budgetModal" class="modal">
+    <div class="modal-content wide">
         <div class="modal-header">
-            <h3>🔒 Verifikasi Keamanan</h3>
-            <button class="modal-close" onclick="closeModal('passwordModal')">×</button>
+            <h3>📊 Atur Anggaran Bulanan</h3>
+            <button class="modal-close" onclick="closeModal('budgetModal')">×</button>
         </div>
         <div class="form-group">
-            <label>Masukkan Password Keamanan</label>
-            <input type="password" id="securityPassword" class="form-control" placeholder="Ketik 'DELETE' untuk konfirmasi">
-            <p class="warning-text">⚠️ Tindakan ini tidak dapat dibatalkan. Data yang dihapus tidak bisa dikembalikan.</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('passwordModal')">Batal</button>
-            <button id="confirmDeleteBtn" class="btn btn-danger">Hapus Permanen</button>
-        </div>
-    </div>
-</div>
-
-<!-- Backup Manager Modal -->
-<div id="backupModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>🔒 Manajer Cadangan Keamanan</h3>
-            <button class="modal-close" onclick="closeModal('backupModal')">×</button>
-        </div>
-        
-        <div class="security-panel">
-            <div class="security-title">🛡️ Perlindungan Data</div>
-            <p style="font-size: .75rem; margin-bottom: 12px;">Sistem menyediakan beberapa lapis keamanan untuk melindungi data Anda dari penghapusan tidak sengaja atau sengaja.</p>
-        </div>
-        
-        <div class="form-group">
-            <label>Auto-Backup Terakhir</label>
-            <div id="lastBackupInfo" style="background: #f5f5f5; padding: 8px; border-radius: 4px; font-size: .75rem;">
-                Memuat informasi backup...
+            <label>Bulan & Tahun</label>
+            <div style="display: flex; gap: 8px;">
+                <select id="budgetModalMonth" class="form-control" style="flex:1">
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+                <input type="number" id="budgetModalYear" class="form-control" style="flex:1" placeholder="Tahun">
             </div>
         </div>
-        
-        <div class="form-group">
-            <label>Cadangan Tersimpan</label>
-            <div id="backupListContainer" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
-                <!-- Backup list akan ditampilkan di sini -->
-            </div>
-        </div>
-        
-        <div class="panel-actions-row" style="margin-top: 12px;">
-            <button class="btn btn-primary" onclick="createBackup()" style="flex: 1;">💾 Buat Cadangan Sekarang</button>
-            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex: 1;">🔄 Pulihkan dari Cadangan</button>
-        </div>
-        
-        <div class="security-panel" style="margin-top: 12px;">
-            <div class="security-title">⚠️ Penghapusan Data</div>
-            <p style="font-size: .7rem; margin-bottom: 8px; color: #666;">Untuk menghapus buku kas, Anda harus:</p>
-            <ul style="font-size: .7rem; margin-left: 20px; color: #666;">
-                <li>Minimal memiliki 1 buku kas aktif lainnya</li>
-                <li>Membuat cadangan manual terlebih dahulu</li>
-                <li>Mengonfirmasi dengan kata sandi</li>
-                <li>Mengetik 'SETUJU' untuk verifikasi akhir</li>
-            </ul>
-        </div>
-        
+        <div id="budgetCategoriesContainer"></div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button>
-        </div>
-    </div>
-</div>
-
-<!-- Book Lock Modal -->
-<div id="lockBookModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>🔒 Kunci / Buka Kunci Buku Kas</h3>
-            <button class="modal-close" onclick="closeModal('lockBookModal')">×</button>
-        </div>
-        <div id="lockBookInfo"></div>
-        <div class="form-group">
-            <label>Password Buku (jika dikunci)</label>
-            <input type="password" id="bookPassword" class="form-control" placeholder="Masukkan password...">
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('lockBookModal')">Batal</button>
-            <button id="toggleLockBtn" class="btn btn-primary">Kunci Buku</button>
+            <button class="btn btn-secondary" onclick="closeModal('budgetModal')">Batal</button>
+            <button class="btn btn-primary" onclick="saveBudget()">Simpan Anggaran</button>
         </div>
     </div>
 </div>
@@ -948,6 +1073,43 @@
     </div>
 </div>
 
+<div id="backupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔒 Manajer Cadangan Keamanan</h3>
+            <button class="modal-close" onclick="closeModal('backupModal')">×</button>
+        </div>
+        
+        <div class="security-panel">
+            <div class="security-title">🛡️ Perlindungan Data</div>
+            <p style="font-size: .75rem; margin-bottom: 12px;">Sistem menyediakan beberapa lapis keamanan untuk melindungi data Anda dari penghapusan tidak sengaja atau sengaja.</p>
+        </div>
+        
+        <div class="form-group">
+            <label>Auto-Backup Terakhir</label>
+            <div id="lastBackupInfo" style="background: #f5f5f5; padding: 8px; border-radius: 4px; font-size: .75rem;">
+                Memuat informasi backup...
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Cadangan Tersimpan</label>
+            <div id="backupListContainer" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
+                <!-- Backup list akan ditampilkan di sini -->
+            </div>
+        </div>
+        
+        <div class="panel-actions-row" style="margin-top: 12px;">
+            <button class="btn btn-primary" onclick="createBackup()" style="flex: 1;">💾 Buat Cadangan Sekarang</button>
+            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex: 1;">🔄 Pulihkan dari Cadangan</button>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
 <div id="viewAttachmentModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
@@ -975,15 +1137,23 @@ let filterEndDate = '';
 let actionId = null;
 let deviceId = '';
 let currentAttachmentData = null;
-let pendingDeleteBookId = null;
+let budgets = {};
 
-// ==================== KEAMANAN ====================
-const SECURITY_CONFIG = {
-    maxBackups: 10,
-    autoBackupInterval: 24 * 60 * 60 * 1000, // 24 jam
-    requiredConfirmWord: 'SETUJU'
-};
+// Kategori untuk anggaran
+const EXPENSE_CATEGORIES = [
+    'Makanan & Minuman',
+    'Transportasi',
+    'Belanja & Pakaian',
+    'Tagihan (Listrik, Air, Internet)',
+    'Hiburan',
+    'Kesehatan',
+    'Pendidikan',
+    'Cicilan & Hutang',
+    'Investasi & Tabungan',
+    'Lain-lain'
+];
 
+// ==================== TOAST NOTIFICATION ====================
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toastMessage');
     const icon = document.getElementById('toastIcon');
@@ -1011,165 +1181,341 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// ==================== AUTO BACKUP SYSTEM ====================
-function createBackup() {
-    const backupKey = 'artaflow_backup_' + currentBookId + '_' + Date.now();
-    const backupData = {
-        timestamp: new Date().toISOString(),
-        bookId: currentBookId,
-        bookName: books.find(b => b.id === currentBookId)?.name,
-        transactions: JSON.parse(JSON.stringify(txs)),
-        totalTransactions: txs.length,
-        deviceId: deviceId
-    };
+// ==================== BUDGET FUNCTIONS ====================
+function loadBudgets() {
+    const stored = localStorage.getItem('artaflow_budgets_' + currentBookId);
+    if (stored) {
+        try {
+            budgets = JSON.parse(stored);
+        } catch(e) {
+            budgets = {};
+        }
+    }
+    if (!budgets) budgets = {};
+}
+
+function saveBudgets() {
+    localStorage.setItem('artaflow_budgets_' + currentBookId, JSON.stringify(budgets));
+}
+
+function getCurrentMonthYear() {
+    const now = new Date();
+    const month = document.getElementById('budgetMonth').value;
+    const year = document.getElementById('budgetYear').value;
+    return { month: parseInt(month), year: parseInt(year) };
+}
+
+function getActualExpensesForMonth(month, year) {
+    let total = 0;
+    const monthStr = String(month).padStart(2, '0');
     
-    // Simpan backup
-    localStorage.setItem(backupKey, JSON.stringify(backupData));
+    txs.forEach(t => {
+        if (t.type === 'expense') {
+            const txDate = new Date(t.date);
+            if (txDate.getMonth() + 1 === month && txDate.getFullYear() === year) {
+                total += t.amount;
+            }
+        }
+    });
+    return total;
+}
+
+function getExpensesByCategory(month, year) {
+    const categoryTotals = {};
+    EXPENSE_CATEGORIES.forEach(cat => { categoryTotals[cat] = 0; });
     
-    // Kelola jumlah backup (max 10)
-    let backups = getBackupList();
-    backups.push({
-        key: backupKey,
-        timestamp: backupData.timestamp,
-        bookId: currentBookId,
-        bookName: backupData.bookName,
-        totalTransactions: backupData.totalTransactions
+    txs.forEach(t => {
+        if (t.type === 'expense') {
+            const txDate = new Date(t.date);
+            if (txDate.getMonth() + 1 === month && txDate.getFullYear() === year) {
+                // Simple category detection based on description keywords
+                let category = 'Lain-lain';
+                const desc = t.desc.toLowerCase();
+                
+                if (desc.includes('makan') || desc.includes('minum') || desc.includes('resto') || desc.includes('warung')) category = 'Makanan & Minuman';
+                else if (desc.includes('bensin') || desc.includes('transport') || desc.includes('gojek') || desc.includes('grab') || desc.includes('taxi')) category = 'Transportasi';
+                else if (desc.includes('belanja') || desc.includes('baju') || desc.includes('pakaian') || desc.includes('sepatu')) category = 'Belanja & Pakaian';
+                else if (desc.includes('listrik') || desc.includes('air') || desc.includes('internet') || desc.includes('pdam') || desc.includes('pln')) category = 'Tagihan (Listrik, Air, Internet)';
+                else if (desc.includes('nonton') || desc.includes('film') || desc.includes('game') || desc.includes('netflix')) category = 'Hiburan';
+                else if (desc.includes('obat') || desc.includes('dokter') || desc.includes('rumah sakit')) category = 'Kesehatan';
+                else if (desc.includes('sekolah') || desc.includes('kursus') || desc.includes('buku')) category = 'Pendidikan';
+                else if (desc.includes('cicil') || desc.includes('hutang') || desc.includes('pinjam')) category = 'Cicilan & Hutang';
+                else if (desc.includes('investasi') || desc.includes('saham') || desc.includes('reksadana') || desc.includes('tabungan')) category = 'Investasi & Tabungan';
+                
+                categoryTotals[category] += t.amount;
+            }
+        }
     });
     
-    // Urutkan berdasarkan timestamp (terbaru di akhir)
-    backups.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    return categoryTotals;
+}
+
+function renderBudget() {
+    const { month, year } = getCurrentMonthYear();
+    const budgetKey = `${year}-${month}`;
+    const monthlyBudget = budgets[budgetKey] || {};
+    const totalBudget = Object.values(monthlyBudget).reduce((a, b) => a + b, 0);
+    const actualExpenses = getActualExpensesForMonth(month, year);
+    const remaining = totalBudget - actualExpenses;
+    const percentage = totalBudget > 0 ? (actualExpenses / totalBudget) * 100 : 0;
     
-    // Hapus backup lama jika melebihi batas
-    while (backups.length > SECURITY_CONFIG.maxBackups) {
-        const oldestBackup = backups.shift();
-        localStorage.removeItem(oldestBackup.key);
+    let progressClass = '';
+    if (percentage >= 100) progressClass = 'danger';
+    else if (percentage >= 80) progressClass = 'warning';
+    
+    const container = document.getElementById('budgetListContainer');
+    
+    let html = `<div class="budget-item">
+        <div class="budget-item-header">
+            <span class="budget-category">📊 Ringkasan Anggaran ${getMonthName(month)} ${year}</span>
+        </div>
+        <div class="budget-progress">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill ${progressClass}" style="width: ${Math.min(percentage, 100)}%">${Math.round(percentage)}%</div>
+            </div>
+            <div class="budget-stats">
+                <span>Target Anggaran: ${rp(totalBudget)}</span>
+                <span>Realisasi: ${rp(actualExpenses)}</span>
+                <span class="budget-remaining ${remaining < 0 ? 'negative' : ''}">Sisa: ${rp(remaining)}</span>
+            </div>
+        </div>
+    </div>`;
+    
+    // Tampilkan detail per kategori
+    const categoryTotals = getExpensesByCategory(month, year);
+    const sortedCategories = [...EXPENSE_CATEGORIES].sort((a, b) => (categoryTotals[b] || 0) - (categoryTotals[a] || 0));
+    
+    for (const category of sortedCategories) {
+        const budgetAmount = monthlyBudget[category] || 0;
+        const actualAmount = categoryTotals[category] || 0;
+        const catRemaining = budgetAmount - actualAmount;
+        const catPercentage = budgetAmount > 0 ? (actualAmount / budgetAmount) * 100 : 0;
+        
+        let catProgressClass = '';
+        if (catPercentage >= 100) catProgressClass = 'danger';
+        else if (catPercentage >= 80) catProgressClass = 'warning';
+        
+        if (budgetAmount > 0 || actualAmount > 0) {
+            html += `<div class="budget-item">
+                <div class="budget-item-header">
+                    <span class="budget-category">📌 ${category}</span>
+                    <div class="budget-actions">
+                        <small style="color:#666;">Target: ${rp(budgetAmount)}</small>
+                    </div>
+                </div>
+                <div class="budget-progress">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill ${catProgressClass}" style="width: ${Math.min(catPercentage, 100)}%">${Math.round(catPercentage)}%</div>
+                    </div>
+                    <div class="budget-stats">
+                        <span>Realisasi: ${rp(actualAmount)}</span>
+                        <span class="budget-remaining ${catRemaining < 0 ? 'negative' : ''}">Sisa: ${rp(catRemaining)}</span>
+                    </div>
+                </div>
+            </div>`;
+        }
     }
     
-    localStorage.setItem('artaflow_backup_metadata_' + currentBookId, JSON.stringify(backups));
-    showToast('Cadangan berhasil dibuat!', 'success');
-    refreshBackupList();
+    if (totalBudget === 0 && actualExpenses === 0) {
+        html += `<div style="text-align: center; padding: 20px; color: #666;">
+            Belum ada anggaran yang ditetapkan untuk bulan ini.<br>
+            Klik "Atur Anggaran" untuk mulai merencanakan keuangan Anda.
+        </div>`;
+    }
     
-    // Catat ke audit log
-    let msg = `Membuat cadangan data otomatis (${txs.length} transaksi)`;
+    container.innerHTML = html;
+}
+
+function getMonthName(month) {
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return months[month - 1];
+}
+
+function openBudgetModal() {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    
+    document.getElementById('budgetModalMonth').value = document.getElementById('budgetMonth').value || currentMonth;
+    document.getElementById('budgetModalYear').value = document.getElementById('budgetYear').value || currentYear;
+    
+    const container = document.getElementById('budgetCategoriesContainer');
+    const month = parseInt(document.getElementById('budgetModalMonth').value);
+    const year = parseInt(document.getElementById('budgetModalYear').value);
+    const budgetKey = `${year}-${month}`;
+    const currentBudget = budgets[budgetKey] || {};
+    
+    container.innerHTML = EXPENSE_CATEGORIES.map(cat => `
+        <div class="form-group">
+            <label>${cat}</label>
+            <input type="text" class="form-control budget-cat-input" data-category="${cat}" placeholder="Jumlah anggaran (Rp)" value="${currentBudget[cat] ? currentBudget[cat].toLocaleString('id-ID') : ''}" oninput="formatRupiah(this)">
+        </div>
+    `).join('');
+    
+    openModal('budgetModal');
+}
+
+function saveBudget() {
+    const month = parseInt(document.getElementById('budgetModalMonth').value);
+    const year = parseInt(document.getElementById('budgetModalYear').value);
+    const budgetKey = `${year}-${month}`;
+    
+    if (!budgets[budgetKey]) budgets[budgetKey] = {};
+    
+    const inputs = document.querySelectorAll('.budget-cat-input');
+    inputs.forEach(input => {
+        const category = input.getAttribute('data-category');
+        const amount = unRp(input.value);
+        if (amount > 0) {
+            budgets[budgetKey][category] = amount;
+        } else {
+            delete budgets[budgetKey][category];
+        }
+    });
+    
+    // Hapus key jika kosong
+    if (Object.keys(budgets[budgetKey]).length === 0) {
+        delete budgets[budgetKey];
+    }
+    
+    saveBudgets();
+    
+    // Update dropdown bulan/tahun di budget section
+    document.getElementById('budgetMonth').value = month;
+    document.getElementById('budgetYear').value = year;
+    
+    renderBudget();
+    closeModal('budgetModal');
+    showToast('Anggaran berhasil disimpan!', 'success');
+    
+    let msg = `Menyimpan anggaran bulan ${getMonthName(month)} ${year}`;
     saveLocalAndSync('SISTEM', msg, null);
 }
 
-function getBackupList() {
-    const stored = localStorage.getItem('artaflow_backup_metadata_' + currentBookId);
-    if (stored) {
-        try {
-            return JSON.parse(stored);
-        } catch(e) {
-            return [];
-        }
-    }
-    return [];
-}
-
-function refreshBackupList() {
-    const container = document.getElementById('backupListContainer');
-    if (!container) return;
+function generatePDFReport() {
+    const { month, year } = getCurrentMonthYear();
+    const monthName = getMonthName(month);
+    const bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
     
-    const backups = getBackupList();
+    // Filter transaksi bulan ini
+    const monthTransactions = txs.filter(t => {
+        const txDate = new Date(t.date);
+        return txDate.getMonth() + 1 === month && txDate.getFullYear() === year;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    if (backups.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 16px; color: #666;">Belum ada cadangan tersimpan</div>';
-        return;
-    }
+    const totalIncome = monthTransactions.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+    const totalExpense = monthTransactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+    const balance = totalIncome - totalExpense;
     
-    // Tampilkan dari yang terbaru ke terlama
-    const sortedBackups = [...backups].reverse();
+    // Hitung anggaran
+    const budgetKey = `${year}-${month}`;
+    const monthlyBudget = budgets[budgetKey] || {};
+    const totalBudget = Object.values(monthlyBudget).reduce((a, b) => a + b, 0);
+    const categoryTotals = getExpensesByCategory(month, year);
     
-    container.innerHTML = sortedBackups.map((backup, idx) => {
-        const date = new Date(backup.timestamp);
-        const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
-        return `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee;">
-                <div style="font-size: .7rem;">
-                    <strong>${dateStr}</strong><br>
-                    <small>${backup.totalTransactions} transaksi</small>
+    // Buat HTML untuk PDF
+    const pdfContent = `
+    <div class="pdf-report">
+        <div class="pdf-header">
+            <div class="pdf-title">ARTAFLOW - LAPORAN KEUANGAN</div>
+            <div class="pdf-subtitle">${bookName} | Periode ${monthName} ${year}</div>
+            <div class="pdf-subtitle">Dicetak: ${new Date().toLocaleString('id-ID')}</div>
+        </div>
+        
+        <div class="pdf-section">
+            <div class="pdf-section-title">📊 RINGKASAN KEUANGAN</div>
+            <div class="pdf-stats">
+                <div class="pdf-stat-card">
+                    <div class="pdf-stat-label">Total Pemasukan</div>
+                    <div class="pdf-stat-value" style="color: #00875a;">${rp(totalIncome)}</div>
                 </div>
-                <div>
-                    <button class="btn btn-mini" style="background:#de350b; color:#fff;" onclick="deleteBackup('${backup.key}')">Hapus</button>
+                <div class="pdf-stat-card">
+                    <div class="pdf-stat-label">Total Pengeluaran</div>
+                    <div class="pdf-stat-value" style="color: #de350b;">${rp(totalExpense)}</div>
+                </div>
+                <div class="pdf-stat-card">
+                    <div class="pdf-stat-label">Saldo Bersih</div>
+                    <div class="pdf-stat-value" style="color: ${balance >= 0 ? '#00875a' : '#de350b'};">${rp(balance)}</div>
                 </div>
             </div>
-        `;
-    }).join('');
-    
-    // Update info backup terakhir
-    const lastBackup = backups[backups.length - 1];
-    if (lastBackup) {
-        const lastDate = new Date(lastBackup.timestamp);
-        const infoStr = `Terakhir: ${lastDate.getDate()}/${lastDate.getMonth()+1}/${lastDate.getFullYear()} ${lastDate.getHours()}:${String(lastDate.getMinutes()).padStart(2,'0')} (${lastBackup.totalTransactions} transaksi)`;
-        document.getElementById('lastBackupInfo').innerHTML = infoStr;
-    } else {
-        document.getElementById('lastBackupInfo').innerHTML = 'Belum ada cadangan';
-    }
-}
-
-function deleteBackup(backupKey) {
-    if (confirm('Hapus cadangan ini? Tindakan tidak dapat dibatalkan.')) {
-        localStorage.removeItem(backupKey);
+        </div>
         
-        let backups = getBackupList();
-        backups = backups.filter(b => b.key !== backupKey);
-        localStorage.setItem('artaflow_backup_metadata_' + currentBookId, JSON.stringify(backups));
+        <div class="pdf-section">
+            <div class="pdf-section-title">💰 ANGGARAN VS REALISASI</div>
+            <div class="pdf-stats">
+                <div class="pdf-stat-card">
+                    <div class="pdf-stat-label">Target Anggaran</div>
+                    <div class="pdf-stat-value">${rp(totalBudget)}</div>
+                </div>
+                <div class="pdf-stat-card">
+                    <div class="pdf-stat-label">Realisasi</div>
+                    <div class="pdf-stat-value" style="color: #de350b;">${rp(totalExpense)}</div>
+                </div>
+                <div class="pdf-stat-card">
+                    <div class="pdf-stat-label">Sisa Anggaran</div>
+                    <div class="pdf-stat-value" style="color: ${(totalBudget - totalExpense) >= 0 ? '#00875a' : '#de350b'};">${rp(totalBudget - totalExpense)}</div>
+                </div>
+            </div>
+        </div>
         
-        refreshBackupList();
-        showToast('Cadangan dihapus', 'info');
-    }
-}
-
-function restoreFromBackup() {
-    const backups = getBackupList();
-    if (backups.length === 0) {
-        alert('Tidak ada cadangan yang tersedia untuk dipulihkan.');
-        return;
-    }
+        <div class="pdf-section">
+            <div class="pdf-section-title">📋 DETIL TRANSAKSI</div>
+            <table class="pdf-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Deskripsi</th>
+                        <th>Jenis</th>
+                        <th>Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${monthTransactions.map(t => `
+                        <tr>
+                            <td>${formatDateTime(t.date, t.created_at)}</td>
+                            <td>${escapeHtml(t.desc)}</td>
+                            <td>${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
+                            <td style="text-align:right">${rp(t.amount)}</td>
+                        </tr>
+                    `).join('')}
+                    ${monthTransactions.length === 0 ? '<tr><td colspan="4" style="text-align:center">Tidak ada transaksi</td></tr>' : ''}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="pdf-footer">
+            Laporan ini dibuat secara otomatis oleh ArtaFlow<br>
+            Sistem Multi Buku Kas dengan Audit Log Terpusat
+        </div>
+    </div>
+    `;
     
-    // Pilih backup terbaru
-    const latestBackup = backups[backups.length - 1];
-    const backupData = localStorage.getItem(latestBackup.key);
+    // Buat element sementara untuk PDF
+    const element = document.createElement('div');
+    element.innerHTML = pdfContent;
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    element.style.top = '-9999px';
+    document.body.appendChild(element);
     
-    if (backupData) {
-        try {
-            const data = JSON.parse(backupData);
-            const confirmRestore = confirm(`Pulihkan data dari cadangan tanggal ${new Date(data.timestamp).toLocaleString()}?\n\nPeringatan: Data saat ini akan ditimpa!`);
-            
-            if (confirmRestore) {
-                txs = data.transactions;
-                saveLocal();
-                render();
-                
-                let msg = `Memulihkan data dari cadangan (${txs.length} transaksi)`;
-                saveLocalAndSync('SISTEM', msg, null);
-                
-                showToast('Data berhasil dipulihkan dari cadangan!', 'success');
-                closeModal('backupModal');
-            }
-        } catch(e) {
-            alert('Gagal memulihkan cadangan: ' + e.message);
-        }
-    }
-}
-
-function openBackupManager() {
-    refreshBackupList();
-    openModal('backupModal');
-}
-
-// ==================== AUTO SAVE PREVENTION ====================
-function autoBackupCheck() {
-    const lastBackupCheck = localStorage.getItem('artaflow_last_backup_check_' + currentBookId);
-    const now = Date.now();
+    const opt = {
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `ArtaFlow_Laporan_${bookName}_${monthName}_${year}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
     
-    if (!lastBackupCheck || (now - parseInt(lastBackupCheck)) > SECURITY_CONFIG.autoBackupInterval) {
-        // Buat backup otomatis jika ada perubahan data
-        if (txs.length > 0) {
-            createBackup();
-        }
-        localStorage.setItem('artaflow_last_backup_check_' + currentBookId, now.toString());
-    }
+    html2pdf().set(opt).from(element).save().then(() => {
+        document.body.removeChild(element);
+        showToast('Laporan PDF berhasil dihasilkan!', 'success');
+        
+        let msg = `Mencetak laporan PDF periode ${monthName} ${year}`;
+        saveLocalAndSync('SISTEM', msg, null);
+    }).catch(err => {
+        document.body.removeChild(element);
+        showToast('Gagal membuat PDF: ' + err.message, 'error');
+    });
 }
 
 // ==================== DEVICE ID UNIK ====================
@@ -1312,7 +1658,150 @@ function downloadAttachment() {
     }
 }
 
-// ==================== TEST CLOUD CONNECTION ====================
+// ==================== BACKUP SYSTEM ====================
+function createBackup() {
+    const backupKey = 'artaflow_backup_' + currentBookId + '_' + Date.now();
+    const backupData = {
+        timestamp: new Date().toISOString(),
+        bookId: currentBookId,
+        bookName: books.find(b => b.id === currentBookId)?.name,
+        transactions: JSON.parse(JSON.stringify(txs)),
+        budgets: JSON.parse(JSON.stringify(budgets)),
+        totalTransactions: txs.length,
+        deviceId: deviceId
+    };
+    
+    localStorage.setItem(backupKey, JSON.stringify(backupData));
+    
+    let backups = getBackupList();
+    backups.push({
+        key: backupKey,
+        timestamp: backupData.timestamp,
+        bookId: currentBookId,
+        bookName: backupData.bookName,
+        totalTransactions: backupData.totalTransactions
+    });
+    
+    backups.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    while (backups.length > 10) {
+        const oldestBackup = backups.shift();
+        localStorage.removeItem(oldestBackup.key);
+    }
+    
+    localStorage.setItem('artaflow_backup_metadata_' + currentBookId, JSON.stringify(backups));
+    showToast('Cadangan berhasil dibuat!', 'success');
+    refreshBackupList();
+    
+    let msg = `Membuat cadangan data otomatis (${txs.length} transaksi)`;
+    saveLocalAndSync('SISTEM', msg, null);
+}
+
+function getBackupList() {
+    const stored = localStorage.getItem('artaflow_backup_metadata_' + currentBookId);
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch(e) {
+            return [];
+        }
+    }
+    return [];
+}
+
+function refreshBackupList() {
+    const container = document.getElementById('backupListContainer');
+    if (!container) return;
+    
+    const backups = getBackupList();
+    
+    if (backups.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 16px; color: #666;">Belum ada cadangan tersimpan</div>';
+        return;
+    }
+    
+    const sortedBackups = [...backups].reverse();
+    
+    container.innerHTML = sortedBackups.map((backup, idx) => {
+        const date = new Date(backup.timestamp);
+        const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee;">
+                <div style="font-size: .7rem;">
+                    <strong>${dateStr}</strong><br>
+                    <small>${backup.totalTransactions} transaksi</small>
+                </div>
+                <div>
+                    <button class="btn btn-mini" style="background:#de350b; color:#fff;" onclick="deleteBackup('${backup.key}')">Hapus</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    const lastBackup = backups[backups.length - 1];
+    if (lastBackup) {
+        const lastDate = new Date(lastBackup.timestamp);
+        const infoStr = `Terakhir: ${lastDate.getDate()}/${lastDate.getMonth()+1}/${lastDate.getFullYear()} ${lastDate.getHours()}:${String(lastDate.getMinutes()).padStart(2,'0')} (${lastBackup.totalTransactions} transaksi)`;
+        document.getElementById('lastBackupInfo').innerHTML = infoStr;
+    } else {
+        document.getElementById('lastBackupInfo').innerHTML = 'Belum ada cadangan';
+    }
+}
+
+function deleteBackup(backupKey) {
+    if (confirm('Hapus cadangan ini? Tindakan tidak dapat dibatalkan.')) {
+        localStorage.removeItem(backupKey);
+        
+        let backups = getBackupList();
+        backups = backups.filter(b => b.key !== backupKey);
+        localStorage.setItem('artaflow_backup_metadata_' + currentBookId, JSON.stringify(backups));
+        
+        refreshBackupList();
+        showToast('Cadangan dihapus', 'info');
+    }
+}
+
+function restoreFromBackup() {
+    const backups = getBackupList();
+    if (backups.length === 0) {
+        alert('Tidak ada cadangan yang tersedia untuk dipulihkan.');
+        return;
+    }
+    
+    const latestBackup = backups[backups.length - 1];
+    const backupData = localStorage.getItem(latestBackup.key);
+    
+    if (backupData) {
+        try {
+            const data = JSON.parse(backupData);
+            const confirmRestore = confirm(`Pulihkan data dari cadangan tanggal ${new Date(data.timestamp).toLocaleString()}?\n\nPeringatan: Data saat ini akan ditimpa!`);
+            
+            if (confirmRestore) {
+                txs = data.transactions;
+                if (data.budgets) budgets = data.budgets;
+                saveLocal();
+                saveBudgets();
+                render();
+                renderBudget();
+                
+                let msg = `Memulihkan data dari cadangan (${txs.length} transaksi)`;
+                saveLocalAndSync('SISTEM', msg, null);
+                
+                showToast('Data berhasil dipulihkan dari cadangan!', 'success');
+                closeModal('backupModal');
+            }
+        } catch(e) {
+            alert('Gagal memulihkan cadangan: ' + e.message);
+        }
+    }
+}
+
+function openBackupManager() {
+    refreshBackupList();
+    openModal('backupModal');
+}
+
+// ==================== CLOUD SYNC ====================
 async function testCloudConnection() {
     const urlInput = document.getElementById('cloudUrlInput');
     const url = urlInput.value.trim();
@@ -1362,6 +1851,7 @@ async function syncAfterConnection() {
     let syncSuccess = await loadFromCloud();
     if(syncSuccess) {
         render();
+        renderBudget();
         showToast('Data berhasil disinkronkan dengan cloud!', 'success');
     } else {
         let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
@@ -1375,6 +1865,7 @@ async function syncAfterConnection() {
                     book: cleanBookName,
                     data: {
                         transactions: txs,
+                        budgets: budgets,
                         device_id: deviceId,
                         sync_time: new Date().toISOString()
                     }
@@ -1396,7 +1887,6 @@ async function syncAfterConnection() {
     }
 }
 
-// ==================== LOG TERPUSAT KE CLOUD ====================
 async function loadLogsFromCloud() {
     let url = getCloudUrl();
     if (!url) {
@@ -1462,7 +1952,6 @@ function renderLogsToUI(logs) {
     }).join('');
 }
 
-// ==================== CLOUD SYNC UTAMA ====================
 function getCloudUrl() { 
     let b64 = cloudUrls[currentBookId] || ''; 
     return _deobfuscate(b64);
@@ -1489,9 +1978,7 @@ function updateSyncStatusIndicator() {
 
 async function saveLocalAndSync(logType = null, logMessage = null, txId = null) {
     saveLocal();
-    
-    // Auto backup setiap kali ada perubahan
-    autoBackupCheck();
+    saveBudgets();
     
     let url = getCloudUrl();
     if (!url) return;
@@ -1504,6 +1991,7 @@ async function saveLocalAndSync(logType = null, logMessage = null, txId = null) 
         book: cleanBookName,
         data: {
             transactions: txs,
+            budgets: budgets,
             device_id: deviceId,
             sync_time: new Date().toISOString()
         }
@@ -1530,6 +2018,7 @@ async function saveLocalAndSync(logType = null, logMessage = null, txId = null) 
         if(d.success) {
             await loadFromCloud();
             render();
+            renderBudget();
             await refreshLogsFromCloud();
         } else {
             console.error('Gagal sinkronisasi otomatis ke cloud:', d.error);
@@ -1556,7 +2045,9 @@ async function loadFromCloud() {
         
         if (d.success && d.transactions) {
             txs = d.transactions;
+            if (d.budgets) budgets = d.budgets;
             saveLocal();
+            saveBudgets();
             return true;
         }
         return false;
@@ -1662,6 +2153,7 @@ async function handleSubmit(e) {
     await saveLocalAndSync('TAMBAH', msg, newTransaction.id);
     
     render();
+    renderBudget();
     closeModal('addModal');
     document.getElementById('addForm').reset();
     document.getElementById('attachmentPreview').style.display = 'none';
@@ -1695,6 +2187,7 @@ async function handleEditSubmit(e) {
         await saveLocalAndSync('UBAH', msg, id);
         
         render();
+        renderBudget();
         showToast('Transaksi berhasil diubah!', 'success');
     }
     closeModal('editModal');
@@ -1710,13 +2203,14 @@ async function deleteTransaction(id) {
             await saveLocalAndSync('HAPUS', msg, id);
             
             render();
+            renderBudget();
             showToast('Transaksi berhasil dihapus!', 'info');
         }
     }
     closeModal('actionMenuModal');
 }
 
-// ==================== MANAJEMEN BUKU KAS DENGAN KEAMANAN ====================
+// ==================== MANAJEMEN BUKU KAS ====================
 function loadBooks() {
     let stored = localStorage.getItem('artaflow_books');
     if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
@@ -1730,6 +2224,17 @@ function loadBooks() {
     let active = localStorage.getItem('artaflow_active_book_id');
     currentBookId = (active && books.some(b => b.id === active)) ? active : books[0].id;
     refreshBookSelectOptions();
+    
+    // Initialize year dropdown
+    const yearSelect = document.getElementById('budgetYear');
+    if (yearSelect) {
+        const currentYear = new Date().getFullYear();
+        yearSelect.innerHTML = '';
+        for (let y = currentYear - 2; y <= currentYear + 2; y++) {
+            yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        }
+        yearSelect.value = currentYear;
+    }
 }
 
 function refreshBookSelectOptions() {
@@ -1744,7 +2249,6 @@ function refreshBookSelectOptions() {
 }
 
 async function switchBook(id) {
-    // Cek apakah buku terkunci
     const targetBook = books.find(b => b.id === id);
     if (targetBook && targetBook.locked) {
         const password = prompt('Buku "' + targetBook.name + '" terkunci. Masukkan password untuk membuka:');
@@ -1761,12 +2265,16 @@ async function switchBook(id) {
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
     else { txs = []; }
+    
+    loadBudgets();
     render();
+    renderBudget();
     
     document.getElementById('logSummaryArea').innerHTML = '🔄 Menyinkronkan data Buku Kas dengan Cloud...';
     let syncSuccess = await loadFromCloud();
     if(syncSuccess) {
         render();
+        renderBudget();
         showToast('Data berhasil disinkronkan!', 'success');
     }
     await refreshLogsFromCloud();
@@ -1802,7 +2310,6 @@ function toggleBookLock(bookId, bookName) {
     const book = books.find(b => b.id === bookId);
     if (book) {
         if (!book.locked) {
-            // Mengunci buku
             const setPassword = prompt('Buat password untuk buku "' + bookName + '" (minimal 4 karakter):');
             if (setPassword && setPassword.length >= 4) {
                 book.locked = true;
@@ -1818,7 +2325,6 @@ function toggleBookLock(bookId, bookName) {
                 alert('Password harus minimal 4 karakter!');
             }
         } else {
-            // Membuka kunci buku
             const password = prompt('Masukkan password untuk membuka kunci buku "' + bookName + '":');
             if (password && _deobfuscate(book.password) === password) {
                 book.locked = false;
@@ -1846,7 +2352,6 @@ function secureDeleteBook(bookId) {
         return;
     }
     
-    // Cek apakah ada cadangan
     const backups = getBackupList();
     if (backups.length === 0 && txs.length > 0) {
         const confirmBackup = confirm('⚠️ PERINGATAN KEAMANAN!\n\nBuku "' + bTarget.name + '" memiliki ' + txs.length + ' transaksi tetapi BELUM ADA CADANGAN.\n\nApakah Anda ingin membuat cadangan sebelum menghapus?');
@@ -1857,7 +2362,6 @@ function secureDeleteBook(bookId) {
         }
     }
     
-    // Verifikasi dengan password
     const password = prompt('🔒 VERIFIKASI KEAMANAN\n\nUntuk menghapus buku "' + bTarget.name + '", ketik "DELETE" (huruf besar) untuk konfirmasi:');
     
     if (password !== 'DELETE') {
@@ -1865,22 +2369,20 @@ function secureDeleteBook(bookId) {
         return;
     }
     
-    // Verifikasi akhir dengan kata SETUJU
-    const finalConfirm = prompt('⚠️ PERINGATAN TERAKHIR!\n\nData transaksi dari "' + bTarget.name + '" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik "' + SECURITY_CONFIG.requiredConfirmWord + '" (huruf besar) untuk menghapus secara permanen:');
+    const finalConfirm = prompt('⚠️ PERINGATAN TERAKHIR!\n\nData transaksi dari "' + bTarget.name + '" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik "SETUJU" (huruf besar) untuk menghapus secara permanen:');
     
-    if (finalConfirm !== SECURITY_CONFIG.requiredConfirmWord) {
+    if (finalConfirm !== 'SETUJU') {
         alert('❌ Kata kunci salah. Penghapusan buku kas dibatalkan.');
         return;
     }
     
-    // Proses penghapusan
     localStorage.removeItem('artaflow_txs_' + bookId);
+    localStorage.removeItem('artaflow_budgets_' + bookId);
     if (cloudUrls[bookId]) {
         delete cloudUrls[bookId];
         localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
     }
     
-    // Hapus backup metadata buku ini
     localStorage.removeItem('artaflow_backup_metadata_' + bookId);
     
     books = books.filter(b => b.id !== bookId);
@@ -1934,7 +2436,13 @@ function exportToCSV() {
 function exportToJSON() {
     if (!txs.length) { alert("Tidak ada data transaksi untuk diekspor."); return; }
     let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-    let dataStr = JSON.stringify(txs, null, 2);
+    const exportData = {
+        transactions: txs,
+        budgets: budgets,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    let dataStr = JSON.stringify(exportData, null, 2);
     let blob = new Blob([dataStr], { type: 'application/json' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1956,30 +2464,36 @@ function handleJsonImport(e) {
         try {
             let importedData = JSON.parse(event.target.result);
             
-            if (!Array.isArray(importedData)) {
+            let importedTransactions = importedData.transactions || importedData;
+            
+            if (!Array.isArray(importedTransactions)) {
                 throw new Error("Format JSON tidak valid. Data wajib berbentuk List/Array.");
             }
             
-            if (importedData.length > 0) {
-                let sample = importedData[0];
+            if (importedTransactions.length > 0) {
+                let sample = importedTransactions[0];
                 if (!sample.id || !sample.type || !sample.date || sample.amount === undefined) {
                     throw new Error("Struktur transaksi JSON salah. Wajib memiliki field: id, type, date, amount, dan desc.");
                 }
             }
             
             let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-            let confirmImport = confirm('⚠️ PERINGATAN!\n\nApakah Anda yakin ingin mengimpor ' + importedData.length + ' data transaksi ke dalam buku "' + bName + '"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.\n\nDianjurkan untuk membuat cadangan terlebih dahulu.');
+            let confirmImport = confirm('⚠️ PERINGATAN!\n\nApakah Anda yakin ingin mengimpor ' + importedTransactions.length + ' data transaksi ke dalam buku "' + bName + '"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.\n\nDianjurkan untuk membuat cadangan terlebih dahulu.');
             
             if (confirmImport) {
-                // Buat backup otomatis sebelum import
                 createBackup();
                 
-                txs = importedData;
-                let msg = 'Melakukan impor cadangan data JSON (' + importedData.length + ' transaksi) secara manual ke aplikasi.';
+                txs = importedTransactions;
+                if (importedData.budgets) budgets = importedData.budgets;
+                saveLocal();
+                saveBudgets();
+                
+                let msg = 'Melakukan impor cadangan data JSON (' + importedTransactions.length + ' transaksi) secara manual ke aplikasi.';
                 await saveLocalAndSync('SISTEM', msg, null);
                 
                 render();
-                alert('✅ Berhasil memuat ' + importedData.length + ' data transaksi ke dalam ' + bName + '!');
+                renderBudget();
+                alert('✅ Berhasil memuat ' + importedTransactions.length + ' data transaksi ke dalam ' + bName + '!');
                 closeModal('bookManagerModal');
                 showToast('Impor data berhasil!', 'success');
             }
@@ -2051,6 +2565,13 @@ function doPost(e) {
       txSheet.getRange("A1:G1").setFontWeight("bold");
     }
     
+    let budgetSheet = ss.getSheetByName(bookName + "_budgets");
+    if (!budgetSheet) {
+      budgetSheet = ss.insertSheet(bookName + "_budgets");
+      budgetSheet.appendRow(["year", "month", "category", "amount"]);
+      budgetSheet.getRange("A1:D1").setFontWeight("bold");
+    }
+    
     let logSheet = ss.getSheetByName(bookName + "_logs");
     if (!logSheet) {
       logSheet = ss.insertSheet(bookName + "_logs");
@@ -2073,11 +2594,23 @@ function doPost(e) {
           attachment: rows[i][6] || ""
         });
       }
-      return res.setContent(JSON.stringify({ success: true, transactions: transactions }));
+      
+      const budgetRows = budgetSheet.getDataRange().getDisplayValues();
+      const budgets = {};
+      for (let i = 1; i < budgetRows.length; i++) {
+        if (!budgetRows[i][0]) continue;
+        const key = budgetRows[i][0] + "-" + budgetRows[i][1];
+        if (!budgets[key]) budgets[key] = {};
+        budgets[key][budgetRows[i][2]] = Number(budgetRows[i][3]);
+      }
+      
+      return res.setContent(JSON.stringify({ success: true, transactions: transactions, budgets: budgets }));
     }
     
     if (action === "full_sync_with_log" || action === "full_sync") {
       const newData = req.data.transactions;
+      const newBudgets = req.data.budgets;
+      
       if (newData && Array.isArray(newData)) {
         const existingRows = txSheet.getDataRange().getDisplayValues();
         const sheetMap = {};
@@ -2114,6 +2647,21 @@ function doPost(e) {
             return [String(t.id), String(t.date), String(t.desc), String(t.type), Number(t.amount), String(t.created_at || ""), String(t.attachment || "")];
           });
           txSheet.getRange(2, 1, values.length, 7).setValues(values);
+        }
+      }
+      
+      if (newBudgets) {
+        budgetSheet.clearContents();
+        budgetSheet.getRange(1, 1, 1, 4).setValues([["year", "month", "category", "amount"]]);
+        const budgetValues = [];
+        for (const key in newBudgets) {
+          const [year, month] = key.split('-');
+          for (const cat in newBudgets[key]) {
+            budgetValues.push([year, month, cat, newBudgets[key][cat]]);
+          }
+        }
+        if (budgetValues.length > 0) {
+          budgetSheet.getRange(2, 1, budgetValues.length, 4).setValues(budgetValues);
         }
       }
       
@@ -2193,9 +2741,9 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
 
 (async function init() {
     loadBooks();
+    loadBudgets();
     document.getElementById('scriptCodeArea').value = BACKEND_SCRIPT;
     
-    // Set default datetime to now
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -2210,17 +2758,22 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
     
     render();
+    renderBudget();
     let syncSuccess = await loadFromCloud();
     if(syncSuccess) {
         render();
+        renderBudget();
         showToast('Data berhasil dimuat dari cloud!', 'success');
     }
     await refreshLogsFromCloud();
     updateTime();
     setInterval(updateTime, 1000);
     
-    // Auto backup periodik
-    setInterval(() => autoBackupCheck(), 60 * 60 * 1000); // Cek setiap jam
+    setInterval(() => {
+        if (txs.length > 0) {
+            createBackup();
+        }
+    }, 24 * 60 * 60 * 1000);
 })();
 
 // Export fungsi ke global window
@@ -2255,6 +2808,10 @@ window.deleteBackup = deleteBackup;
 window.openBackupManager = openBackupManager;
 window.secureDeleteBook = secureDeleteBook;
 window.toggleBookLock = toggleBookLock;
+window.openBudgetModal = openBudgetModal;
+window.saveBudget = saveBudget;
+window.generatePDFReport = generatePDFReport;
+window.renderBudget = renderBudget;
 </script>
 </body>
 </html>

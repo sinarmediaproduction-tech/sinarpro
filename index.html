@@ -2128,9 +2128,10 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUppe
     let sync = await loadFromCloud();
     if (sync) { render(); renderBudget(); }
     await refreshLogsFromCloud();
-    updateTime();
-    setInterval(updateTime, 1000);
 })();
+
+updateTime();
+setInterval(updateTime, 1000);
 
 // Expose functions to global scope
 window.closeModal = closeModal;

@@ -975,214 +975,6 @@ const _S_KEY = 42;
 function _obfuscate(str) { if(!str) return ''; let r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return btoa(r); }
 function _deobfuscate(b64) { if(!b64) return ''; try { let str=atob(b64), r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return r; } catch(e){ return ''; } }
 
-// ==================== DATA INITIALIZATION WITH SAMPLE DATA ====================
-function initSampleData() {
-    let existing = localStorage.getItem('artaflow_txs_' + currentBookId);
-    if (!existing || JSON.parse(existing).length === 0) {
-        let now = new Date();
-        let sampleTxs = [
-            { id: 1001, type: 'income', category: null, date: now.toISOString().slice(0,16), desc: 'Gaji Bulanan', amount: 5000000, created_at: new Date().toISOString(), attachment: '', balance: 5000000 },
-            { id: 1002, type: 'expense', category: 'Makanan & Minuman', date: now.toISOString().slice(0,16), desc: 'Belanja Bulanan', amount: 1500000, created_at: new Date().toISOString(), attachment: '', balance: 3500000 },
-            { id: 1003, type: 'expense', category: 'Transportasi', date: now.toISOString().slice(0,16), desc: 'Bensin & Tol', amount: 500000, created_at: new Date().toISOString(), attachment: '', balance: 3000000 },
-            { id: 1004, type: 'expense', category: 'Tagihan', date: now.toISOString().slice(0,16), desc: 'Listrik & Internet', amount: 700000, created_at: new Date().toISOString(), attachment: '', balance: 2300000 },
-            { id: 1005, type: 'income', category: null, date: now.toISOString().slice(0,16), desc: 'Freelance', amount: 2000000, created_at: new Date().toISOString(), attachment: '', balance: 4300000 }
-        ];
-        txs = sampleTxs;
-        saveLocal();
-        render();
-        renderBudget();
-        showToast('Data contoh telah ditambahkan!', 'info');
-    }
-}
-
-// ==================== MONTHLY REPORT FUNCTIONS ====================
-function openMonthlyReport() {
-    let now = new Date();
-    document.getElementById('reportMonth').value = now.getMonth() + 1;
-    document.getElementById('reportYear').value = now.getFullYear();
-    openModal('monthlyReportModal');
-    generateMonthlyReport();
-}
-
-function generateMonthlyReport() {
-    let month = parseInt(document.getElementById('reportMonth').value);
-    let year = parseInt(document.getElementById('reportYear').value);
-    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    let monthName = monthNames[month - 1];
-    let bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
-    
-    document.getElementById('reportModalTitle').innerHTML = `📊 Laporan ${monthName} ${year} - ${escapeHtml(bookName)}`;
-    
-    // Filter transaksi bulan ini
-    let monthTxs = txs.filter(t => {
-        let d = new Date(t.date);
-        return d.getMonth() + 1 === month && d.getFullYear() === year;
-    });
-    
-    let totalIncome = monthTxs.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
-    let totalExpense = monthTxs.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
-    let balance = totalIncome - totalExpense;
-    
-    // Hitung per kategori pengeluaran
-    let categoryData = {};
-    EXPENSE_CATEGORIES.forEach(cat => { categoryData[cat] = 0; });
-    monthTxs.filter(t => t.type === 'expense').forEach(t => {
-        if (t.category && categoryData[t.category] !== undefined) {
-            categoryData[t.category] += t.amount;
-        } else if (t.category) {
-            categoryData[t.category] = (categoryData[t.category] || 0) + t.amount;
-        }
-    });
-    
-    // Siapkan data untuk chart
-    let chartLabels = [];
-    let chartValues = [];
-    for (let cat in categoryData) {
-        if (categoryData[cat] > 0) {
-            chartLabels.push(cat);
-            chartValues.push(categoryData[cat]);
-        }
-    }
-    
-    // Buat konten report
-    let reportHtml = `
-        <div class="report-stats">
-            <div class="report-stat-card" style="border-color:#00875a">
-                <div class="report-stat-label">💵 Total Pemasukan</div>
-                <div class="report-stat-value" style="color:#00875a">${rp(totalIncome)}</div>
-            </div>
-            <div class="report-stat-card" style="border-color:#de350b">
-                <div class="report-stat-label">💰 Total Pengeluaran</div>
-                <div class="report-stat-value" style="color:#de350b">${rp(totalExpense)}</div>
-            </div>
-            <div class="report-stat-card" style="border-color:${balance >= 0 ? '#00875a' : '#de350b'}">
-                <div class="report-stat-label">⚖️ Saldo</div>
-                <div class="report-stat-value" style="color:${balance >= 0 ? '#00875a' : '#de350b'}">${rp(balance)}</div>
-            </div>
-        </div>
-    `;
-    
-    if (chartLabels.length > 0) {
-        reportHtml += `
-            <div class="chart-container">
-                <canvas id="reportChartCanvas" style="max-height: 250px; width: 100%;"></canvas>
-            </div>
-        `;
-    }
-    
-    if (chartLabels.length > 0) {
-        reportHtml += `
-            <table class="report-table">
-                <thead><tr><th>Kategori Pengeluaran</th><th class="text-right">Jumlah</th><th class="text-right">Persentase</th></tr></thead>
-                <tbody>
-        `;
-        chartLabels.forEach((label, idx) => {
-            let percent = totalExpense > 0 ? (chartValues[idx] / totalExpense * 100).toFixed(1) : 0;
-            reportHtml += `<tr><td>${label}</td><td class="text-right">${rp(chartValues[idx])}</td><td class="text-right">${percent}%</td></tr>`;
-        });
-        reportHtml += `</tbody></table>`;
-    }
-    
-    // Daftar transaksi
-    if (monthTxs.length > 0) {
-        reportHtml += `
-            <table class="report-table" style="margin-top:20px">
-                <thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="text-right">Jenis</th><th class="text-right">Jumlah</th></tr></thead>
-                <tbody>
-        `;
-        monthTxs.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(t => {
-            let typeText = t.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-            let typeColor = t.type === 'income' ? '#00875a' : '#de350b';
-            reportHtml += `<tr>
-                <td>${formatDateTime(t.date)}</td>
-                <td>${t.category || '-'}</td>
-                <td>${escapeHtml(t.desc)}</td>
-                <td class="text-right" style="color:${typeColor}">${typeText}</td>
-                <td class="text-right" style="color:${typeColor}">${rp(t.amount)}</td>
-            </tr>`;
-        });
-        reportHtml += `</tbody></table>`;
-    } else {
-        reportHtml += `<div style="text-align:center; padding:30px; color:#666;">📭 Belum ada transaksi pada bulan ini</div>`;
-    }
-    
-    document.getElementById('reportContent').innerHTML = reportHtml;
-    
-    // Render chart setelah DOM update
-    if (chartLabels.length > 0) {
-        setTimeout(() => {
-            let ctx = document.getElementById('reportChartCanvas')?.getContext('2d');
-            if (ctx) {
-                if (reportChart) reportChart.destroy();
-                reportChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: chartLabels,
-                        datasets: [{
-                            data: chartValues,
-                            backgroundColor: ['#00875a', '#de350b', '#ffab00', '#4a5568', '#00a3bf', '#6554c0', '#ff8b3d', '#36b37e', '#e6b400', '#ff7452'],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: { position: 'bottom', labels: { font: { size: 10 } } },
-                            tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${rp(ctx.raw)}` } }
-                        }
-                    }
-                });
-            }
-        }, 100);
-    }
-}
-
-function exportReportAsPDF() {
-    let month = parseInt(document.getElementById('reportMonth').value);
-    let year = parseInt(document.getElementById('reportYear').value);
-    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    let monthName = monthNames[month - 1];
-    let bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
-    
-    let element = document.getElementById('reportContent');
-    let originalHtml = element.innerHTML;
-    
-    let printHtml = `
-        <div style="font-family: Inter, sans-serif; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">
-                <div style="font-size: 18px; font-weight: 700;">ARTAFLOW - LAPORAN BULANAN</div>
-                <div style="font-size: 12px; color: #666;">${bookName} | ${monthName} ${year}</div>
-                <div style="font-size: 10px; color: #999;">${new Date().toLocaleString('id-ID')}</div>
-            </div>
-            ${originalHtml}
-            <div style="margin-top: 20px; text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #ddd;">
-                Laporan dibuat otomatis oleh ArtaFlow
-            </div>
-        </div>
-    `;
-    
-    let el = document.createElement('div');
-    el.innerHTML = printHtml;
-    el.style.position = 'absolute';
-    el.style.left = '-9999px';
-    document.body.appendChild(el);
-    
-    html2pdf().set({
-        margin: [0.5, 0.5, 0.5, 0.5],
-        filename: `ArtaFlow_${bookName}_${monthName}_${year}_Laporan.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    }).from(el).save().then(() => {
-        document.body.removeChild(el);
-        showToast('Laporan PDF selesai!', 'success');
-    }).catch(() => {
-        document.body.removeChild(el);
-        showToast('Gagal buat PDF', 'error');
-    });
-}
-
 // ==================== TOGGLE CATEGORY FIELD ====================
 function toggleCategoryField() {
     let type = document.querySelector('input[name="type"]:checked').value;
@@ -1402,68 +1194,120 @@ function saveBudget() {
     saveLocalAndSync('SISTEM', `Menyimpan anggaran bulan ${month} ${year}`, null);
 }
 
+// ==================== PDF REPORT FUNCTIONS (DIPERBAIKI) ====================
 function generatePDFReport() {
     let month = parseInt(document.getElementById('budgetMonth').value);
     let year = parseInt(document.getElementById('budgetYear').value);
-    let monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     let monthName = monthNames[month-1];
     let bookName = books.find(b=>b.id===currentBookId)?.name||'Buku Kas';
-    let monthTx = txs.filter(t=>{let d=new Date(t.date); return d.getMonth()+1===month && d.getFullYear()===year;}).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    let totalIncome = monthTx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0);
-    let totalExpense = monthTx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0);
-    let balance = totalIncome - totalExpense;
-    let budgetKey = year+'-'+month;
-    let monthlyBudget = budgets[budgetKey]||{};
-    let totalBudget = Object.values(monthlyBudget).reduce((a,b)=>a+b,0);
     
+    // Filter transaksi berdasarkan bulan dan tahun
+    let monthTx = txs.filter(t => {
+        let d = new Date(t.date);
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+    }).sort((a,b) => new Date(a.date) - new Date(b.date));
+    
+    let totalIncome = monthTx.filter(t => t.type === 'income').reduce((a,b) => a + b.amount, 0);
+    let totalExpense = monthTx.filter(t => t.type === 'expense').reduce((a,b) => a + b.amount, 0);
+    let balance = totalIncome - totalExpense;
+    let budgetKey = year + '-' + month;
+    let monthlyBudget = budgets[budgetKey] || {};
+    let totalBudget = Object.values(monthlyBudget).reduce((a,b) => a + b, 0);
+    
+    // Tabel kategori
     let categoryReport = '';
     for (let cat of EXPENSE_CATEGORIES) {
         let target = monthlyBudget[cat] || 0;
         let actual = getActualExpensesByCategory(month, year, cat);
         if (target > 0 || actual > 0) {
-            categoryReport += `<tr><td style="border:1px solid #ddd; padding:6px;">${cat}</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">${rp(target)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">${rp(actual)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right; ${actual>target?'color:#de350b':'color:#00875a'}">${rp(target-actual)}</td></tr>`;
+            categoryReport += `<tr>
+                <td style="border:1px solid #ddd; padding:6px;">${cat}</td>
+                <td style="border:1px solid #ddd; padding:6px; text-align:right;">${rp(target)}</td>
+                <td style="border:1px solid #ddd; padding:6px; text-align:right;">${rp(actual)}</td>
+                <td style="border:1px solid #ddd; padding:6px; text-align:right; ${actual>target?'color:#de350b':'color:#00875a'}">${rp(target-actual)}</td>
+            </tr>`;
         }
     }
     
-    let html = `<div style="font-family:Inter,sans-serif; padding:20px;">
-        <div style="text-align:center; margin-bottom:20px; border-bottom:2px solid #1a1a1a; padding-bottom:10px;">
-            <div style="font-size:18px; font-weight:700;">ARTAFLOW - LAPORAN KEUANGAN</div>
-            <div style="font-size:12px; color:#666;">${bookName} | ${monthName} ${year}</div>
-            <div style="font-size:10px; color:#999;">${new Date().toLocaleString('id-ID')}</div>
-        </div>
-        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
-            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Pemasukan</div><div style="font-size:16px; font-weight:700; color:#00875a;">${rp(totalIncome)}</div></div>
-            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Pengeluaran</div><div style="font-size:16px; font-weight:700; color:#de350b;">${rp(totalExpense)}</div></div>
-            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Saldo</div><div style="font-size:16px; font-weight:700; color:${balance>=0?'#00875a':'#de350b'};">${rp(balance)}</div></div>
-            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Target Anggaran</div><div style="font-size:16px; font-weight:700;">${rp(totalBudget)}</div></div>
-        </div>
-        <div style="margin-bottom:20px;">
-            <div style="font-size:14px; font-weight:700; margin-bottom:10px;">📊 REALISASI ANGGARAN PER KATEGORI</div>
-            <table style="width:100%; border-collapse:collapse; font-size:10px;">
-                <thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Kategori</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Target</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Realisasi</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Sisa/(Over)</th></tr></thead>
-                <tbody>${categoryReport || '<td><td colspan="4" style="text-align:center;">Belum ada anggaran</td></tr>'}</tbody>
-            </table>
-        </div>
-        <div>
-            <div style="font-size:14px; font-weight:700; margin-bottom:10px;">📋 DETIL TRANSAKSI</div>
-            <table style="width:100%; border-collapse:collapse; font-size:10px;">
-                <thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Tanggal</th><th style="border:1px solid #ddd; padding:6px;">Kategori</th><th style="border:1px solid #ddd; padding:6px;">Deskripsi</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Jumlah</th></tr></thead>
-                <tbody>`;
+    // Tabel transaksi
+    let transactionsHtml = '';
     monthTx.forEach(t => {
-        html += `<tr><td style="border:1px solid #ddd; padding:6px;">${formatDateTime(t.date)}</td><td style="border:1px solid #ddd; padding:6px;">${t.category || '-'}</td><td style="border:1px solid #ddd; padding:6px;">${escapeHtml(t.desc)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right; ${t.type==='income'?'color:#00875a':'color:#de350b'}">${rp(t.amount)}</td></tr>`;
+        transactionsHtml += `<tr>
+            <td style="border:1px solid #ddd; padding:6px;">${formatDateTime(t.date)}</td>
+            <td style="border:1px solid #ddd; padding:6px;">${t.category || '-'}</td>
+            <td style="border:1px solid #ddd; padding:6px;">${escapeHtml(t.desc)}</td>
+            <td style="border:1px solid #ddd; padding:6px; text-align:right; ${t.type==='income'?'color:#00875a':'color:#de350b'}">${rp(t.amount)}</td>
+        </tr>`;
     });
-    if(monthTx.length === 0) html += '<tr><td colspan="4" style="text-align:center; padding:20px;">Tidak ada transaksi</td></tr>';
-    html += `</tbody>
-            </table>
-        </div>
-        <div style="margin-top:20px; text-align:center; font-size:9px; color:#999; padding-top:10px; border-top:1px solid #ddd;">Laporan dibuat otomatis oleh ArtaFlow</div>
-    </div>`;
     
-    let el = document.createElement('div'); 
-    el.innerHTML = html; 
-    el.style.position = 'absolute'; 
-    el.style.left = '-9999px'; 
+    if (monthTx.length === 0) {
+        transactionsHtml = '<tr><td colspan="4" style="text-align:center; padding:20px;">Tidak ada transaksi</td></tr>';
+    }
+    
+    let html = `
+        <div style="font-family: Inter, sans-serif; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">
+                <div style="font-size: 18px; font-weight: 700;">ARTAFLOW - LAPORAN KEUANGAN</div>
+                <div style="font-size: 12px; color: #666;">${bookName} | ${monthName} ${year}</div>
+                <div style="font-size: 10px; color: #999;">${new Date().toLocaleString('id-ID')}</div>
+            </div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+                <div style="flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px;">Pemasukan</div>
+                    <div style="font-size: 16px; font-weight: 700; color: #00875a;">${rp(totalIncome)}</div>
+                </div>
+                <div style="flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px;">Pengeluaran</div>
+                    <div style="font-size: 16px; font-weight: 700; color: #de350b;">${rp(totalExpense)}</div>
+                </div>
+                <div style="flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px;">Saldo</div>
+                    <div style="font-size: 16px; font-weight: 700; color: ${balance >= 0 ? '#00875a' : '#de350b'};">${rp(balance)}</div>
+                </div>
+                <div style="flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px;">Target Anggaran</div>
+                    <div style="font-size: 16px; font-weight: 700;">${rp(totalBudget)}</div>
+                </div>
+            </div>
+            ${categoryReport ? `
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">📊 REALISASI ANGGARAN PER KATEGORI</div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                    <thead><tr style="background: #f5f5f5;">
+                        <th style="border: 1px solid #ddd; padding: 6px;">Kategori</th>
+                        <th style="border: 1px solid #ddd; padding: 6px; text-align: right;">Target</th>
+                        <th style="border: 1px solid #ddd; padding: 6px; text-align: right;">Realisasi</th>
+                        <th style="border: 1px solid #ddd; padding: 6px; text-align: right;">Sisa/(Over)</th>
+                    </tr></thead>
+                    <tbody>${categoryReport}</tbody>
+                </table>
+            </div>
+            ` : ''}
+            <div>
+                <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">📋 DETIL TRANSAKSI</div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                    <thead><tr style="background: #f5f5f5;">
+                        <th style="border: 1px solid #ddd; padding: 6px;">Tanggal</th>
+                        <th style="border: 1px solid #ddd; padding: 6px;">Kategori</th>
+                        <th style="border: 1px solid #ddd; padding: 6px;">Deskripsi</th>
+                        <th style="border: 1px solid #ddd; padding: 6px; text-align: right;">Jumlah</th>
+                    </tr></thead>
+                    <tbody>${transactionsHtml}</tbody>
+                </table>
+            </div>
+            <div style="margin-top: 20px; text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #ddd;">
+                Laporan dibuat otomatis oleh ArtaFlow
+            </div>
+        </div>
+    `;
+    
+    let el = document.createElement('div');
+    el.innerHTML = html;
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
     document.body.appendChild(el);
+    
     html2pdf().set({
         margin: [0.5, 0.5, 0.5, 0.5],
         filename: `ArtaFlow_${bookName}_${monthName}_${year}.pdf`,
@@ -1473,8 +1317,204 @@ function generatePDFReport() {
     }).from(el).save().then(() => {
         document.body.removeChild(el);
         showToast('PDF selesai!', 'success');
-    }).catch(() => {
+    }).catch((err) => {
         document.body.removeChild(el);
+        console.error('PDF Error:', err);
+        showToast('Gagal buat PDF', 'error');
+    });
+}
+
+// ==================== MONTHLY REPORT FUNCTIONS ====================
+function openMonthlyReport() {
+    let now = new Date();
+    document.getElementById('reportMonth').value = now.getMonth() + 1;
+    document.getElementById('reportYear').value = now.getFullYear();
+    openModal('monthlyReportModal');
+    generateMonthlyReport();
+}
+
+function generateMonthlyReport() {
+    let month = parseInt(document.getElementById('reportMonth').value);
+    let year = parseInt(document.getElementById('reportYear').value);
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let monthName = monthNames[month - 1];
+    let bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
+    
+    document.getElementById('reportModalTitle').innerHTML = `📊 Laporan ${monthName} ${year} - ${escapeHtml(bookName)}`;
+    
+    // Filter transaksi bulan ini
+    let monthTxs = txs.filter(t => {
+        let d = new Date(t.date);
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+    
+    let totalIncome = monthTxs.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+    let totalExpense = monthTxs.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+    let balance = totalIncome - totalExpense;
+    
+    // Hitung per kategori pengeluaran
+    let categoryData = {};
+    EXPENSE_CATEGORIES.forEach(cat => { categoryData[cat] = 0; });
+    monthTxs.filter(t => t.type === 'expense').forEach(t => {
+        if (t.category && categoryData[t.category] !== undefined) {
+            categoryData[t.category] += t.amount;
+        } else if (t.category) {
+            categoryData[t.category] = (categoryData[t.category] || 0) + t.amount;
+        }
+    });
+    
+    // Siapkan data untuk chart
+    let chartLabels = [];
+    let chartValues = [];
+    for (let cat in categoryData) {
+        if (categoryData[cat] > 0) {
+            chartLabels.push(cat);
+            chartValues.push(categoryData[cat]);
+        }
+    }
+    
+    // Buat konten report
+    let reportHtml = `
+        <div class="report-stats">
+            <div class="report-stat-card" style="border-color:#00875a">
+                <div class="report-stat-label">💵 Total Pemasukan</div>
+                <div class="report-stat-value" style="color:#00875a">${rp(totalIncome)}</div>
+            </div>
+            <div class="report-stat-card" style="border-color:#de350b">
+                <div class="report-stat-label">💰 Total Pengeluaran</div>
+                <div class="report-stat-value" style="color:#de350b">${rp(totalExpense)}</div>
+            </div>
+            <div class="report-stat-card" style="border-color:${balance >= 0 ? '#00875a' : '#de350b'}">
+                <div class="report-stat-label">⚖️ Saldo</div>
+                <div class="report-stat-value" style="color:${balance >= 0 ? '#00875a' : '#de350b'}">${rp(balance)}</div>
+            </div>
+        </div>
+    `;
+    
+    if (chartLabels.length > 0) {
+        reportHtml += `
+            <div class="chart-container">
+                <canvas id="reportChartCanvas" style="max-height: 250px; width: 100%;"></canvas>
+            </div>
+        `;
+    }
+    
+    if (chartLabels.length > 0) {
+        reportHtml += `
+            <table class="report-table">
+                <thead><tr><th>Kategori Pengeluaran</th><th class="text-right">Jumlah</th><th class="text-right">Persentase</th></tr></thead>
+                <tbody>
+        `;
+        chartLabels.forEach((label, idx) => {
+            let percent = totalExpense > 0 ? (chartValues[idx] / totalExpense * 100).toFixed(1) : 0;
+            reportHtml += `<tr><td>${label}</td><td class="text-right">${rp(chartValues[idx])}</td><td class="text-right">${percent}%</td></tr>`;
+        });
+        reportHtml += `</tbody></table>`;
+    }
+    
+    // Daftar transaksi
+    if (monthTxs.length > 0) {
+        reportHtml += `
+            <table class="report-table" style="margin-top:20px">
+                <thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="text-right">Jenis</th><th class="text-right">Jumlah</th></tr></thead>
+                <tbody>
+        `;
+        monthTxs.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+            let typeText = t.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+            let typeColor = t.type === 'income' ? '#00875a' : '#de350b';
+            reportHtml += `<tr>
+                <td>${formatDateTime(t.date)}</td>
+                <td>${t.category || '-'}</td>
+                <td>${escapeHtml(t.desc)}</td>
+                <td class="text-right" style="color:${typeColor}">${typeText}</td>
+                <td class="text-right" style="color:${typeColor}">${rp(t.amount)}</td>
+            </tr>`;
+        });
+        reportHtml += `</tbody></table>`;
+    } else {
+        reportHtml += `<div style="text-align:center; padding:30px; color:#666;">📭 Belum ada transaksi pada bulan ini</div>`;
+    }
+    
+    document.getElementById('reportContent').innerHTML = reportHtml;
+    
+    // Render chart setelah DOM update
+    if (chartLabels.length > 0) {
+        setTimeout(() => {
+            let ctx = document.getElementById('reportChartCanvas')?.getContext('2d');
+            if (ctx) {
+                if (reportChart) reportChart.destroy();
+                reportChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            data: chartValues,
+                            backgroundColor: ['#00875a', '#de350b', '#ffab00', '#4a5568', '#00a3bf', '#6554c0', '#ff8b3d', '#36b37e', '#e6b400', '#ff7452'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                            tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${rp(ctx.raw)}` } }
+                        }
+                    }
+                });
+            }
+        }, 100);
+    }
+}
+
+function exportReportAsPDF() {
+    let month = parseInt(document.getElementById('reportMonth').value);
+    let year = parseInt(document.getElementById('reportYear').value);
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let monthName = monthNames[month - 1];
+    let bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
+    
+    // Ambil konten yang sudah ada di reportContent
+    let contentElement = document.getElementById('reportContent');
+    let originalContent = contentElement.innerHTML;
+    
+    if (!originalContent || originalContent.includes('Pilih bulan dan tahun')) {
+        showToast('Silakan klik Tampilkan terlebih dahulu!', 'error');
+        return;
+    }
+    
+    let printHtml = `
+        <div style="font-family: Inter, sans-serif; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">
+                <div style="font-size: 18px; font-weight: 700;">ARTAFLOW - LAPORAN BULANAN</div>
+                <div style="font-size: 12px; color: #666;">${bookName} | ${monthName} ${year}</div>
+                <div style="font-size: 10px; color: #999;">${new Date().toLocaleString('id-ID')}</div>
+            </div>
+            ${originalContent}
+            <div style="margin-top: 20px; text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #ddd;">
+                Laporan dibuat otomatis oleh ArtaFlow
+            </div>
+        </div>
+    `;
+    
+    let el = document.createElement('div');
+    el.innerHTML = printHtml;
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    
+    html2pdf().set({
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `ArtaFlow_${bookName}_${monthName}_${year}_Laporan.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).from(el).save().then(() => {
+        document.body.removeChild(el);
+        showToast('Laporan PDF selesai!', 'success');
+    }).catch((err) => {
+        document.body.removeChild(el);
+        console.error('PDF Export Error:', err);
         showToast('Gagal buat PDF', 'error');
     });
 }
@@ -2037,7 +2077,6 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUppe
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) try { txs = JSON.parse(local); } catch(e) { txs = []; }
     
-    // Jika tidak ada data, tambahkan sample data
     if (txs.length === 0) {
         let sampleTxs = [
             { id: 1001, type: 'income', category: null, date: dt, desc: 'Gaji Bulanan', amount: 5000000, created_at: new Date().toISOString(), attachment: '' },
@@ -2060,6 +2099,7 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUppe
     setInterval(updateTime, 1000);
 })();
 
+// Expose functions to global scope
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.handleSubmit = handleSubmit;

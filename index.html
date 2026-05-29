@@ -578,8 +578,6 @@
     </div>
 </div>
 
-<!-- MODALS -->
-
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -662,7 +660,6 @@
     </div>
 </div>
 
-<!-- MODAL KELOLA BUKU KAS (DIPERBARUI) -->
 <div id="bookManagerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -680,7 +677,6 @@
             <button type="submit" class="btn btn-primary" style="width: 100%;">Buat Buku Baru</button>
         </form>
 
-        <!-- PANEL TATA KELOLA DATA UTAMA (EXPORT CSV, EXPORT JSON, IMPORT JSON) -->
         <div class="data-management-panel">
             <div class="panel-title">Data Cadangan Buku Aktif</div>
             <div class="panel-actions-row">
@@ -688,7 +684,6 @@
                 <button class="btn btn-secondary" style="flex: 1; padding: 6px 4px; font-size: .7rem;" onclick="exportToJSON()">📦 Ekspor JSON</button>
                 <button class="btn btn-secondary" style="flex: 1; padding: 6px 4px; font-size: .7rem;" onclick="triggerJsonImport()">📤 Impor JSON</button>
             </div>
-            <!-- Hidden Input File untuk Impor JSON -->
             <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleJsonImport(event)">
         </div>
 
@@ -711,266 +706,218 @@
 </div>
 
 <script>
-// ==================== ARTAFLOW CORE SCRIPT (VERSI MULTI-DEVICE AMAN) ====================
-
+// ==================== KONFIGURASI & VARIABEL GLOBAL ====================
 let txs = [];
 let books = [];
-let currentBookId = '';
+let currentBookId = 'b_default';
+let cloudUrls = {};
 let currentFilter = 'all';
-let filterStartDate = null;
-let filterEndDate = null;
+let filterStartDate = '';
+let filterEndDate = '';
 let actionId = null;
 let deviceId = '';
 
-const BACKEND_SCRIPT = `// KODE GAS SUDAH DIPERBARUI DI SPREADSHEET`;
-
-// --- OBSTRUKSI / UTILITY ENKRIPSI SEDERHANA ---
-function _obfuscate(str) {
-    if (!str) return '';
-    let result = '';
-    for (let i = 0; i < str.length; i++) {
-        result += String.fromCharCode(str.charCodeAt(i) ^ 42);
-    }
-    return btoa(result);
-}
-
-function _deobfuscate(str) {
-    if (!str) return '';
-    try {
-        let decoded = atob(str);
-        let result = '';
-        for (let i = 0; i < decoded.length; i++) {
-            result += String.fromCharCode(decoded.charCodeAt(i) ^ 42);
-        }
-        return result;
-    } catch (e) { return ''; }
-}
-
+// ==================== DEVICE ID UNIK ====================
 function getDeviceId() {
     let id = localStorage.getItem('artaflow_device_id');
     if (!id) {
-        id = 'DEV-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         localStorage.setItem('artaflow_device_id', id);
     }
     return id;
 }
 
-// --- MANAJEMEN BUKU ---
-function loadBooks() {
-    let local = localStorage.getItem('artaflow_books');
-    if (local) {
-        try { books = JSON.parse(local); } catch(e) { books = []; }
+// ==================== ENKRIPSI RINGAN ====================
+const _S_KEY = 42;
+function _obfuscate(str) {
+    if(!str) return '';
+    let result = "";
+    for (let i = 0; i < str.length; i++) {
+        result += String.fromCharCode(str.charCodeAt(i) ^ _S_KEY);
     }
-    if (books.length === 0) {
-        books = [{ id: 'default', name: 'Buku Utama', cloudUrl: '' }];
-        localStorage.setItem('artaflow_books', JSON.stringify(books));
-    }
-    currentBookId = localStorage.getItem('artaflow_current_book') || books[0].id;
-    if (!books.find(b => b.id === currentBookId)) {
-        currentBookId = books[0].id;
-    }
-    renderBookSelect();
+    return btoa(result);
 }
-
-function renderBookSelect() {
-    let select = document.getElementById('bookSelect');
-    if(select) {
-        select.innerHTML = '';
-        books.forEach(b => {
-            let opt = document.createElement('option');
-            opt.value = b.id;
-            opt.innerText = b.name;
-            opt.selected = b.id === currentBookId;
-            select.appendChild(opt);
-        });
-    }
-}
-
-function switchBook(bookId) {
-    currentBookId = bookId;
-    localStorage.setItem('artaflow_current_book', bookId);
-    let local = localStorage.getItem('artaflow_txs_' + currentBookId);
-    if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } } else { txs = []; }
-    render();
-    
-    // Tarik data cloud terbaru dari buku yang baru dipilih secara background
-    loadFromCloud().then(success => { if(success) render(); });
-}
-
-function openBookManager() {
-    openModal('bookModal');
-    renderBookList();
-    let curBook = books.find(b => b.id === currentBookId);
-    document.getElementById('cloudUrlInput').value = curBook && curBook.cloudUrl ? _deobfuscate(curBook.cloudUrl) : '';
-}
-
-function renderBookList() {
-    let list = document.getElementById('bookList');
-    list.innerHTML = '';
-    books.forEach(b => {
-        let div = document.createElement('div');
-        div.className = 'book-item';
-        div.style = 'display:flex; justify-content:space-between; align-items:center; padding:8px; border:1.5px solid #1a1a1a; margin-bottom:8px; background:#fff; box-shadow:2px 2px 0 #1a1a1a;';
-        
-        let info = document.createElement('span');
-        info.innerText = b.name + (b.id === currentBookId ? ' (Aktif)' : '');
-        info.style.fontWeight = b.id === currentBookId ? '700' : '400';
-        
-        let delBtn = document.createElement('button');
-        delBtn.innerText = 'Hapus';
-        delBtn.className = 'btn-danger';
-        delBtn.style = 'padding:2px 8px; font-size:12px; background:#ff6b6b; cursor:pointer; font-weight:700; border:1.5px solid #1a1a1a;';
-        delBtn.onclick = () => deleteBook(b.id);
-        
-        div.appendChild(info);
-        if (books.length > 1 && b.id !== currentBookId) {
-            div.appendChild(delBtn);
+function _deobfuscate(b64) {
+    if(!b64) return '';
+    try {
+        let str = atob(b64);
+        let result = "";
+        for (let i = 0; i < str.length; i++) {
+            result += String.fromCharCode(str.charCodeAt(i) ^ _S_KEY);
         }
-        list.appendChild(div);
-    });
+        return result;
+    } catch(e) { return ''; }
 }
 
-function addNewBook() {
-    let nameInput = document.getElementById('newBookName');
-    let name = nameInput.value.trim();
-    if (!name) return;
-    let newId = 'book_' + Date.now();
-    books.push({ id: newId, name: name, cloudUrl: '' });
-    localStorage.setItem('artaflow_books', JSON.stringify(books));
-    nameInput.value = '';
-    renderBookList();
-    renderBookSelect();
+// ==================== FORMATTER ====================
+function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+function unRp(s) { return Number(s.replace(/[^0-9]/g, '')) || 0; }
+function formatRupiah(el) {
+    let val = el.value.replace(/[^0-9]/g, '');
+    if(!val) { el.value = ''; return; }
+    el.value = Number(val).toLocaleString('id-ID');
+}
+function escapeHtml(str) {
+    if(!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function formatDateTime(dtStr, createdStr) {
+    try {
+        let d = new Date(dtStr);
+        if (isNaN(d.getTime())) return dtStr;
+        let pad = n => String(n).padStart(2, '0');
+        let datePart = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+        let timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        if (createdStr) {
+            let c = new Date(createdStr);
+            if (!isNaN(c.getTime())) { timePart = `${pad(c.getHours())}:${pad(c.getMinutes())}`; }
+        }
+        return `${datePart} ${timePart}`;
+    } catch(e) { return dtStr; }
 }
 
-function deleteBook(id) {
-    if (id === currentBookId) return;
-    if (confirm("Hapus buku ini beserta seluruh data transaksinya secara lokal?")) {
-        books = books.filter(b => b.id !== id);
-        localStorage.setItem('artaflow_books', JSON.stringify(books));
-        localStorage.removeItem('artaflow_txs_' + id);
-        renderBookList();
-        renderBookSelect();
+// ==================== LOG TERPUSAT KE CLOUD ====================
+async function loadLogsFromCloud() {
+    let url = getCloudUrl();
+    if (!url) {
+        document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666; font-size:.75rem;">⚠️ URL Cloud belum dikonfigurasi di menu Kelola Buku. Mode Offline aktif.</p>';
+        return [];
     }
-}
-
-function getCloudUrl() {
-    let curBook = books.find(b => b.id === currentBookId);
-    return curBook && curBook.cloudUrl ? _deobfuscate(curBook.cloudUrl) : '';
-}
-
-function saveCloudUrl() {
-    let url = document.getElementById('cloudUrlInput').value.trim();
-    let curBook = books.find(b => b.id === currentBookId);
-    if (curBook) {
-        curBook.cloudUrl = url ? _obfuscate(url) : '';
-        localStorage.setItem('artaflow_books', JSON.stringify(books));
-        alert("URL Web App Berhasil Disimpan untuk buku ini!");
+    
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ action: 'get_logs', book: bName })
+        });
+        let data = await res.json();
         
-        // Coba langsung load setelah url disimpan
-        loadFromCloud().then(success => { if(success) render(); });
+        if (data.success && data.logs) {
+            return data.logs;
+        }
+        return [];
+    } catch(e) {
+        console.log('Gagal ambil log:', e);
+        return [];
     }
 }
 
-// --- MANAJEMEN DATA & INDEPENDENT SINKRONISASI (ANTI RACE-CONDITION) ---
-
-function saveLocal() {
-    localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs));
+async function refreshLogsFromCloud() {
+    document.getElementById('logSummaryArea').innerHTML = '<p style="color:#666; font-size:.75rem;">Mengambil log terbaru dari cloud...</p>';
+    let logs = await loadLogsFromCloud();
+    renderLogsToUI(logs);
 }
 
-function syncSingleTransactionToCloud(transactionObj) {
+function renderLogsToUI(logs) {
+    let area = document.getElementById('logSummaryArea');
+    if(!area) return;
+    
+    if(!logs || logs.length === 0) {
+        let url = getCloudUrl();
+        if(url) {
+            area.innerHTML = '<p style="color:#666; font-size:.75rem;">Belum ada aktivitas audit log tercatat di cloud untuk buku ini.</p>';
+        }
+        return;
+    }
+    
+    area.innerHTML = logs.map(l => {
+        let d = new Date(l.timestamp);
+        let timeStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+        let tagClass = 'tag-system';
+        if (l.type === 'TAMBAH') tagClass = 'tag-add';
+        if (l.type === 'UBAH') tagClass = 'tag-edit';
+        if (l.type === 'HAPUS') tagClass = 'tag-delete';
+        return `<div class="log-line">
+            <small style="color:#888;">[${timeStr}]</small>
+            <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.book_name || l.book || '?')})</small>
+            <small style="color:#1a1a1a; background:#e5e7eb; padding:1px 4px; border-radius:2px; font-weight:bold;">${escapeHtml(l.device_id || 'unknown')}</small>
+            <span class="log-tag ${tagClass}">${l.type}</span>
+            <span>${escapeHtml(l.message)}</span>
+        </div>`;
+    }).join('');
+}
+
+// ==================== CLOUD SYNC UTAMA ====================
+function getCloudUrl() { 
+    let b64 = cloudUrls[currentBookId] || ''; 
+    return _deobfuscate(b64);
+}
+
+function saveCloudUrl(url) {
+    cloudUrls[currentBookId] = _obfuscate(url.trim());
+    localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
+    updateSyncStatusIndicator();
+}
+
+function updateSyncStatusIndicator() {
+    let wrapper = document.getElementById('syncStatusWrapper');
+    let tag = document.getElementById('syncStatusTag');
+    if(!wrapper || !tag) return;
+    if (getCloudUrl()) {
+        wrapper.className = "sync-status-container online"; 
+        tag.innerText = "☁️ CLOUD CONNECTED";
+    } else {
+        wrapper.className = "sync-status-container offline"; 
+        tag.innerText = "📴 OFFLINE MODE";
+    }
+}
+
+async function saveLocalAndSync(logType = null, logMessage = null, txId = null) {
+    saveLocal();
+    
     let url = getCloudUrl();
     if (!url) return;
     
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     
-    fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        body: JSON.stringify({ 
-            action: 'sync_upsert', 
-            book: bName, 
-            data: { transaction: transactionObj, device_id: deviceId } 
-        })
-    })
-    .then(res => res.json())
-    .then(d => { if(!d.success) console.error("Gagal sync item:", d.error); })
-    .catch(e => console.warn('Gagal menghubungi cloud (Sedang Offline):', e));
-}
-
-function syncDeleteToCloud(id) {
-    let url = getCloudUrl();
-    if (!url) return;
+    let payload = {
+        action: 'full_sync_with_log',
+        book: bName,
+        data: {
+            transactions: txs,
+            device_id: deviceId,
+            sync_time: new Date().toISOString()
+        }
+    };
     
-    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    if (logType && logMessage) {
+        payload.logData = {
+            timestamp: new Date().toISOString(),
+            type: logType,
+            message: logMessage,
+            device_id: deviceId,
+            transaction_id: txId,
+            book_name: bName
+        };
+    }
     
-    fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        body: JSON.stringify({ 
-            action: 'sync_delete', 
-            book: bName, 
-            data: { id: id, device_id: deviceId } 
-        })
-    })
-    .catch(e => console.warn('Gagal menghapus di cloud (Sedang Offline):', e));
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(payload)
+        });
+        let d = await res.json();
+        if(d.success) {
+            let logs = await loadLogsFromCloud();
+            renderLogsToUI(logs);
+        } else {
+            console.error('Gagal sinkronisasi otomatis ke cloud:', d.error);
+        }
+    } catch(e) {
+        console.error('Koneksi sinkronisasi cloud terputus:', e);
+    }
 }
 
 async function loadFromCloud() {
     let url = getCloudUrl();
     if (!url) return false;
     
-    try {
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-        let res = await fetch(url, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify({ action: 'load_data', book: bName })
-        });
-        let d = await res.json();
-        if (d.success && d.transactions) {
-            let localMap = new Map(txs.map(t => [t.id, t]));
-            let updatedAny = false;
-
-            d.transactions.forEach(cTx => {
-                let lTx = localMap.get(cTx.id);
-                if (!lTx) {
-                    txs.push(cTx);
-                    updatedAny = true;
-                } else {
-                    let cTime = new Date(cTx.updated_at || cTx.date).getTime();
-                    let lTime = new Date(lTx.updated_at || lTx.date).getTime();
-                    if (cTime > lTime) {
-                        lTx.type = cTx.type;
-                        lTx.date = cTx.date;
-                        lTx.desc = cTx.desc;
-                        lTx.amount = cTx.amount;
-                        lTx.updated_at = cTx.updated_at;
-                        updatedAny = true;
-                    }
-                }
-            });
-
-            if (updatedAny) {
-                saveLocal();
-                return true;
-            }
-        }
-    } catch (e) {
-        console.warn("Startup cloud sync terlewati (Mode Offline).");
-    }
-    return false;
-}
-
-async function syncWithCloud() {
-    let url = getCloudUrl();
-    if (!url) { 
-        alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); 
-        return; 
-    }
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     
-    document.body.style.cursor = 'wait';
     try {
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
         let res = await fetch(url, {
             method: 'POST',
             mode: 'cors',
@@ -978,319 +925,474 @@ async function syncWithCloud() {
         });
         let d = await res.json();
         
-        if(d.success && d.transactions) {
-            let cloudTxs = d.transactions;
-            let localMap = new Map(txs.map(t => [t.id, t]));
-            
-            cloudTxs.forEach(cTx => {
-                let lTx = localMap.get(cTx.id);
-                if (!lTx) {
-                    txs.push(cTx);
-                } else {
-                    let cTime = new Date(cTx.updated_at || cTx.date).getTime();
-                    let lTime = new Date(lTx.updated_at || lTx.date).getTime();
-                    if (cTime > lTime) {
-                        lTx.type = cTx.type;
-                        lTx.date = cTx.date;
-                        lTx.desc = cTx.desc;
-                        lTx.amount = cTx.amount;
-                        lTx.updated_at = cTx.updated_at;
-                    }
-                }
-            });
-            
+        if (d.success && d.transactions) {
+            txs = d.transactions;
             saveLocal();
-            
-            for (let localTx of txs) {
-                syncSingleTransactionToCloud(localTx);
-            }
-            
-            render();
-            alert("✅ Sinkronisasi Multi-Device Berhasil!\nData antar perangkat telah diselaraskan dengan aman.");
-        } else {
-            alert("⚠️ Gagal sinkronisasi: " + d.error);
+            return true;
         }
+        return false;
     } catch(e) {
-        alert("❌ Masalah Jaringan/CORS: " + e.toString());
-    } finally {
-        document.body.style.cursor = 'default';
+        console.log('Gagal load dari cloud:', e);
+        return false;
     }
 }
 
-function addLogToCloud(bookName, type, message, txId = "") {
-    let url = getCloudUrl();
-    if (!url) return;
+// ==================== MANAJEMEN DATA LOKAL ====================
+function saveLocal() { 
+    localStorage.setItem('artaflow_txs_' + currentBookId, JSON.stringify(txs)); 
+}
+
+function recalcBalances() {
+    let bal = 0;
+    txs.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
+    txs.forEach(t => {
+        bal += (t.type === 'income' ? t.amount : -t.amount);
+        t.balance = bal;
+    });
+}
+
+function renderStats() {
+    let inc = txs.reduce((s, t) => s + (t.type === 'income' ? t.amount : 0), 0);
+    let exp = txs.reduce((s, t) => s + (t.type === 'expense' ? t.amount : 0), 0);
+    document.getElementById('statBalance').innerText = rp(inc - exp);
+    document.getElementById('statIncome').innerText = rp(inc);
+    document.getElementById('statExpense').innerText = rp(exp);
+}
+
+// ==================== FILTER & RENDER DATA ====================
+function getDisplayData() {
+    let q = document.getElementById('searchInput').value.toLowerCase().trim();
+    return txs.filter(t => {
+        if (currentFilter === 'income' && t.type !== 'income') return false;
+        if (currentFilter === 'expense' && t.type !== 'expense') return false;
+        if (filterStartDate && t.date.split('T')[0] < filterStartDate) return false;
+        if (filterEndDate && t.date.split('T')[0] > filterEndDate) return false;
+        if (q && !t.desc.toLowerCase().includes(q)) return false;
+        return true;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+}
+
+function render() {
+    recalcBalances();
+    renderStats();
+    let filteredData = getDisplayData();
+    let tb = document.getElementById('transactionTableBody');
+    document.getElementById('transactionCount').innerText = filteredData.length + ' transaksi';
     
-    fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        body: JSON.stringify({
-            action: 'add_log',
-            book: bookName,
-            data: {
-                timestamp: new Date().toISOString(),
-                type: type,
-                message: message,
-                device_id: deviceId,
-                transaction_id: txId,
-                book_name: bookName
-            }
-        })
-    }).catch(e => console.log('Gagal mengirim log audit ke cloud.'));
+    if (!filteredData.length) {
+        tb.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px; color:#666;">Tidak ada data transaksi</td></tr>';
+        return;
+    }
+    
+    tb.innerHTML = filteredData.map((t, i) => {
+        let isInc = t.type === 'income';
+        let labelBadge = isInc ? `<span class="type-badge badge-inc">MASUK</span>` : `<span class="type-badge badge-exp">KELUAR</span>`;
+        return `<tr>
+            <td class="text-center">${i + 1}</td>
+            <td>${escapeHtml(formatDateTime(t.date, t.created_at))}</td>
+            <td>${labelBadge} ${escapeHtml(t.desc)}</td>
+            <td class="text-right" style="color: #00875a;">${isInc ? rp(t.amount) : '—'}</td>
+            <td class="text-right" style="color: #de350b;">${!isInc ? rp(t.amount) : '—'}</td>
+            <td class="text-right" style="font-weight: 600;">${rp(t.balance)}</td>
+            <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td>
+        </tr>`;
+    }).join('');
 }
 
-// --- CORE OPERATIONS (CRUD) ---
-
-function rp(num) {
-    return 'Rp ' + Number(num).toLocaleString('id-ID');
-}
-
-function unRp(str) {
-    let num = Number(str.replace(/[^0-9]/g, ''));
-    return isNaN(num) ? 0 : num;
-}
-
-function formatRupiah(input) {
-    let val = input.value.replace(/[^0-9]/g, '');
-    if (val === '') { input.value = ''; return; }
-    input.value = Number(val).toLocaleString('id-ID');
-}
-
+// ==================== CRUD OPERATIONS ====================
 async function handleSubmit(e) {
     e.preventDefault();
+    
     let amt = unRp(document.getElementById('txAmount').value);
     if (amt <= 0) { alert("Jumlah harus lebih dari 0!"); return; }
-    
-    let inputDate = document.getElementById('txDate').value;
-    let isoDate = inputDate ? new Date(inputDate).toISOString() : new Date().toISOString();
-    let nowIso = new Date().toISOString();
     
     let newTransaction = {
         id: Date.now() + Math.floor(Math.random() * 10000),
         type: document.querySelector('input[name="type"]:checked').value,
-        date: isoDate,
-        desc: document.getElementById('txDesc').value.trim() || 'Tanpa keterangan',
+        date: document.getElementById('txDate').value,
+        desc: document.getElementById('txDesc').value.trim(),
         amount: amt,
-        created_at: nowIso,
-        updated_at: nowIso
+        created_at: new Date().toISOString()
     };
     
     txs.unshift(newTransaction);
-    saveLocal();
+    
+    let msg = `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`;
+    await saveLocalAndSync('TAMBAH', msg, newTransaction.id);
+    
     render();
     closeModal('addModal');
     document.getElementById('addForm').reset();
-    
-    syncSingleTransactionToCloud(newTransaction);
-    
-    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    addLogToCloud(bName, 'TAMBAH', `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`, newTransaction.id);
 }
 
 async function handleEditSubmit(e) {
     e.preventDefault();
     let id = Number(document.getElementById('editId').value);
     let amt = unRp(document.getElementById('editTxAmount').value);
-    if (amt <= 0) { alert("Jumlah harus lebih dari 0!"); return; }
+    if(amt <= 0) { alert("Jumlah harus lebih dari 0!"); return; }
     
     let t = txs.find(x => x.id === id);
     if (t) {
         let oldDesc = t.desc;
         let oldAmt = t.amount;
         let oldType = t.type;
-        let nowIso = new Date().toISOString();
-        let inputDate = document.getElementById('editTxDate').value;
         
         t.type = document.querySelector('input[name="editType"]:checked').value;
-        t.date = inputDate ? new Date(inputDate).toISOString() : t.date;
-        t.desc = document.getElementById('editTxDesc').value.trim() || 'Tanpa keterangan';
+        t.date = document.getElementById('editTxDate').value;
+        t.desc = document.getElementById('editTxDesc').value.trim();
         t.amount = amt;
-        t.updated_at = nowIso;
         
-        saveLocal();
+        let msg = `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`;
+        await saveLocalAndSync('UBAH', msg, id);
+        
         render();
-        closeModal('editModal');
-        
-        syncSingleTransactionToCloud(t);
-        
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-        addLogToCloud(bName, 'UBAH', `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`, id);
     }
+    closeModal('editModal');
 }
 
 async function deleteTransaction(id) {
     if (confirm("Yakin ingin menghapus transaksi ini?")) {
         let t = txs.find(x => x.id === id);
-        if (t) {
-            txs = txs.filter(x => x.id !== id);
-            saveLocal();
+        if(t) {
+            txs = txs.filter(t => t.id !== id);
+            
+            let msg = `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"`;
+            await saveLocalAndSync('HAPUS', msg, id);
+            
             render();
-            
-            syncDeleteToCloud(id);
-            
-            let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-            addLogToCloud(bName, 'HAPUS', `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"`, id);
         }
     }
     closeModal('actionMenuModal');
 }
 
-// --- TAMPILAN & FILTER (RENDER ENGINE) ---
-
-function setFilter(f) {
-    currentFilter = f;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    if (event && event.target) event.target.classList.add('active');
-    render();
+// ==================== MANAJEMEN BUKU KAS LOCAL & CLOUD ====================
+function loadBooks() {
+    let stored = localStorage.getItem('artaflow_books');
+    if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
+    if (!books.length) {
+        books = [{ id: 'b_default', name: 'Buku Utama' }];
+        localStorage.setItem('artaflow_books', JSON.stringify(books));
+    }
+    let storedUrls = localStorage.getItem('artaflow_cloud_urls');
+    if (storedUrls) { try { cloudUrls = JSON.parse(storedUrls); } catch(e) { cloudUrls = {}; } }
+    
+    let active = localStorage.getItem('artaflow_active_book_id');
+    currentBookId = (active && books.some(b => b.id === active)) ? active : books[0].id;
+    refreshBookSelectOptions();
 }
 
-function applyDateFilter() {
-    let s = document.getElementById('startDate').value;
-    let e = document.getElementById('endDate').value;
-    if (!s || !e) { alert("Pilih kedua tanggal!"); return; }
-    filterStartDate = new Date(s);
-    filterStartDate.setHours(0,0,0,0);
-    filterEndDate = new Date(e);
-    filterEndDate.setHours(23,59,59,999);
-    render();
+function refreshBookSelectOptions() {
+    let sel = document.getElementById('currentBookSelect');
+    if (sel) sel.innerHTML = books.map(b => `<option value="${b.id}" ${b.id===currentBookId?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
+    let cloudIn = document.getElementById('cloudUrlInput');
+    if(cloudIn) cloudIn.value = getCloudUrl();
+    updateSyncStatusIndicator();
 }
 
-function resetDateFilter() {
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    filterStartDate = null;
-    filterEndDate = null;
+async function switchBook(id) {
+    currentBookId = id;
+    localStorage.setItem('artaflow_active_book_id', id);
+    refreshBookSelectOptions();
+    
+    let local = localStorage.getItem('artaflow_txs_' + currentBookId);
+    if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    else { txs = []; }
+    
+    await loadFromCloud();
     render();
+    refreshLogsFromCloud();
 }
 
-function render() {
-    let list = document.getElementById('txList');
-    if (!list) return;
-    list.innerHTML = '';
+// ==================== TATA KELOLA MODAL BUKU UTAMA ====================
+function openBookManager() {
+    let container = document.getElementById('bookListContainer');
+    let bActive = books.find(b => b.id === currentBookId)?.name || '';
     
-    txs.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    let income = 0, expense = 0;
-    let filteredCount = 0;
-    
-    txs.forEach(t => {
-        let tDate = new Date(t.date);
-        
-        if (currentFilter === 'income' && t.type !== 'income') return;
-        if (currentFilter === 'expense' && t.type !== 'expense') return;
-        
-        if (filterStartDate && tDate < filterStartDate) return;
-        if (filterEndDate && tDate > filterEndDate) return;
-        
-        filteredCount++;
-        if (t.type === 'income') income += t.amount;
-        else expense += t.amount;
-        
-        let card = document.createElement('div');
-        card.className = `tx-card ${t.type}`;
-        
-        let dObj = new Date(t.date);
-        let dateStr = dObj.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + dObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-        
-        card.innerHTML = `
-            <div class="tx-info">
-                <div class="tx-desc">\${t.desc}</div>
-                <div class="tx-date">\${dateStr}</div>
+    container.innerHTML = books.map(b => {
+        let isCurrent = b.id === currentBookId;
+        return `<div class="book-list-item" style="${isCurrent ? 'border-color: #00875a; background: #f4fbf7;' : ''}">
+            <span class="book-list-name" style="font-weight:${isCurrent ? '700' : '500'}">
+                ${escapeHtml(b.name)} ${isCurrent ? '<small style="color:#00875a;">(Aktif)</small>' : ''}
+            </span>
+            <div class="book-list-actions">
+                <button class="btn btn-mini btn-danger" onclick="deleteBook('${b.id}')">Hapus Buku</button>
             </div>
-            <div class="tx-amt" style="font-weight:700;">\${t.type==='income'?'+':'-'} \${rp(t.amount)}</div>
-        `;
-        card.onclick = () => openActionMenu(t.id);
-        list.appendChild(card);
-    });
+        </div>`;
+    }).join('');
     
-    let totalInc = 0, totalExp = 0;
-    txs.forEach(t => {
-        if(t.type === 'income') totalInc += t.amount;
-        else totalExp += t.amount;
-    });
+    let panelTitle = document.querySelector('.data-management-panel .panel-title');
+    if(panelTitle) panelTitle.innerText = `Cadangan Data (${bActive})`;
     
-    document.getElementById('totalIncome').innerText = rp(totalInc);
-    document.getElementById('totalExpense').innerText = rp(totalExp);
-    document.getElementById('totalBalance').innerText = rp(totalInc - totalExp);
+    openModal('bookManagerModal');
+}
+
+function addNewBook(e) {
+    e.preventDefault();
+    let nameIn = document.getElementById('newBookName');
+    let name = nameIn.value.trim();
+    if (!name) return;
+    let id = 'b_' + Date.now();
+    books.push({ id, name });
+    localStorage.setItem('artaflow_books', JSON.stringify(books));
+    nameIn.value = '';
+    openBookManager();
+    refreshBookSelectOptions();
+}
+
+async function deleteBook(id) {
+    let bTarget = books.find(b => b.id === id);
+    if (!bTarget) return;
     
-    if (filteredCount === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:40px; color:#666; font-style:italic;">Belum ada data transaksi.</div>';
+    if (books.length <= 1) {
+        alert("Gagal menghapus! Sistem ArtaFlow wajib memiliki minimal satu Buku Kas aktif.");
+        return;
+    }
+    
+    let confirm1 = confirm(`Apakah Anda yakin ingin menghapus buku kas "${bTarget.name}"?\nTindakan ini akan menghapus permanen data lokal transaksi di dalam perangkat ini.`);
+    if (!confirm1) return;
+    
+    let confirm2 = prompt(`⚠️ PERINGATAN TERAKHIR!\nData transaksi dari "${bTarget.name}" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik 'SETUJU' (huruf besar) untuk menghapus.`);
+    if (confirm2 === 'SETUJU') {
+        localStorage.removeItem('artaflow_txs_' + id);
+        if (cloudUrls[id]) {
+            delete cloudUrls[id];
+            localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
+        }
+        
+        books = books.filter(b => b.id !== id);
+        localStorage.setItem('artaflow_books', JSON.stringify(books));
+        
+        if (currentBookId === id) {
+            currentBookId = books[0].id;
+            localStorage.setItem('artaflow_active_book_id', currentBookId);
+            await switchBook(currentBookId);
+        } else {
+            openBookManager();
+            refreshBookSelectOptions();
+        }
+        alert("✅ Buku kas beserta seluruh data lokalnya telah berhasil dihapus.");
+    } else if (confirm2 !== null) {
+        alert("❌ Kata kunci salah. Penghapusan buku kas dibatalkan.");
     }
 }
 
-// --- MANAJEMEN MODAL & WINDOW ---
-
-function openModal(id) {
-    document.getElementById(id).classList.add('show');
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.remove('show');
-}
-
-function openActionMenu(id) {
-    actionId = id;
-    let t = txs.find(x => x.id === id);
-    if(t) {
-        document.getElementById('actionMenuTitle').innerText = t.desc;
-        openModal('actionMenuModal');
-    }
-}
-
-function updateTime() {
-    let now = new Date();
-    let opt = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    let el = document.getElementById('liveTimeDisplay');
-    if (el) el.innerText = now.toLocaleDateString('id-ID', opt);
-}
-
+// ==================== IMPOR & EKSPOR CADANGAN DATA ====================
 function exportToCSV() {
-    if(txs.length === 0) { alert("Tidak ada data untuk diekspor!"); return; }
-    let csv = 'ID,Tanggal,Keterangan,Tipe,Jumlah,Dibuat_Pada\\n';
-    txs.forEach(t => {
-        csv += `"\${t.id}","\${t.date}","\${t.desc.replace(/"/g, '""')}","\${t.type}",\${t.amount},"\${t.created_at}"\\n`;
-    });
-    let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    let bName = books.find(b => b.id === currentBookId)?.name || 'buku';
-    link.setAttribute("download", `artaflow_ekspor_\${bName.toLowerCase().replace(/\\s+/g,'_')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!txs.length) { alert("Tidak ada data transaksi untuk diekspor."); return; }
+    let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
+    let csvRows = [["ID","Tanggal","Deskripsi","Jenis","Jumlah"].join(',')];
+    txs.forEach(t => { csvRows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount].join(',')); });
+    let blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ArtaFlow_${bName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
 }
 
+function exportToJSON() {
+    if (!txs.length) { alert("Tidak ada data transaksi untuk diekspor."); return; }
+    let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
+    let dataStr = JSON.stringify(txs, null, 2);
+    let blob = new Blob([dataStr], { type: 'application/json' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ArtaFlow_${bName.replace(/\s+/g, '_')}_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+}
+
+function triggerJsonImport() {
+    document.getElementById('jsonFileInput').click();
+}
+
+function handleJsonImport(e) {
+    let file = e.target.files[0];
+    if (!file) return;
+    
+    let reader = new FileReader();
+    reader.onload = async function(event) {
+        try {
+            let importedData = JSON.parse(event.target.result);
+            
+            if (!Array.isArray(importedData)) {
+                throw new Error("Format JSON tidak valid. Data wajib berbentuk List/Array.");
+            }
+            
+            if (importedData.length > 0) {
+                let sample = importedData[0];
+                if (!sample.id || !sample.type || !sample.date || sample.amount === undefined) {
+                    throw new Error("Struktur transaksi JSON salah. Wajib memiliki field: id, type, date, amount, dan desc.");
+                }
+            }
+            
+            let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
+            let confirmImport = confirm(`Apakah Anda yakin ingin mengimpor ${importedData.length} data transaksi ke dalam buku "${bName}"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.`);
+            
+            if (confirmImport) {
+                txs = importedData;
+                let msg = `Melakukan impor cadangan data JSON (${importedData.length} transaksi) secara manual ke aplikasi.`;
+                await saveLocalAndSync('SISTEM', msg, null);
+                
+                render();
+                alert(`✅ Berhasil memuat ${importedData.length} data transaksi ke dalam ${bName}!`);
+                closeModal('bookManagerModal');
+            }
+        } catch (err) {
+            alert("❌ Gagal Impor File: " + err.message);
+        }
+        document.getElementById('jsonFileInput').value = '';
+    };
+    reader.readAsText(file);
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function openActionMenu(id) { actionId = id; openModal('actionMenuModal'); }
+function setFilter(type) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('filter-' + type).classList.add('active');
+    render();
+}
+function applyDateFilter() {
+    filterStartDate = document.getElementById('dateFilterStart').value;
+    filterEndDate = document.getElementById('dateFilterEnd').value;
+    if (filterStartDate || filterEndDate) document.getElementById('clearDateBtn').style.display = 'inline-block';
+    render();
+}
+function resetDateFilter() {
+    document.getElementById('dateFilterStart').value = '';
+    document.getElementById('dateFilterEnd').value = '';
+    filterStartDate = '';
+    filterEndDate = '';
+    document.getElementById('clearDateBtn').style.display = 'none';
+    render();
+}
+function updateTime() {
+    let clock = document.getElementById('liveClock');
+    if (clock) {
+        let now = new Date();
+        let pad = n => String(n).padStart(2, '0');
+        clock.innerText = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+}
 function copyScriptToClipboard() {
     let el = document.getElementById('scriptCodeArea');
     el.select();
-    document.execCommand('copy');
-    alert("Kode Google Apps Script berhasil disalin!");
+    document.execCommand("copy");
+    alert("Kode backend telah disalin ke clipboard!");
 }
 
-// --- INISIALISASI UTAMA ---
+// ==================== GOOGLE APPS SCRIPT BACKEND CODE ====================
+const BACKEND_SCRIPT = `// ==================== ARTAFLOW BACKEND - GOOGLE APPS SCRIPT ====================
+function doPost(e) {
+  const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
+  try {
+    const raw = e.postData.contents;
+    const req = JSON.parse(raw);
+    const action = req.action;
+    const bookName = req.book || "default_book";
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    let txSheet = ss.getSheetByName(bookName + "_transactions");
+    if (!txSheet) {
+      txSheet = ss.insertSheet(bookName + "_transactions");
+      txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
+    }
+    
+    let logSheet = ss.getSheetByName(bookName + "_logs");
+    if (!logSheet) {
+      logSheet = ss.insertSheet(bookName + "_logs");
+      logSheet.appendRow(["timestamp", "type", "message", "device_id", "transaction_id", "book_name"]);
+    }
+    
+    if (action === "load_data") {
+      const rows = txSheet.getDataRange().getValues();
+      const transactions = [];
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][0]) continue;
+        transactions.push({
+          id: Number(rows[i][0]),
+          date: rows[i][1],
+          desc: rows[i][2],
+          type: rows[i][3],
+          amount: Number(rows[i][4]),
+          created_at: rows[i][5]
+        });
+      }
+      return res.setContent(JSON.stringify({ success: true, transactions: transactions }));
+    }
+    
+    if (action === "full_sync_with_log" || action === "full_sync") {
+      const newData = req.data.transactions;
+      if (newData && Array.isArray(newData)) {
+        txSheet.clear();
+        txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
+        if (newData.length > 0) {
+          const values = newData.map(function(t) {
+            return [t.id, t.date, t.desc, t.type, t.amount, t.created_at || new Date().toISOString()];
+          });
+          txSheet.getRange(2, 1, values.length, 6).setValues(values);
+        }
+      }
+      
+      const logData = req.logData;
+      if (logData) {
+        logSheet.appendRow([
+          logData.timestamp || new Date().toISOString(),
+          logData.type,
+          logData.message,
+          logData.device_id || "unknown",
+          logData.transaction_id || "",
+          logData.book_name || bookName
+        ]);
+      }
+      return res.setContent(JSON.stringify({ success: true, message: "Sync kas dan log audit berhasil" }));
+    }
+    
+    if (action === "get_logs") {
+      const rows = logSheet.getDataRange().getValues();
+      const logs = [];
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][0]) continue;
+        logs.push({
+          timestamp: rows[i][0],
+          type: rows[i][1],
+          message: rows[i][2],
+          device_id: rows[i][3],
+          transaction_id: rows[i][4],
+          book_name: rows[i][5]
+        });
+      }
+      logs.reverse();
+      return res.setContent(JSON.stringify({ success: true, logs: logs }));
+    }
+    
+    return res.setContent(JSON.stringify({ success: false, error: "Aksi tidak dikenal" }));
+  } catch(err) {
+    return res.setContent(JSON.stringify({ success: false, error: err.toString() }));
+  }
+}
 
+function doGet() {
+  return ContentService.createTextOutput("ArtaFlow Backend is Running!");
+}
+`;
+
+// ==================== INITIALIZATION ====================
 document.getElementById('actionEditBtn').onclick = () => {
     let t = txs.find(x => x.id === actionId);
     if (t) {
         document.getElementById('editId').value = t.id;
-        document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
+        if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
+        else document.getElementById('editTypeExpense').checked = true;
+        document.getElementById('editTxDate').value = t.date;
         document.getElementById('editTxDesc').value = t.desc;
-        
-        let d = new Date(t.date);
-        let offset = d.getTimezoneOffset() * 60000;
-        let localISOTime = (new Date(d.getTime() - offset)).toISOString().slice(0, 16);
-        document.getElementById('editTxDate').value = localISOTime;
-        
-        if (t.type === 'income') {
-            document.getElementById('editTypeIncome').checked = true;
-        } else {
-            document.getElementById('editTypeExpense').checked = true;
-        }
+        document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
         closeModal('actionMenuModal');
         openModal('editModal');
     }
 };
-
 document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(actionId);
 
 document.querySelectorAll('.modal').forEach(m => {
@@ -1298,7 +1400,7 @@ document.querySelectorAll('.modal').forEach(m => {
 });
 
 deviceId = getDeviceId();
-document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
+document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
 
 (async function init() {
     loadBooks();
@@ -1307,26 +1409,23 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
     
+    await loadFromCloud();
     render();
+    refreshLogsFromCloud();
     updateTime();
     setInterval(updateTime, 1000);
-    
-    try {
-        let updated = await loadFromCloud();
-        if (updated) render();
-    } catch(e) {
-        console.log("Aplikasi berjalan dalam Mode Offline.");
-    }
 })();
 
-// Export fungsi ke scope global HTML
+// Export fungsi ke global window
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.handleSubmit = handleSubmit;
 window.handleEditSubmit = handleEditSubmit;
 window.saveCloudUrl = saveCloudUrl;
-window.syncWithCloud = syncWithCloud;
 window.exportToCSV = exportToCSV;
+window.exportToJSON = exportToJSON;
+window.triggerJsonImport = triggerJsonImport;
+window.handleJsonImport = handleJsonImport;
 window.setFilter = setFilter;
 window.applyDateFilter = applyDateFilter;
 window.resetDateFilter = resetDateFilter;
@@ -1337,5 +1436,7 @@ window.addNewBook = addNewBook;
 window.deleteBook = deleteBook;
 window.switchBook = switchBook;
 window.copyScriptToClipboard = copyScriptToClipboard;
+window.refreshLogsFromCloud = refreshLogsFromCloud;
 </script>
+</body>
 </html>

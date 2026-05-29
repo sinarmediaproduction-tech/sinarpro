@@ -20,7 +20,7 @@
         });
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2=family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a1a; padding: 24px; transition: background 0.3s ease; }
@@ -53,6 +53,7 @@
         .btn-secondary { background: #fff; color: #1a1a1a; }
         .btn-secondary:hover { background: #f5f5f5; }
         .btn-danger { background: #de350b; color: #fff; border-color: #de350b; }
+        .btn-danger:hover { background: #bd2a04; }
         .sync-status { font-size: .65rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; border: 1.5px solid #1a1a1a; display: inline-flex; align-items: center; gap: 4px; }
         .sync-status.online { background: #e3fcef; color: #006644; border-color: #006644; }
         .sync-status.offline { background: #ffebe6; color: #bf2600; border-color: #bf2600; }
@@ -67,10 +68,12 @@
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .action-btn { background: none; border: none; font-weight: 700; cursor: pointer; padding: 4px 8px; font-size: 1rem; border-radius: 4px; }
-        .footer { display: flex; justify-content: space-between; align-items: center; font-size: .7rem; color: #666; padding-top: 8px; }
+        .footer { display: flex; justify-content: space-between; align-items: center; font-size: .7rem; color: #666; padding-top: 8px; flex-wrap: wrap; gap: 12px; }
+        .footer-left { display: flex; align-items: center; gap: 16px; }
+        .footer-actions { display: flex; gap: 8px; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
         .modal.show { display: flex; }
-        .modal-content { background: #fff; border: 2px solid #1a1a1a; border-radius: 8px; padding: 20px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background: #fff; border: 2px solid #1a1a1a; border-radius: 8px; padding: 20px; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
         .modal-header h3 { font-size: 1rem; font-weight: 600; }
         .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
@@ -81,19 +84,22 @@
         .radio-label { display: flex; align-items: center; gap: 6px; font-size: .8rem; cursor: pointer; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid #eee; }
         .log-line { border-bottom: 1px dashed #ddd; padding: 8px 0; display: block; font-size: .7rem; font-family: monospace; }
-        .log-tag { font-weight: 700; padding: 2px 6px; border-radius: 3px; font-size: 0.6rem; margin-right: 8px; color: #fff; }
+        .log-tag { font-weight: 700; padding: 2px 6px; border-radius: 3px; font-size: 0.6 micro; margin-right: 8px; color: #fff; }
         .tag-add { background: #00875a; }
         .tag-edit { background: #ffab00; color: #1a1a1a !important; }
         .tag-delete { background: #de350b; }
         .tag-system { background: #4a5568; }
         .code-container { position: relative; margin-top: 10px; }
-        .code-box { width: 100%; height: 150px; font-family: monospace; font-size: .65rem; padding: 10px; border: 1.5px solid #1a1a1a; border-radius: 4px; background: #fafafa; resize: vertical; }
+        .code-box { width: 100%; height: 120px; font-family: monospace; font-size: .65rem; padding: 10px; border: 1.5px solid #1a1a1a; border-radius: 4px; background: #fafafa; resize: vertical; }
         .copy-btn { position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: .6rem; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+        .data-management-box { margin-top: 14px; border: 1.5px dashed #1a1a1a; padding: 12px; border-radius: 4px; background: #fffcf5; }
         @media(max-width:768px) {
             body { padding: 12px; }
             .controls { flex-direction: column; align-items: stretch; }
             .filters { width: 100%; }
             .search-input { flex-grow: 1; }
+            .footer { flex-direction: column; align-items: flex-start; }
+            .footer-actions { width: 100%; justify-content: flex-start; }
         }
         .device-id { font-size: .65rem; color: #666; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
     </style>
@@ -146,9 +152,6 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
-            <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit</button>
-            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
-            <button class="btn btn-secondary" onclick="syncWithCloud()">Sinkronisasi Manual</button>
         </div>
     </div>
 
@@ -170,8 +173,14 @@
     </div>
 
     <div class="footer">
-        <div id="transactionCount">0 transaksi</div>
-        <div id="liveClock">00:00:00</div>
+        <div class="footer-left">
+            <div id="transactionCount">0 transaksi</div>
+            <div id="liveClock">00:00:00</div>
+        </div>
+        <div class="footer-actions">
+            <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit</button>
+            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
+        </div>
     </div>
 </div>
 
@@ -266,7 +275,7 @@
         
         <div id="bookListContainer"></div>
         
-        <form onsubmit="addNewBook(event)" style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 16px;">
+        <form onsubmit="addNewBook(event)" style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 12px;">
             <div class="form-group" style="margin-bottom: 8px;">
                 <label for="newBookName">Tambah Buku Baru</label>
                 <input type="text" id="newBookName" class="form-control" placeholder="Nama buku kas baru..." required>
@@ -274,7 +283,16 @@
             <button type="submit" class="btn btn-primary" style="width: 100%;">Buat Buku Baru</button>
         </form>
 
-        <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px;">
+        <div class="data-management-box">
+            <h4 style="font-size: .75rem; font-weight:700; margin-bottom: 8px; text-transform:uppercase; color:#666;">Utilitas Data Buku Aktif</h4>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1; justify-content:center;" onclick="triggerJsonImport()">📥 Impor JSON</button>
+                <button class="btn btn-danger" style="flex:1; justify-content:center;" onclick="clearActiveBookData()">🗑️ Hapus Data</button>
+            </div>
+            <input type="file" id="jsonFileInput" accept=".json" style="display:none;" onchange="handleJsonImport(event)">
+        </div>
+
+        <div style="border-top: 2px dashed #1a1a1a; padding-top: 14px; margin-top:14px;">
             <div class="form-group">
                 <label>URL Cloud Google Sheets</label>
                 <input type="password" id="cloudUrlInput" class="form-control" placeholder="Masukkan URL Web App Google Apps Script" oninput="saveCloudUrl(this.value)">
@@ -480,7 +498,6 @@ function updateSyncStatusIndicator() {
     }
 }
 
-// Push 1 data secara incremental ke cloud (Cegah Race Condition)
 async function pushTransactionToCloud(tx, isDeleted = false) {
     let url = getCloudUrl();
     if (!url) return false;
@@ -504,25 +521,21 @@ async function pushTransactionToCloud(tx, isDeleted = false) {
     }
 }
 
-// Sinkronisasi Manual: Menggabungkan data Cloud dan Lokal secara cerdas
-async function syncWithCloud() {
+async function syncWithCloudAfterImport() {
     let url = getCloudUrl();
-    if (!url) { alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); return; }
+    if (!url) return;
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     
     try {
-        // 1. Ambil data dari cloud
         let res = await fetch(url, {
             method: 'POST',
             mode: 'cors',
             body: JSON.stringify({ action: 'load_data', book: bName })
         });
         let d = await res.json();
-        if(!d.success) { alert("Gagal memuat data cloud."); return; }
+        if(!d.success) return;
         
         let cloudTxs = d.transactions || [];
-        
-        // 2. Gabungkan data lokal dan cloud dengan membandingkan updated_at
         let localMap = new Map(txs.map(t => [String(t.id), t]));
         
         cloudTxs.forEach(c => {
@@ -543,8 +556,7 @@ async function syncWithCloud() {
         txs = Array.from(localMap.values());
         saveLocal();
         
-        // 3. Kirim kembali data lokal yang belum ada di cloud
-        res = await fetch(url, {
+        await fetch(url, {
             method: 'POST',
             mode: 'cors',
             body: JSON.stringify({ 
@@ -555,9 +567,8 @@ async function syncWithCloud() {
         });
         
         render();
-        alert("✅ Sinkronisasi 2-Arah berhasil secara cerdas!");
     } catch(e) {
-        alert("❌ Koneksi gagal: " + e.toString());
+        console.error("Gagal menyelaraskan impor:", e);
     }
 }
 
@@ -573,7 +584,6 @@ async function loadFromCloud() {
         });
         let d = await res.json();
         if (d.success && d.transactions) {
-            // Filter yang tidak dihapus
             txs = d.transactions.filter(t => t.is_deleted !== 1 && t.is_deleted !== "1");
             saveLocal();
             return true;
@@ -581,6 +591,115 @@ async function loadFromCloud() {
         return false;
     } catch(e) {
         return false;
+    }
+}
+
+// ==================== LOGIKA IMPOR JSON & HAPUS DATA BUKU ====================
+function triggerJsonImport() {
+    document.getElementById('jsonFileInput').click();
+}
+
+function handleJsonImport(event) {
+    let file = event.target.files[0];
+    if (!file) return;
+    
+    let reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            let importedData = JSON.parse(e.target.result);
+            
+            if (!Array.isArray(importedData)) {
+                if (importedData.transactions && Array.isArray(importedData.transactions)) {
+                    importedData = importedData.transactions;
+                } else {
+                    alert("Format JSON salah! Harus berupa Array objek transaksi.");
+                    return;
+                }
+            }
+            
+            let currentBookObj = books.find(b => b.id === currentBookId);
+            let bName = currentBookObj?.name || 'default_book';
+            let addedCount = 0;
+            let nowStr = new Date().toISOString();
+            
+            importedData.forEach(item => {
+                if (item.desc && item.amount && item.type) {
+                    let isExist = txs.some(x => String(x.id) === String(item.id));
+                    if (!isExist) {
+                        txs.push({
+                            id: item.id || (Date.now() + Math.floor(Math.random() * 10000) + addedCount),
+                            type: item.type === 'income' || item.type === 'masuk' ? 'income' : 'expense',
+                            date: item.date || nowStr.slice(0, 16),
+                            desc: item.desc.trim(),
+                            amount: Number(item.amount),
+                            created_at: item.created_at || nowStr,
+                            updated_at: item.updated_at || nowStr,
+                            is_deleted: 0
+                        });
+                        addedCount++;
+                    }
+                }
+            });
+            
+            if(addedCount > 0) {
+                saveLocal();
+                render();
+                alert(`✅ Berhasil mengimpor ${addedCount} transaksi baru.`);
+                
+                let url = getCloudUrl();
+                if(url) {
+                    if(confirm("Cloud terhubung. Sinkronisasikan langsung ke Google Sheets?")) {
+                        await syncWithCloudAfterImport();
+                    }
+                }
+                await addLogToCloud(bName, 'SYSTEM', `Mengimpor data sebanyak ${addedCount} transaksi via file JSON`, null);
+            } else {
+                alert("Tidak ada transaksi baru atau format data tidak valid.");
+            }
+        } catch(err) {
+            alert("Gagal membaca file JSON: " + err.message);
+        }
+        document.getElementById('jsonFileInput').value = '';
+    };
+    reader.readAsText(file);
+}
+
+async function clearActiveBookData() {
+    let currentBookObj = books.find(b => b.id === currentBookId);
+    let bName = currentBookObj?.name || 'default_book';
+    
+    if (confirm(`⚠️ PERINGATAN CRITICAL!\nApakah Anda yakin ingin MENGHAPUS SEMUA DATA TRANSAKSI di dalam "${bName}"?\nData lokal akan dikosongkan.`)) {
+        let confirmationText = prompt(`Ketik kata "HAPUS" (huruf kapital) untuk mengonfirmasi:`);
+        if (confirmationText === "HAPUS") {
+            txs = [];
+            saveLocal();
+            render();
+            
+            let url = getCloudUrl();
+            if (url) {
+                if (confirm("Pembersihan lokal berhasil. Kosongkan juga database di Google Sheets untuk buku kas ini?")) {
+                    try {
+                        await fetch(url, {
+                            method: 'POST',
+                            mode: 'cors',
+                            body: JSON.stringify({ 
+                                action: 'full_sync', 
+                                book: bName, 
+                                data: { transactions: [], device_id: deviceId } 
+                            })
+                        });
+                        alert("✅ Database lokal dan Cloud Google Sheets telah dibersihkan.");
+                    } catch(e) {
+                        alert("Gagal membersihkan cloud, namun data lokal Anda sudah kosong.");
+                    }
+                }
+            } else {
+                alert("✅ Seluruh data transaksi lokal di buku ini berhasil dibersihkan.");
+            }
+            await addLogToCloud(bName, 'HAPUS', `Melakukan pembersihan total data transaksi di buku kas`, null);
+        } else {
+            alert("Konfirmasi dibatalkan.");
+        }
     }
 }
 
@@ -668,7 +787,6 @@ async function handleSubmit(e) {
     render();
     closeModal('addModal');
     
-    // Incremental Cloud Sync & Logging
     await pushTransactionToCloud(newTransaction);
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     await addLogToCloud(bName, 'TAMBAH', `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`, newTransaction.id);
@@ -710,10 +828,8 @@ async function deleteTransaction(id) {
             t.is_deleted = 1;
             t.updated_at = new Date().toISOString();
             
-            // Push ke cloud info penghapusannya
             await pushTransactionToCloud(t, true);
             
-            // Hapus dari data lokal setelah dipush
             txs = txs.filter(x => x.id !== id);
             saveLocal();
             
@@ -757,6 +873,7 @@ async function switchBook(id) {
     
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) { try { txs = JSON.parse(local); } catch(e) { txs = []; } }
+    else { txs = []; }
     
     await loadFromCloud();
     render();
@@ -1006,7 +1123,8 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
     setInterval(updateTime, 1000);
 })();
 
-window.closeModal = closeModal; window.openModal = openModal; window.handleSubmit = handleSubmit; window.handleEditSubmit = handleEditSubmit; window.saveCloudUrl = saveCloudUrl; window.syncWithCloud = syncWithCloud; window.exportToCSV = exportToCSV; window.setFilter = setFilter; window.applyDateFilter = applyDateFilter; window.resetDateFilter = resetDateFilter; window.openActionMenu = openActionMenu; window.formatRupiah = formatRupiah; window.openBookManager = openBookManager; window.addNewBook = addNewBook; window.deleteBook = deleteBook; window.switchBook = switchBook; window.copyScriptToClipboard = copyScriptToClipboard; window.refreshLogsFromCloud = refreshLogsFromCloud;
+// Export fungsi ke global scope
+window.closeModal = closeModal; window.openModal = openModal; window.handleSubmit = handleSubmit; window.handleEditSubmit = handleEditSubmit; window.saveCloudUrl = saveCloudUrl; window.exportToCSV = exportToCSV; window.setFilter = setFilter; window.applyDateFilter = applyDateFilter; window.resetDateFilter = resetDateFilter; window.openActionMenu = openActionMenu; window.formatRupiah = formatRupiah; window.openBookManager = openBookManager; window.addNewBook = addNewBook; window.deleteBook = deleteBook; window.switchBook = switchBook; window.copyScriptToClipboard = copyScriptToClipboard; window.refreshLogsFromCloud = refreshLogsFromCloud; window.triggerJsonImport = triggerJsonImport; window.handleJsonImport = handleJsonImport; window.clearActiveBookData = clearActiveBookData;
 </script>
 </body>
 </html>

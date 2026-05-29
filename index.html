@@ -316,7 +316,7 @@
             border-collapse: collapse;
             text-align: left;
             font-size: .75rem;
-            min-width: 700px;
+            min-width: 750px;
         }
         th {
             background: #f9f9f9;
@@ -343,6 +343,14 @@
         }
         .badge-inc { background: #e3fcef; color: #006644; }
         .badge-exp { background: #ffebe6; color: #bf2600; }
+        
+        .category-badge {
+            font-size: 0.6rem;
+            background: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            display: inline-block;
+        }
         
         .text-right { text-align: right; }
         .text-center { text-align: center; }
@@ -405,7 +413,7 @@
             overflow-y: auto;
         }
         .modal-content.wide {
-            max-width: 650px;
+            max-width: 700px;
         }
         .modal-header {
             display: flex;
@@ -628,6 +636,14 @@
         }
         .budget-cat-row .form-control { flex: 1; }
         
+        .budget-summary-row {
+            background: #f5f5f5;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+        
         @media(max-width:768px) {
             body { padding: 12px; }
             .controls { flex-direction: column; align-items: stretch; }
@@ -639,6 +655,7 @@
             .budget-mini-info { justify-content: space-between; }
             .budget-cat-row { flex-direction: column; align-items: stretch; }
             .budget-cat-row .budget-cat-label { width: auto; }
+            .modal-content.wide { max-width: 95%; }
         }
     </style>
 </head>
@@ -731,7 +748,7 @@
     <div class="table-container">
         <table>
             <thead>
-                <tr><th>No</th><th>Tanggal</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th><th>Nota</th><th>Aksi</th></tr>
+                <tr><th>No</th><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th><th>Nota</th><th>Aksi</th></tr>
             </thead>
             <tbody id="transactionTableBody"></tbody>
         </table>
@@ -756,12 +773,14 @@
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
+<!-- Modal Add -->
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Transaksi Baru</h3><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
         <form id="addForm" onsubmit="handleSubmit(event)">
-            <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="type" value="income" checked> Pemasukan</label><label class="radio-label"><input type="radio" name="type" value="expense"> Pengeluaran</label></div></div>
+            <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="type" value="income" checked onchange="toggleCategoryField()"> Pemasukan</label><label class="radio-label"><input type="radio" name="type" value="expense" onchange="toggleCategoryField()"> Pengeluaran</label></div></div>
             <div class="form-group"><label>Tanggal & Waktu</label><input type="datetime-local" id="txDate" class="form-control" required></div>
+            <div class="form-group" id="categoryGroup"><label>Kategori</label><select id="txCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">🍽️ Makanan & Minuman</option><option value="Transportasi">🚗 Transportasi</option><option value="Belanja & Pakaian">🛍️ Belanja & Pakaian</option><option value="Tagihan">💡 Tagihan</option><option value="Hiburan">🎬 Hiburan</option><option value="Kesehatan">🏥 Kesehatan</option><option value="Pendidikan">📚 Pendidikan</option><option value="Cicilan & Hutang">🏦 Cicilan & Hutang</option><option value="Investasi">📈 Investasi</option><option value="Lain-lain">📌 Lain-lain</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="txDesc" class="form-control" required></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="txAmount" class="form-control" oninput="formatRupiah(this)" required></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="txAttachment" accept="image/*" class="form-control" onchange="previewAttachment(this)"><img id="attachmentPreview" class="attachment-preview"></div>
@@ -770,13 +789,15 @@
     </div>
 </div>
 
+<!-- Modal Edit -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Ubah Transaksi</h3><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
         <form id="editForm" onsubmit="handleEditSubmit(event)">
             <input type="hidden" id="editId">
-            <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="editType" value="income" id="editTypeIncome"> Pemasukan</label><label class="radio-label"><input type="radio" name="editType" value="expense" id="editTypeExpense"> Pengeluaran</label></div></div>
+            <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="editType" value="income" id="editTypeIncome" onchange="toggleEditCategoryField()"> Pemasukan</label><label class="radio-label"><input type="radio" name="editType" value="expense" id="editTypeExpense" onchange="toggleEditCategoryField()"> Pengeluaran</label></div></div>
             <div class="form-group"><label>Tanggal & Waktu</label><input type="datetime-local" id="editTxDate" class="form-control" required></div>
+            <div class="form-group" id="editCategoryGroup"><label>Kategori</label><select id="editTxCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">🍽️ Makanan & Minuman</option><option value="Transportasi">🚗 Transportasi</option><option value="Belanja & Pakaian">🛍️ Belanja & Pakaian</option><option value="Tagihan">💡 Tagihan</option><option value="Hiburan">🎬 Hiburan</option><option value="Kesehatan">🏥 Kesehatan</option><option value="Pendidikan">📚 Pendidikan</option><option value="Cicilan & Hutang">🏦 Cicilan & Hutang</option><option value="Investasi">📈 Investasi</option><option value="Lain-lain">📌 Lain-lain</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="editTxDesc" class="form-control" required></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size:.65rem; color:#666; margin-top:4px;"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
@@ -785,6 +806,7 @@
     </div>
 </div>
 
+<!-- Modal Action Menu -->
 <div id="actionMenuModal" class="modal">
     <div class="modal-content" style="max-width:250px">
         <div class="modal-header"><h3>Pilihan Aksi</h3><button class="modal-close" onclick="closeModal('actionMenuModal')">×</button></div>
@@ -792,6 +814,7 @@
     </div>
 </div>
 
+<!-- Modal Book Manager -->
 <div id="bookManagerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
@@ -802,6 +825,7 @@
     </div>
 </div>
 
+<!-- Modal Backup -->
 <div id="backupModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>🔒 Manajer Cadangan</h3><button class="modal-close" onclick="closeModal('backupModal')">×</button></div>
@@ -812,15 +836,18 @@
     </div>
 </div>
 
+<!-- Modal Budget -->
 <div id="budgetModal" class="modal">
     <div class="modal-content wide">
         <div class="modal-header"><h3>📊 Atur Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div>
         <div class="form-group"><label>Bulan & Tahun</label><div style="display:flex; gap:8px"><select id="budgetModalMonth" class="form-control" style="flex:1"></select><input type="number" id="budgetModalYear" class="form-control" style="flex:1"></div></div>
         <div id="budgetCategoriesContainer"></div>
+        <div id="budgetSummary" class="budget-summary-row"></div>
         <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('budgetModal')">Batal</button><button class="btn btn-primary" onclick="saveBudget()">Simpan</button></div>
     </div>
 </div>
 
+<!-- Modal View Attachment -->
 <div id="viewAttachmentModal" class="modal">
     <div class="modal-content" style="max-width:600px; text-align:center">
         <div class="modal-header"><h3>📎 Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div>
@@ -870,6 +897,29 @@ const _S_KEY = 42;
 function _obfuscate(str) { if(!str) return ''; let r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return btoa(r); }
 function _deobfuscate(b64) { if(!b64) return ''; try { let str=atob(b64), r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return r; } catch(e){ return ''; } }
 
+// ==================== TOGGLE CATEGORY FIELD ====================
+function toggleCategoryField() {
+    let type = document.querySelector('input[name="type"]:checked').value;
+    let categoryGroup = document.getElementById('categoryGroup');
+    if (type === 'expense') {
+        categoryGroup.style.display = 'block';
+    } else {
+        categoryGroup.style.display = 'none';
+        document.getElementById('txCategory').value = '';
+    }
+}
+
+function toggleEditCategoryField() {
+    let type = document.querySelector('input[name="editType"]:checked').value;
+    let categoryGroup = document.getElementById('editCategoryGroup');
+    if (type === 'expense') {
+        categoryGroup.style.display = 'block';
+    } else {
+        categoryGroup.style.display = 'none';
+        document.getElementById('editTxCategory').value = '';
+    }
+}
+
 // ==================== LOCAL LOG FUNCTIONS ====================
 function addLocalLog(type, message, txId = null) {
     let logs = getLocalLogs();
@@ -898,12 +948,34 @@ function getLocalLogs() {
 }
 
 // ==================== BUDGET FUNCTIONS ====================
-function loadBudgets() { let s = localStorage.getItem('artaflow_budgets_'+currentBookId); if(s) try{ budgets=JSON.parse(s); }catch(e){ budgets={}; } if(!budgets) budgets={}; }
-function saveBudgets() { localStorage.setItem('artaflow_budgets_'+currentBookId, JSON.stringify(budgets)); }
+function loadBudgets() { 
+    let s = localStorage.getItem('artaflow_budgets_'+currentBookId); 
+    if(s) try{ budgets=JSON.parse(s); }catch(e){ budgets={}; } 
+    if(!budgets) budgets={}; 
+}
 
-function getActualExpenses(month, year) {
+function saveBudgets() { 
+    localStorage.setItem('artaflow_budgets_'+currentBookId, JSON.stringify(budgets)); 
+}
+
+function getActualExpensesByCategory(month, year, category) {
     let total = 0;
-    txs.forEach(t => { if(t.type==='expense'){ let d=new Date(t.date); if(d.getMonth()+1===month && d.getFullYear()===year) total+=t.amount; } });
+    txs.forEach(t => { 
+        if(t.type === 'expense' && t.category === category) {
+            let d = new Date(t.date);
+            if(d.getMonth() + 1 === month && d.getFullYear() === year) {
+                total += t.amount;
+            }
+        }
+    });
+    return total;
+}
+
+function getTotalActualExpenses(month, year) {
+    let total = 0;
+    EXPENSE_CATEGORIES.forEach(cat => {
+        total += getActualExpensesByCategory(month, year, cat);
+    });
     return total;
 }
 
@@ -912,57 +984,145 @@ function renderBudget() {
     let year = parseInt(document.getElementById('budgetYear').value);
     let budgetKey = year+'-'+month;
     let monthlyBudget = budgets[budgetKey] || {};
-    let totalBudget = Object.values(monthlyBudget).reduce((a,b)=>a+b,0);
-    let actual = getActualExpenses(month, year);
-    let remaining = totalBudget - actual;
-    let pct = totalBudget>0 ? (actual/totalBudget)*100 : 0;
+    
+    let totalBudget = 0;
+    let totalActual = 0;
+    let overBudgetCategories = [];
+    
+    for (let category of EXPENSE_CATEGORIES) {
+        let target = monthlyBudget[category] || 0;
+        let actual = getActualExpensesByCategory(month, year, category);
+        totalBudget += target;
+        totalActual += actual;
+        
+        if (target > 0 && actual > target) {
+            overBudgetCategories.push(`${category} (${rp(actual - target)} lebih)`);
+        }
+    }
+    
+    let remaining = totalBudget - totalActual;
+    let pct = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
     let cls = '';
-    if(pct>=100) cls='danger';
-    else if(pct>=80) cls='warning';
+    if(pct >= 100) cls = 'danger';
+    else if(pct >= 80) cls = 'warning';
+    
     document.getElementById('budgetTargetDisplay').innerText = rp(totalBudget);
-    document.getElementById('budgetActualDisplay').innerText = rp(actual);
+    document.getElementById('budgetActualDisplay').innerText = rp(totalActual);
     let remEl = document.getElementById('budgetRemainingDisplay');
     remEl.innerText = rp(remaining);
-    remEl.className = 'budget-mini-value ' + (remaining<0?'negative':'positive');
+    remEl.className = 'budget-mini-value ' + (remaining < 0 ? 'negative' : 'positive');
     let fill = document.getElementById('budgetProgressFill');
-    fill.style.width = Math.min(pct,100)+'%';
+    fill.style.width = Math.min(pct, 100) + '%';
     fill.className = 'budget-mini-progress-fill ' + cls;
+    
+    if (overBudgetCategories.length > 0) {
+        let toastMsg = `⚠️ Over budget: ${overBudgetCategories.slice(0, 2).join(', ')}${overBudgetCategories.length > 2 ? '...' : ''}`;
+        showToast(toastMsg, 'warning');
+    }
 }
 
 function openBudgetModal() {
     let now = new Date();
     let monthSel = document.getElementById('budgetModalMonth');
     monthSel.innerHTML = '';
-    for(let i=1;i<=12;i++) monthSel.innerHTML += `<option value="${i}" ${i===now.getMonth()+1?'selected':''}>${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][i-1]}</option>`;
+    for(let i = 1; i <= 12; i++) {
+        monthSel.innerHTML += `<option value="${i}" ${i === now.getMonth() + 1 ? 'selected' : ''}>${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][i-1]}</option>`;
+    }
     document.getElementById('budgetModalYear').value = now.getFullYear();
-    let month = parseInt(monthSel.value);
-    let year = parseInt(document.getElementById('budgetModalYear').value);
-    let budgetKey = year+'-'+month;
-    let current = budgets[budgetKey] || {};
-    let container = document.getElementById('budgetCategoriesContainer');
-    container.innerHTML = EXPENSE_CATEGORIES.map(cat => `<div class="budget-cat-row"><div class="budget-cat-label">${cat}</div><input type="text" class="form-control budget-cat-input" data-category="${cat}" placeholder="Rp" value="${current[cat]?current[cat].toLocaleString('id-ID'):''}" oninput="formatRupiah(this)"></div>`).join('');
+    
+    renderBudgetModalContent();
     openModal('budgetModal');
+}
+
+function renderBudgetModalContent() {
+    let month = parseInt(document.getElementById('budgetModalMonth').value);
+    let year = parseInt(document.getElementById('budgetModalYear').value);
+    let budgetKey = year + '-' + month;
+    let current = budgets[budgetKey] || {};
+    
+    let container = document.getElementById('budgetCategoriesContainer');
+    if (!container) return;
+    
+    let totalBudget = 0;
+    let totalActual = 0;
+    
+    container.innerHTML = EXPENSE_CATEGORIES.map(cat => {
+        let target = current[cat] || 0;
+        let actual = getActualExpensesByCategory(month, year, cat);
+        totalBudget += target;
+        totalActual += actual;
+        let status = actual > target ? '⚠️' : (actual === target ? '⚡' : '✅');
+        let statusColor = actual > target ? '#de350b' : (actual === target ? '#cc7b00' : '#00875a');
+        return `<div class="budget-cat-row">
+            <div class="budget-cat-label">${cat}</div>
+            <input type="text" class="form-control budget-cat-input" data-category="${cat}" placeholder="Rp" value="${target ? target.toLocaleString('id-ID') : ''}" oninput="formatRupiah(this); updateBudgetSummary()">
+            <div style="font-size:.6rem; min-width:100px; text-align:right; color:${statusColor}">${status} Real: ${rp(actual)}</div>
+        </div>`;
+    }).join('');
+    
+    let summaryDiv = document.getElementById('budgetSummary');
+    if (summaryDiv) {
+        summaryDiv.innerHTML = `<div class="budget-summary-row" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <span>📊 Total Target: ${rp(totalBudget)}</span>
+            <span>💰 Total Realisasi: ${rp(totalActual)}</span>
+            <span class="${totalActual > totalBudget ? 'negative' : 'positive'}">${totalActual > totalBudget ? '⚠️ Over Budget: ' + rp(totalActual - totalBudget) : '✅ Sisa: ' + rp(totalBudget - totalActual)}</span>
+        </div>`;
+    }
+}
+
+function updateBudgetSummary() {
+    let month = parseInt(document.getElementById('budgetModalMonth').value);
+    let year = parseInt(document.getElementById('budgetModalYear').value);
+    let totalBudget = 0;
+    let totalActual = 0;
+    
+    document.querySelectorAll('.budget-cat-input').forEach(inp => {
+        let cat = inp.getAttribute('data-category');
+        let amt = unRp(inp.value);
+        let actual = getActualExpensesByCategory(month, year, cat);
+        totalBudget += amt;
+        totalActual += actual;
+        
+        let statusSpan = inp.parentElement.querySelector('div[style*="min-width:100px"]');
+        if (statusSpan) {
+            let status = actual > amt ? '⚠️' : (actual === amt ? '⚡' : '✅');
+            let statusColor = actual > amt ? '#de350b' : (actual === amt ? '#cc7b00' : '#00875a');
+            statusSpan.innerHTML = `${status} Real: ${rp(actual)}`;
+            statusSpan.style.color = statusColor;
+        }
+    });
+    
+    let summaryDiv = document.getElementById('budgetSummary');
+    if (summaryDiv) {
+        summaryDiv.innerHTML = `<div class="budget-summary-row" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <span>📊 Total Target: ${rp(totalBudget)}</span>
+            <span>💰 Total Realisasi: ${rp(totalActual)}</span>
+            <span class="${totalActual > totalBudget ? 'negative' : 'positive'}">${totalActual > totalBudget ? '⚠️ Over Budget: ' + rp(totalActual - totalBudget) : '✅ Sisa: ' + rp(totalBudget - totalActual)}</span>
+        </div>`;
+    }
 }
 
 function saveBudget() {
     let month = parseInt(document.getElementById('budgetModalMonth').value);
     let year = parseInt(document.getElementById('budgetModalYear').value);
-    let budgetKey = year+'-'+month;
-    if(!budgets[budgetKey]) budgets[budgetKey]={};
+    let budgetKey = year + '-' + month;
+    if(!budgets[budgetKey]) budgets[budgetKey] = {};
+    
     document.querySelectorAll('.budget-cat-input').forEach(inp => {
         let cat = inp.getAttribute('data-category');
         let amt = unRp(inp.value);
-        if(amt>0) budgets[budgetKey][cat]=amt;
+        if(amt > 0) budgets[budgetKey][cat] = amt;
         else delete budgets[budgetKey][cat];
     });
-    if(Object.keys(budgets[budgetKey]).length===0) delete budgets[budgetKey];
+    
+    if(Object.keys(budgets[budgetKey]).length === 0) delete budgets[budgetKey];
     saveBudgets();
     document.getElementById('budgetMonth').value = month;
     document.getElementById('budgetYear').value = year;
     renderBudget();
     closeModal('budgetModal');
-    showToast('Anggaran disimpan!','success');
-    saveLocalAndSync('SISTEM',`Menyimpan anggaran bulan ${month} ${year}`,null);
+    showToast('Anggaran disimpan!', 'success');
+    saveLocalAndSync('SISTEM', `Menyimpan anggaran bulan ${month} ${year}`, null);
 }
 
 function generatePDFReport() {
@@ -978,17 +1138,67 @@ function generatePDFReport() {
     let budgetKey = year+'-'+month;
     let monthlyBudget = budgets[budgetKey]||{};
     let totalBudget = Object.values(monthlyBudget).reduce((a,b)=>a+b,0);
-    let html = `<div style="font-family:Inter,sans-serif; padding:20px;"><div style="text-align:center; margin-bottom:20px; border-bottom:2px solid #1a1a1a; padding-bottom:10px;"><div style="font-size:18px; font-weight:700;">ARTAFLOW - LAPORAN KEUANGAN</div><div style="font-size:12px; color:#666;">${bookName} | ${monthName} ${year}</div><div style="font-size:10px; color:#999;">${new Date().toLocaleString('id-ID')}</div></div>
-    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;"><div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Pemasukan</div><div style="font-size:16px; font-weight:700; color:#00875a;">${rp(totalIncome)}</div></div>
-    <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Pengeluaran</div><div style="font-size:16px; font-weight:700; color:#de350b;">${rp(totalExpense)}</div></div>
-    <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Saldo</div><div style="font-size:16px; font-weight:700; color:${balance>=0?'#00875a':'#de350b'};">${rp(balance)}</div></div>
-    <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Target Anggaran</div><div style="font-size:16px; font-weight:700;">${rp(totalBudget)}</div></div></div>
-    <div><div style="font-size:14px; font-weight:700; margin-bottom:10px;">📋 DETIL TRANSAKSI</div><table style="width:100%; border-collapse:collapse; font-size:10px;"><thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Tanggal</th><th style="border:1px solid #ddd; padding:6px;">Deskripsi</th><th style="border:1px solid #ddd; padding:6px;">Jenis</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Jumlah</th></tr></thead><tbody>`;
-    monthTx.forEach(t=>{html+=`<tr><td style="border:1px solid #ddd; padding:6px;">${formatDateTime(t.date)}</td><td style="border:1px solid #ddd; padding:6px;">${escapeHtml(t.desc)}</td><td style="border:1px solid #ddd; padding:6px;">${t.type==='income'?'Pemasukan':'Pengeluaran'}</td><td style="border:1px solid #ddd; padding:6px; text-align:right; ${t.type==='income'?'color:#00875a':'color:#de350b'}">${rp(t.amount)}</td></tr>`;});
-    if(monthTx.length===0) html+='<tr><td colspan="4" style="text-align:center; padding:20px;">Tidak ada transaksi</td></tr>';
-    html+=`</tbody></table></div><div style="margin-top:20px; text-align:center; font-size:9px; color:#999; padding-top:10px; border-top:1px solid #ddd;">Laporan dibuat otomatis oleh ArtaFlow</div></div>`;
-    let el = document.createElement('div'); el.innerHTML = html; el.style.position='absolute'; el.style.left='-9999px'; document.body.appendChild(el);
-    html2pdf().set({margin:[0.5,0.5,0.5,0.5], filename:`ArtaFlow_${bookName}_${monthName}_${year}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'in',format:'a4',orientation:'portrait'}}).from(el).save().then(()=>{document.body.removeChild(el); showToast('PDF selesai!','success');}).catch(()=>{document.body.removeChild(el); showToast('Gagal buat PDF','error');});
+    
+    let categoryReport = '';
+    for (let cat of EXPENSE_CATEGORIES) {
+        let target = monthlyBudget[cat] || 0;
+        let actual = getActualExpensesByCategory(month, year, cat);
+        if (target > 0 || actual > 0) {
+            categoryReport += `<tr><td style="border:1px solid #ddd; padding:6px;">${cat}</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">${rp(target)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">${rp(actual)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right; ${actual>target?'color:#de350b':'color:#00875a'}">${rp(target-actual)}</td></tr>`;
+        }
+    }
+    
+    let html = `<div style="font-family:Inter,sans-serif; padding:20px;">
+        <div style="text-align:center; margin-bottom:20px; border-bottom:2px solid #1a1a1a; padding-bottom:10px;">
+            <div style="font-size:18px; font-weight:700;">ARTAFLOW - LAPORAN KEUANGAN</div>
+            <div style="font-size:12px; color:#666;">${bookName} | ${monthName} ${year}</div>
+            <div style="font-size:10px; color:#999;">${new Date().toLocaleString('id-ID')}</div>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Pemasukan</div><div style="font-size:16px; font-weight:700; color:#00875a;">${rp(totalIncome)}</div></div>
+            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Pengeluaran</div><div style="font-size:16px; font-weight:700; color:#de350b;">${rp(totalExpense)}</div></div>
+            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Saldo</div><div style="font-size:16px; font-weight:700; color:${balance>=0?'#00875a':'#de350b'};">${rp(balance)}</div></div>
+            <div style="flex:1; border:1px solid #ddd; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:11px;">Target Anggaran</div><div style="font-size:16px; font-weight:700;">${rp(totalBudget)}</div></div>
+        </div>
+        <div style="margin-bottom:20px;">
+            <div style="font-size:14px; font-weight:700; margin-bottom:10px;">📊 REALISASI ANGGARAN PER KATEGORI</div>
+            <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                <thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Kategori</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Target</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Realisasi</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Sisa/(Over)</th></tr></thead>
+                <tbody>${categoryReport || '<tr><td colspan="4" style="text-align:center;">Belum ada anggaran</td></tr>'}</tbody>
+            </table>
+        </div>
+        <div>
+            <div style="font-size:14px; font-weight:700; margin-bottom:10px;">📋 DETIL TRANSAKSI</div>
+            <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                <thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Tanggal</th><th style="border:1px solid #ddd; padding:6px;">Kategori</th><th style="border:1px solid #ddd; padding:6px;">Deskripsi</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Jumlah</th></tr></thead>
+                <tbody>`;
+    monthTx.forEach(t => {
+        html += `<tr><td style="border:1px solid #ddd; padding:6px;">${formatDateTime(t.date)}</td><td style="border:1px solid #ddd; padding:6px;">${t.category || '-'}</td><td style="border:1px solid #ddd; padding:6px;">${escapeHtml(t.desc)}</td><td style="border:1px solid #ddd; padding:6px; text-align:right; ${t.type==='income'?'color:#00875a':'color:#de350b'}">${rp(t.amount)}</td></tr>`;
+    });
+    if(monthTx.length === 0) html += '<tr><td colspan="4" style="text-align:center; padding:20px;">Tidak ada transaksi</td></tr>';
+    html += `</tbody></table>
+        </div>
+        <div style="margin-top:20px; text-align:center; font-size:9px; color:#999; padding-top:10px; border-top:1px solid #ddd;">Laporan dibuat otomatis oleh ArtaFlow</div>
+    </div>`;
+    
+    let el = document.createElement('div'); 
+    el.innerHTML = html; 
+    el.style.position = 'absolute'; 
+    el.style.left = '-9999px'; 
+    document.body.appendChild(el);
+    html2pdf().set({
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `ArtaFlow_${bookName}_${monthName}_${year}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).from(el).save().then(() => {
+        document.body.removeChild(el);
+        showToast('PDF selesai!', 'success');
+    }).catch(() => {
+        document.body.removeChild(el);
+        showToast('Gagal buat PDF', 'error');
+    });
 }
 
 // ==================== IMAGE FUNCTIONS ====================
@@ -1171,7 +1381,6 @@ async function saveLocalAndSync(logType, logMessage, txId) {
     saveLocal();
     saveBudgets();
     
-    // Selalu simpan log lokal dulu
     addLocalLog(logType, logMessage, txId);
     
     let url = getCloudUrl();
@@ -1286,16 +1495,18 @@ function render() {
     let tb = document.getElementById('transactionTableBody');
     document.getElementById('transactionCount').innerText = data.length + ' transaksi';
     if (!data.length) {
-        tb.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px;">Tidak ada data</td></tr>';
+        tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px;">Tidak ada数据</td></tr>';
         return;
     }
     tb.innerHTML = data.map((t, i) => {
         let isInc = t.type === 'income';
         let badge = isInc ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
         let att = t.attachment ? `<span class="attachment-link" onclick="viewAttachment(\`${t.attachment.replace(/`/g, "\\`")}\`)">📎</span>` : '<span class="no-attachment">—</span>';
+        let categoryHtml = (t.type === 'expense' && t.category) ? `<span class="category-badge">${escapeHtml(t.category)}</span>` : '-';
         return `<tr>
             <td class="text-center">${i+1}</td>
             <td>${escapeHtml(formatDateTime(t.date))}</td>
+            <td class="text-center">${categoryHtml}</td>
             <td>${badge} ${escapeHtml(t.desc)}</td>
             <td class="text-right" style="color:#00875a;">${isInc ? rp(t.amount) : '—'}</td>
             <td class="text-right" style="color:#de350b;">${!isInc ? rp(t.amount) : '—'}</td>
@@ -1313,9 +1524,19 @@ async function handleSubmit(e) {
     let att = '';
     let file = document.getElementById('txAttachment').files[0];
     if (file) { let b64 = await fileToBase64(file); att = await compressImage(b64); }
+    
+    let selectedType = document.querySelector('input[name="type"]:checked').value;
+    let selectedCategory = document.getElementById('txCategory').value;
+    
+    if (selectedType === 'expense' && !selectedCategory) {
+        alert("Silakan pilih kategori untuk pengeluaran!");
+        return;
+    }
+    
     let newTx = {
         id: Date.now() + Math.floor(Math.random() * 10000),
-        type: document.querySelector('input[name="type"]:checked').value,
+        type: selectedType,
+        category: selectedType === 'expense' ? selectedCategory : null,
         date: document.getElementById('txDate').value,
         desc: document.getElementById('txDesc').value.trim(),
         amount: amt,
@@ -1323,12 +1544,13 @@ async function handleSubmit(e) {
         attachment: att
     };
     txs.unshift(newTx);
-    await saveLocalAndSync('TAMBAH', `Menambah transaksi: ${newTx.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTx.amount)} - "${newTx.desc}"`, newTx.id);
+    await saveLocalAndSync('TAMBAH', `Menambah transaksi: ${newTx.type === 'income' ? 'MASUK' : 'KELUAR ' + newTx.category} ${rp(newTx.amount)} - "${newTx.desc}"`, newTx.id);
     render();
     renderBudget();
     closeModal('addModal');
     document.getElementById('addForm').reset();
     document.getElementById('attachmentPreview').style.display = 'none';
+    toggleCategoryField();
     showToast('Transaksi ditambahkan!', 'success');
 }
 
@@ -1339,7 +1561,16 @@ async function handleEditSubmit(e) {
     if (amt <= 0) { alert("Jumlah harus >0!"); return; }
     let t = txs.find(x => x.id === id);
     if (t) {
-        t.type = document.querySelector('input[name="editType"]:checked').value;
+        let selectedType = document.querySelector('input[name="editType"]:checked').value;
+        let selectedCategory = document.getElementById('editTxCategory').value;
+        
+        if (selectedType === 'expense' && !selectedCategory) {
+            alert("Silakan pilih kategori untuk pengeluaran!");
+            return;
+        }
+        
+        t.type = selectedType;
+        t.category = selectedType === 'expense' ? selectedCategory : null;
         t.date = document.getElementById('editTxDate').value;
         t.desc = document.getElementById('editTxDesc').value.trim();
         t.amount = amt;
@@ -1358,7 +1589,7 @@ async function deleteTransaction(id) {
         let t = txs.find(x => x.id === id);
         if (t) {
             txs = txs.filter(x => x.id !== id);
-            await saveLocalAndSync('HAPUS', `Menghapus transaksi: ${t.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(t.amount)} - "${t.desc}"`, id);
+            await saveLocalAndSync('HAPUS', `Menghapus transaksi: ${t.type === 'income' ? 'MASUK' : 'KELUAR ' + (t.category || '')} ${rp(t.amount)} - "${t.desc}"`, id);
             render();
             renderBudget();
             showToast('Transaksi dihapus!', 'info');
@@ -1449,8 +1680,10 @@ async function deleteBook(id) {
 function exportToCSV() {
     if (!txs.length) { alert("Tidak ada data!"); return; }
     let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-    let rows = [["ID", "Tanggal", "Deskripsi", "Jenis", "Jumlah", "Lampiran"].join(',')];
-    txs.forEach(t => { rows.push([t.id, t.date, `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.attachment ? 'Ya' : 'Tidak'].join(',')); });
+    let rows = [["ID", "Tanggal", "Kategori", "Deskripsi", "Jenis", "Jumlah", "Lampiran"].join(',')];
+    txs.forEach(t => { 
+        rows.push([t.id, t.date, t.category || '', `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.attachment ? 'Ya' : 'Tidak'].join(',')); 
+    });
     let blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1546,7 +1779,7 @@ const BACKEND_SCRIPT = `function doPost(e) {
     const bookName = (req.book || "default_book").replace(/[^a-zA-Z0-9_]/g, '_');
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let txSheet = ss.getSheetByName(bookName + "_transactions");
-    if (!txSheet) { txSheet = ss.insertSheet(bookName + "_transactions"); txSheet.appendRow(["id","date","desc","type","amount","created_at","attachment"]); txSheet.getRange("A1:G1").setFontWeight("bold"); }
+    if (!txSheet) { txSheet = ss.insertSheet(bookName + "_transactions"); txSheet.appendRow(["id","date","category","desc","type","amount","created_at","attachment"]); txSheet.getRange("A1:H1").setFontWeight("bold"); }
     let budgetSheet = ss.getSheetByName(bookName + "_budgets");
     if (!budgetSheet) { budgetSheet = ss.insertSheet(bookName + "_budgets"); budgetSheet.appendRow(["year","month","category","amount"]); budgetSheet.getRange("A1:D1").setFontWeight("bold"); }
     let logSheet = ss.getSheetByName(bookName + "_logs");
@@ -1554,7 +1787,7 @@ const BACKEND_SCRIPT = `function doPost(e) {
     if (action === "load_data") {
       const rows = txSheet.getDataRange().getDisplayValues();
       const transactions = [];
-      for (let i = 1; i < rows.length; i++) if (rows[i][0]) transactions.push({ id: isNaN(rows[i][0])?rows[i][0]:Number(rows[i][0]), date: rows[i][1], desc: rows[i][2], type: rows[i][3], amount: Number(rows[i][4]), created_at: rows[i][5], attachment: rows[i][6]||"" });
+      for (let i = 1; i < rows.length; i++) if (rows[i][0]) transactions.push({ id: isNaN(rows[i][0])?rows[i][0]:Number(rows[i][0]), date: rows[i][1], category: rows[i][2]||null, desc: rows[i][3], type: rows[i][4], amount: Number(rows[i][5]), created_at: rows[i][6], attachment: rows[i][7]||"" });
       const budgetRows = budgetSheet.getDataRange().getDisplayValues();
       const budgets = {};
       for (let i = 1; i < budgetRows.length; i++) if (budgetRows[i][0]) { const key = budgetRows[i][0] + "-" + budgetRows[i][1]; if (!budgets[key]) budgets[key] = {}; budgets[key][budgetRows[i][2]] = Number(budgetRows[i][3]); }
@@ -1566,14 +1799,14 @@ const BACKEND_SCRIPT = `function doPost(e) {
       if (newData && Array.isArray(newData)) {
         const existingRows = txSheet.getDataRange().getDisplayValues();
         const sheetMap = {};
-        for (let i = 1; i < existingRows.length; i++) if (existingRows[i][0]) { const sId = String(existingRows[i][0]); sheetMap[sId] = { id: isNaN(sId)?sId:Number(sId), date: existingRows[i][1], desc: existingRows[i][2], type: existingRows[i][3], amount: Number(existingRows[i][4]), created_at: existingRows[i][5], attachment: existingRows[i][6]||"" }; }
+        for (let i = 1; i < existingRows.length; i++) if (existingRows[i][0]) { const sId = String(existingRows[i][0]); sheetMap[sId] = { id: isNaN(sId)?sId:Number(sId), date: existingRows[i][1], category: existingRows[i][2]||null, desc: existingRows[i][3], type: existingRows[i][4], amount: Number(existingRows[i][5]), created_at: existingRows[i][6], attachment: existingRows[i][7]||"" }; }
         newData.forEach(t => { sheetMap[String(t.id)] = t; });
         const logData = req.logData;
         if (logData && logData.type === 'HAPUS' && logData.transaction_id) delete sheetMap[String(logData.transaction_id)];
         const finalData = Object.keys(sheetMap).map(k => sheetMap[k]);
         txSheet.clearContents();
-        txSheet.getRange(1,1,1,7).setValues([["id","date","desc","type","amount","created_at","attachment"]]);
-        if (finalData.length > 0) { const values = finalData.map(t => [String(t.id), String(t.date), String(t.desc), String(t.type), Number(t.amount), String(t.created_at||""), String(t.attachment||"")]); txSheet.getRange(2,1,values.length,7).setValues(values); }
+        txSheet.getRange(1,1,1,8).setValues([["id","date","category","desc","type","amount","created_at","attachment"]]);
+        if (finalData.length > 0) { const values = finalData.map(t => [String(t.id), String(t.date), String(t.category||""), String(t.desc), String(t.type), Number(t.amount), String(t.created_at||""), String(t.attachment||"")]); txSheet.getRange(2,1,values.length,8).setValues(values); }
       }
       if (newBudgets) {
         budgetSheet.clearContents();
@@ -1605,9 +1838,11 @@ document.getElementById('actionEditBtn').onclick = () => {
         if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
         else document.getElementById('editTypeExpense').checked = true;
         document.getElementById('editTxDate').value = t.date;
+        document.getElementById('editTxCategory').value = t.category || '';
         document.getElementById('editTxDesc').value = t.desc;
         document.getElementById('editTxAmount').value = t.amount.toLocaleString('id-ID');
         document.getElementById('editAttachmentInfo').innerHTML = t.attachment ? '📎 Memiliki lampiran' : '📄 Tidak ada lampiran';
+        toggleEditCategoryField();
         closeModal('actionMenuModal');
         openModal('editModal');
     }
@@ -1616,6 +1851,19 @@ document.getElementById('actionDeleteBtn').onclick = () => deleteTransaction(act
 document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
 });
+
+const budgetModalMonth = document.getElementById('budgetModalMonth');
+const budgetModalYear = document.getElementById('budgetModalYear');
+if (budgetModalMonth) {
+    budgetModalMonth.addEventListener('change', function() {
+        renderBudgetModalContent();
+    });
+}
+if (budgetModalYear) {
+    budgetModalYear.addEventListener('input', function() {
+        renderBudgetModalContent();
+    });
+}
 
 deviceId = getDeviceId();
 document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUpperCase();
@@ -1628,6 +1876,8 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUppe
     let dt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     document.getElementById('txDate').value = dt;
     document.getElementById('editTxDate').value = dt;
+    toggleCategoryField();
+    toggleEditCategoryField();
     let local = localStorage.getItem('artaflow_txs_' + currentBookId);
     if (local) try { txs = JSON.parse(local); } catch(e) { txs = []; }
     render();
@@ -1673,6 +1923,9 @@ window.saveBudget = saveBudget;
 window.generatePDFReport = generatePDFReport;
 window.renderBudget = renderBudget;
 window.testAddLog = testAddLog;
+window.toggleCategoryField = toggleCategoryField;
+window.toggleEditCategoryField = toggleEditCategoryField;
+window.updateBudgetSummary = updateBudgetSummary;
 </script>
 </body>
 </html>

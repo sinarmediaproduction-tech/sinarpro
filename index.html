@@ -845,7 +845,6 @@ function getCloudUrl() {
     return _deobfuscate(b64);
 }
 
-// Sinkronisasi dinonaktifkan sementara input diisi agar tidak membebani server
 function saveCloudUrl(url) {
     cloudUrls[currentBookId] = _obfuscate(url.trim());
     localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
@@ -903,7 +902,7 @@ async function saveLocalAndSync(logType = null, logMessage = null, txId = null) 
         });
         let d = await res.json();
         if(d.success) {
-            // OPTIMASI GABUNGAN: Tarik data terbaru dari Cloud agar input Telegram langsung masuk ke Web
+            // OPTIMASI: Setelah upload, langsung ambil versi terbaru dari cloud (agar input Telegram masuk ke UI)
             await loadFromCloud();
             render();
             await refreshLogsFromCloud();
@@ -1094,7 +1093,6 @@ function refreshBookSelectOptions() {
     updateSyncStatusIndicator();
 }
 
-// Perbaikan Race Condition dengan Memuat & Merender Data Lokal Terlebih Dahulu
 async function switchBook(id) {
     currentBookId = id;
     localStorage.setItem('artaflow_active_book_id', id);
@@ -1298,7 +1296,7 @@ const BACKEND_SCRIPT = `// ==================== ARTAFLOW BACKEND - GOOGLE APPS S
 function doPost(e) {
   const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
   try {
-    if (!e ? .postData ? .contents) {
+    if (!e || !e.postData || !e.postData.contents) {
       return res.setContent(JSON.stringify({ success: false, error: "Tidak ada data payload" }));
     }
     

@@ -12,6 +12,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -415,6 +416,10 @@
         .modal-content.wide {
             max-width: 700px;
         }
+        .modal-content.report {
+            max-width: 900px;
+            max-height: 90vh;
+        }
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -644,6 +649,54 @@
             font-weight: 600;
         }
         
+        /* Report Chart Styles */
+        .report-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .report-stat-card {
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .report-stat-label {
+            font-size: .7rem;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .report-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .chart-container {
+            max-width: 100%;
+            margin: 15px 0;
+        }
+        canvas {
+            max-height: 250px;
+            width: 100%;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .7rem;
+            margin-top: 15px;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        .report-table th {
+            background: #f5f5f5;
+        }
+        .text-right { text-align: right; }
+        
         @media(max-width:768px) {
             body { padding: 12px; }
             .controls { flex-direction: column; align-items: stretch; }
@@ -656,6 +709,7 @@
             .budget-cat-row { flex-direction: column; align-items: stretch; }
             .budget-cat-row .budget-cat-label { width: auto; }
             .modal-content.wide { max-width: 95%; }
+            .report-stats { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -707,6 +761,7 @@
         </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" onclick="openBudgetModal()">✏️ Atur</button>
+            <button class="btn-icon" onclick="openMonthlyReport()">📊 Laporan Bulanan</button>
             <button class="btn-icon" onclick="generatePDFReport()">📄 PDF</button>
         </div>
     </div>
@@ -847,6 +902,30 @@
     </div>
 </div>
 
+<!-- Modal Monthly Report -->
+<div id="monthlyReportModal" class="modal">
+    <div class="modal-content report">
+        <div class="modal-header">
+            <h3 id="reportModalTitle">📊 Laporan Bulanan</h3>
+            <button class="modal-close" onclick="closeModal('monthlyReportModal')">×</button>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+            <select id="reportMonth" class="form-control" style="width: auto; flex: 1;">
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+            </select>
+            <input type="number" id="reportYear" class="form-control" style="width: 100px;" value="2025">
+            <button class="btn btn-primary" onclick="generateMonthlyReport()">Tampilkan</button>
+            <button class="btn btn-secondary" onclick="exportReportAsPDF()">📄 Export PDF</button>
+        </div>
+        <div id="reportContent">
+            <div style="text-align: center; padding: 40px;">Pilih bulan dan tahun, lalu klik Tampilkan</div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal View Attachment -->
 <div id="viewAttachmentModal" class="modal">
     <div class="modal-content" style="max-width:600px; text-align:center">
@@ -869,6 +948,7 @@ let actionId = null;
 let deviceId = '';
 let currentAttachmentData = null;
 let budgets = {};
+let reportChart = null;
 
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
 
@@ -896,6 +976,194 @@ function getDeviceId() { let id = localStorage.getItem('artaflow_device_id'); if
 const _S_KEY = 42;
 function _obfuscate(str) { if(!str) return ''; let r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return btoa(r); }
 function _deobfuscate(b64) { if(!b64) return ''; try { let str=atob(b64), r=''; for(let i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^_S_KEY); return r; } catch(e){ return ''; } }
+
+// ==================== MONTHLY REPORT FUNCTIONS ====================
+function openMonthlyReport() {
+    let now = new Date();
+    document.getElementById('reportMonth').value = now.getMonth() + 1;
+    document.getElementById('reportYear').value = now.getFullYear();
+    openModal('monthlyReportModal');
+    generateMonthlyReport();
+}
+
+function generateMonthlyReport() {
+    let month = parseInt(document.getElementById('reportMonth').value);
+    let year = parseInt(document.getElementById('reportYear').value);
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let monthName = monthNames[month - 1];
+    let bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
+    
+    document.getElementById('reportModalTitle').innerHTML = `📊 Laporan ${monthName} ${year} - ${escapeHtml(bookName)}`;
+    
+    // Filter transaksi bulan ini
+    let monthTxs = txs.filter(t => {
+        let d = new Date(t.date);
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+    
+    let totalIncome = monthTxs.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+    let totalExpense = monthTxs.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+    let balance = totalIncome - totalExpense;
+    
+    // Hitung per kategori pengeluaran
+    let categoryData = {};
+    EXPENSE_CATEGORIES.forEach(cat => { categoryData[cat] = 0; });
+    monthTxs.filter(t => t.type === 'expense').forEach(t => {
+        if (t.category && categoryData[t.category] !== undefined) {
+            categoryData[t.category] += t.amount;
+        } else if (t.category) {
+            categoryData[t.category] = (categoryData[t.category] || 0) + t.amount;
+        }
+    });
+    
+    // Siapkan data untuk chart
+    let chartLabels = [];
+    let chartValues = [];
+    for (let cat in categoryData) {
+        if (categoryData[cat] > 0) {
+            chartLabels.push(cat);
+            chartValues.push(categoryData[cat]);
+        }
+    }
+    
+    // Buat konten report
+    let reportHtml = `
+        <div class="report-stats">
+            <div class="report-stat-card" style="border-color:#00875a">
+                <div class="report-stat-label">💵 Total Pemasukan</div>
+                <div class="report-stat-value" style="color:#00875a">${rp(totalIncome)}</div>
+            </div>
+            <div class="report-stat-card" style="border-color:#de350b">
+                <div class="report-stat-label">💰 Total Pengeluaran</div>
+                <div class="report-stat-value" style="color:#de350b">${rp(totalExpense)}</div>
+            </div>
+            <div class="report-stat-card" style="border-color:${balance >= 0 ? '#00875a' : '#de350b'}">
+                <div class="report-stat-label">⚖️ Saldo</div>
+                <div class="report-stat-value" style="color:${balance >= 0 ? '#00875a' : '#de350b'}">${rp(balance)}</div>
+            </div>
+        </div>
+    `;
+    
+    if (chartLabels.length > 0) {
+        reportHtml += `
+            <div class="chart-container">
+                <canvas id="reportChartCanvas" style="max-height: 250px; width: 100%;"></canvas>
+            </div>
+        `;
+    }
+    
+    if (chartLabels.length > 0) {
+        reportHtml += `
+            <table class="report-table">
+                <thead><tr><th>Kategori Pengeluaran</th><th class="text-right">Jumlah</th><th class="text-right">Persentase</th></tr></thead>
+                <tbody>
+        `;
+        chartLabels.forEach((label, idx) => {
+            let percent = totalExpense > 0 ? (chartValues[idx] / totalExpense * 100).toFixed(1) : 0;
+            reportHtml += `<tr><td>${label}</td><td class="text-right">${rp(chartValues[idx])}</td><td class="text-right">${percent}%</td></tr>`;
+        });
+        reportHtml += `</tbody></table>`;
+    }
+    
+    // Daftar transaksi
+    if (monthTxs.length > 0) {
+        reportHtml += `
+            <table class="report-table" style="margin-top:20px">
+                <thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="text-right">Jenis</th><th class="text-right">Jumlah</th></tr></thead>
+                <tbody>
+        `;
+        monthTxs.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+            let typeText = t.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+            let typeColor = t.type === 'income' ? '#00875a' : '#de350b';
+            reportHtml += `<tr>
+                <td>${formatDateTime(t.date)}</td>
+                <td>${t.category || '-'}</td>
+                <td>${escapeHtml(t.desc)}</td>
+                <td class="text-right" style="color:${typeColor}">${typeText}</td>
+                <td class="text-right" style="color:${typeColor}">${rp(t.amount)}</td>
+            </tr>`;
+        });
+        reportHtml += `</tbody></table>`;
+    } else {
+        reportHtml += `<div style="text-align:center; padding:30px; color:#666;">📭 Belum ada transaksi pada bulan ini</div>`;
+    }
+    
+    document.getElementById('reportContent').innerHTML = reportHtml;
+    
+    // Render chart setelah DOM update
+    if (chartLabels.length > 0) {
+        setTimeout(() => {
+            let ctx = document.getElementById('reportChartCanvas')?.getContext('2d');
+            if (ctx) {
+                if (reportChart) reportChart.destroy();
+                reportChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            data: chartValues,
+                            backgroundColor: ['#00875a', '#de350b', '#ffab00', '#4a5568', '#00a3bf', '#6554c0', '#ff8b3d', '#36b37e', '#e6b400', '#ff7452'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                            tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${rp(ctx.raw)}` } }
+                        }
+                    }
+                });
+            }
+        }, 100);
+    }
+}
+
+function exportReportAsPDF() {
+    let month = parseInt(document.getElementById('reportMonth').value);
+    let year = parseInt(document.getElementById('reportYear').value);
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let monthName = monthNames[month - 1];
+    let bookName = books.find(b => b.id === currentBookId)?.name || 'Buku Kas';
+    
+    let element = document.getElementById('reportContent');
+    let originalHtml = element.innerHTML;
+    
+    let printHtml = `
+        <div style="font-family: Inter, sans-serif; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">
+                <div style="font-size: 18px; font-weight: 700;">ARTAFLOW - LAPORAN BULANAN</div>
+                <div style="font-size: 12px; color: #666;">${bookName} | ${monthName} ${year}</div>
+                <div style="font-size: 10px; color: #999;">${new Date().toLocaleString('id-ID')}</div>
+            </div>
+            ${originalHtml}
+            <div style="margin-top: 20px; text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #ddd;">
+                Laporan dibuat otomatis oleh ArtaFlow
+            </div>
+        </div>
+    `;
+    
+    let el = document.createElement('div');
+    el.innerHTML = printHtml;
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    
+    html2pdf().set({
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `ArtaFlow_${bookName}_${monthName}_${year}_Laporan.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).from(el).save().then(() => {
+        document.body.removeChild(el);
+        showToast('Laporan PDF selesai!', 'success');
+    }).catch(() => {
+        document.body.removeChild(el);
+        showToast('Gagal buat PDF', 'error');
+    });
+}
 
 // ==================== TOGGLE CATEGORY FIELD ====================
 function toggleCategoryField() {
@@ -932,7 +1200,6 @@ function addLocalLog(type, message, txId = null) {
     });
     if (logs.length > 100) logs.pop();
     localStorage.setItem('artaflow_logs_' + currentBookId, JSON.stringify(logs));
-    console.log("Log lokal ditambahkan:", type, message);
 }
 
 function getLocalLogs() {
@@ -1164,7 +1431,7 @@ function generatePDFReport() {
             <div style="font-size:14px; font-weight:700; margin-bottom:10px;">📊 REALISASI ANGGARAN PER KATEGORI</div>
             <table style="width:100%; border-collapse:collapse; font-size:10px;">
                 <thead><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">Kategori</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Target</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Realisasi</th><th style="border:1px solid #ddd; padding:6px; text-align:right;">Sisa/(Over)</th></tr></thead>
-                <tbody>${categoryReport || '<tr><td colspan="4" style="text-align:center;">Belum ada anggaran</td></tr>'}</tbody>
+                <tbody>${categoryReport || '<tr><td colspan="4" style="text-align:center;">Belum ada anggaran</td>'}</tbody>
             </table>
         </div>
         <div>
@@ -1297,78 +1564,44 @@ async function testCloudConnection() {
 
 async function loadLogsFromCloud() {
     let url = getCloudUrl();
-    console.log("Loading logs from cloud, URL:", url ? "ADA" : "TIDAK ADA");
-    
-    if (!url) { 
-        console.log("Tidak ada URL cloud");
-        return []; 
-    }
-    
+    if (!url) { return []; }
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     let cleanBookName = bName.replace(/[^a-zA-Z0-9_]/g, '_');
-    
     try {
-        console.log("Mengambil log untuk buku:", cleanBookName);
         let res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'get_logs', book: cleanBookName })
         });
-        
         let data = await res.json();
-        console.log("Response dari cloud:", data);
-        
-        if (data.success && data.logs) {
-            console.log("Log ditemukan:", data.logs.length, "item");
-            return data.logs;
-        }
+        if (data.success && data.logs) return data.logs;
         return [];
-    } catch(e) {
-        console.error("Error loadLogsFromCloud:", e);
-        return [];
-    }
+    } catch(e) { return []; }
 }
 
 async function refreshLogsFromCloud() {
     let area = document.getElementById('logSummaryArea');
     if (!area) return;
-    
-    console.log("Refresh logs dimulai...");
     area.innerHTML = '<div style="color:#666;">🔄 Memuat log...</div>';
-    
     let url = getCloudUrl();
     if (!url) {
         area.innerHTML = '<p style="color:#666;">⚠️ URL Cloud belum dikonfigurasi. Buka menu Kelola → Masukkan URL Cloud → Connect</p>';
         return;
     }
-    
     let logs = await loadLogsFromCloud();
-    console.log("Logs yang diterima:", logs);
-    
     if (!logs || logs.length === 0) {
         area.innerHTML = '<p style="color:#666;">📭 Belum ada aktivitas log. Coba tambah/ubah/hapus transaksi terlebih dahulu.</p>';
         return;
     }
-    
     area.innerHTML = logs.map(l => { 
         let d = new Date(l.timestamp);
         let tagClass = 'tag-system';
         if (l.type === 'TAMBAH') tagClass = 'tag-add';
         else if (l.type === 'UBAH') tagClass = 'tag-edit';
         else if (l.type === 'HAPUS') tagClass = 'tag-delete';
-        
-        let timeStr = !isNaN(d.getTime()) ? 
-            `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` :
-            l.timestamp;
-        
-        return `<div class="log-line">
-            <small style="color:#888;">[${timeStr}]</small> 
-            <span class="log-tag ${tagClass}">${escapeHtml(l.type)}</span> 
-            ${escapeHtml(l.message)}
-        </div>`;
+        let timeStr = !isNaN(d.getTime()) ? `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : l.timestamp;
+        return `<div class="log-line"><small style="color:#888;">[${timeStr}]</small> <span class="log-tag ${tagClass}">${escapeHtml(l.type)}</span> ${escapeHtml(l.message)}</div>`;
     }).join('');
-    
-    console.log("Log ditampilkan:", logs.length, "item");
 }
 
 function testAddLog() {
@@ -1380,58 +1613,22 @@ function testAddLog() {
 async function saveLocalAndSync(logType, logMessage, txId) {
     saveLocal();
     saveBudgets();
-    
     addLocalLog(logType, logMessage, txId);
-    
     let url = getCloudUrl();
-    if (!url) {
-        console.log("Tidak ada cloud URL, log tersimpan lokal saja");
-        await refreshLogsFromCloud();
-        return;
-    }
-    
+    if (!url) { return; }
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     let cleanBookName = bName.replace(/[^a-zA-Z0-9_]/g, '_');
-    
     let payload = {
         action: 'full_sync_with_log',
         book: cleanBookName,
-        data: {
-            transactions: txs,
-            budgets: budgets,
-            device_id: deviceId,
-            sync_time: new Date().toISOString()
-        },
-        logData: {
-            timestamp: new Date().toISOString(),
-            type: logType,
-            message: logMessage,
-            device_id: deviceId,
-            transaction_id: String(txId || ''),
-            book_name: cleanBookName
-        }
+        data: { transactions: txs, budgets: budgets, device_id: deviceId, sync_time: new Date().toISOString() },
+        logData: { timestamp: new Date().toISOString(), type: logType, message: logMessage, device_id: deviceId, transaction_id: String(txId || ''), book_name: cleanBookName }
     };
-    
-    console.log("Mengirim log ke cloud:", payload.logData);
-    
     try {
-        let res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-        });
+        let res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
         let d = await res.json();
-        console.log("Response sync:", d);
-        
-        if (d.success) {
-            console.log("Sync & log berhasil dikirim");
-            await refreshLogsFromCloud();
-        } else {
-            console.error("Sync gagal:", d.error);
-        }
-    } catch(e) {
-        console.error('Error sync:', e);
-    }
+        if (d.success) await refreshLogsFromCloud();
+    } catch(e) { console.error('Error sync:', e); }
 }
 
 async function loadFromCloud() {
@@ -1440,24 +1637,16 @@ async function loadFromCloud() {
     let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
     let cleanBookName = bName.replace(/[^a-zA-Z0-9_]/g, '_');
     try {
-        let res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'load_data', book: cleanBookName })
-        });
+        let res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'load_data', book: cleanBookName }) });
         let d = await res.json();
         if (d.success && d.transactions) {
             txs = d.transactions;
             if (d.budgets) budgets = d.budgets;
-            saveLocal();
-            saveBudgets();
+            saveLocal(); saveBudgets();
             return true;
         }
         return false;
-    } catch(e) {
-        console.error("Error loadFromCloud:", e);
-        return false;
-    }
+    } catch(e) { return false; }
 }
 
 function saveLocal() { localStorage.setItem('artaflow_txs_'+currentBookId, JSON.stringify(txs)); }
@@ -1495,7 +1684,7 @@ function render() {
     let tb = document.getElementById('transactionTableBody');
     document.getElementById('transactionCount').innerText = data.length + ' transaksi';
     if (!data.length) {
-        tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px;">Tidak ada数据</td></tr>';
+        tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px;">Tidak ada data</td></tr>';
         return;
     }
     tb.innerHTML = data.map((t, i) => {
@@ -1503,17 +1692,7 @@ function render() {
         let badge = isInc ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
         let att = t.attachment ? `<span class="attachment-link" onclick="viewAttachment(\`${t.attachment.replace(/`/g, "\\`")}\`)">📎</span>` : '<span class="no-attachment">—</span>';
         let categoryHtml = (t.type === 'expense' && t.category) ? `<span class="category-badge">${escapeHtml(t.category)}</span>` : '-';
-        return `<tr>
-            <td class="text-center">${i+1}</td>
-            <td>${escapeHtml(formatDateTime(t.date))}</td>
-            <td class="text-center">${categoryHtml}</td>
-            <td>${badge} ${escapeHtml(t.desc)}</td>
-            <td class="text-right" style="color:#00875a;">${isInc ? rp(t.amount) : '—'}</td>
-            <td class="text-right" style="color:#de350b;">${!isInc ? rp(t.amount) : '—'}</td>
-            <td class="text-right" style="font-weight:600;">${rp(t.balance)}</td>
-            <td class="text-center">${att}</td>
-            <td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td>
-        </tr>`;
+        return `<tr><td class="text-center">${i+1}</td><td>${escapeHtml(formatDateTime(t.date))}</td><td class="text-center">${categoryHtml}</td><td>${badge} ${escapeHtml(t.desc)}</td><td class="text-right" style="color:#00875a;">${isInc ? rp(t.amount) : '—'}</td><td class="text-right" style="color:#de350b;">${!isInc ? rp(t.amount) : '—'}</td><td class="text-right" style="font-weight:600;">${rp(t.balance)}</td><td class="text-center">${att}</td><td class="text-center"><button class="action-btn" onclick="openActionMenu(${t.id})">⋯</button></td></tr>`;
     }).join('');
 }
 
@@ -1524,29 +1703,13 @@ async function handleSubmit(e) {
     let att = '';
     let file = document.getElementById('txAttachment').files[0];
     if (file) { let b64 = await fileToBase64(file); att = await compressImage(b64); }
-    
     let selectedType = document.querySelector('input[name="type"]:checked').value;
     let selectedCategory = document.getElementById('txCategory').value;
-    
-    if (selectedType === 'expense' && !selectedCategory) {
-        alert("Silakan pilih kategori untuk pengeluaran!");
-        return;
-    }
-    
-    let newTx = {
-        id: Date.now() + Math.floor(Math.random() * 10000),
-        type: selectedType,
-        category: selectedType === 'expense' ? selectedCategory : null,
-        date: document.getElementById('txDate').value,
-        desc: document.getElementById('txDesc').value.trim(),
-        amount: amt,
-        created_at: new Date().toISOString(),
-        attachment: att
-    };
+    if (selectedType === 'expense' && !selectedCategory) { alert("Silakan pilih kategori untuk pengeluaran!"); return; }
+    let newTx = { id: Date.now() + Math.floor(Math.random() * 10000), type: selectedType, category: selectedType === 'expense' ? selectedCategory : null, date: document.getElementById('txDate').value, desc: document.getElementById('txDesc').value.trim(), amount: amt, created_at: new Date().toISOString(), attachment: att };
     txs.unshift(newTx);
     await saveLocalAndSync('TAMBAH', `Menambah transaksi: ${newTx.type === 'income' ? 'MASUK' : 'KELUAR ' + newTx.category} ${rp(newTx.amount)} - "${newTx.desc}"`, newTx.id);
-    render();
-    renderBudget();
+    render(); renderBudget();
     closeModal('addModal');
     document.getElementById('addForm').reset();
     document.getElementById('attachmentPreview').style.display = 'none';
@@ -1563,12 +1726,7 @@ async function handleEditSubmit(e) {
     if (t) {
         let selectedType = document.querySelector('input[name="editType"]:checked').value;
         let selectedCategory = document.getElementById('editTxCategory').value;
-        
-        if (selectedType === 'expense' && !selectedCategory) {
-            alert("Silakan pilih kategori untuk pengeluaran!");
-            return;
-        }
-        
+        if (selectedType === 'expense' && !selectedCategory) { alert("Silakan pilih kategori untuk pengeluaran!"); return; }
         t.type = selectedType;
         t.category = selectedType === 'expense' ? selectedCategory : null;
         t.date = document.getElementById('editTxDate').value;
@@ -1577,8 +1735,7 @@ async function handleEditSubmit(e) {
         let file = document.getElementById('editTxAttachment').files[0];
         if (file) { let b64 = await fileToBase64(file); t.attachment = await compressImage(b64); }
         await saveLocalAndSync('UBAH', `Mengubah transaksi ID:${id}`, id);
-        render();
-        renderBudget();
+        render(); renderBudget();
         showToast('Transaksi diubah!', 'success');
     }
     closeModal('editModal');
@@ -1590,8 +1747,7 @@ async function deleteTransaction(id) {
         if (t) {
             txs = txs.filter(x => x.id !== id);
             await saveLocalAndSync('HAPUS', `Menghapus transaksi: ${t.type === 'income' ? 'MASUK' : 'KELUAR ' + (t.category || '')} ${rp(t.amount)} - "${t.desc}"`, id);
-            render();
-            renderBudget();
+            render(); renderBudget();
             showToast('Transaksi dihapus!', 'info');
         }
     }
@@ -1681,14 +1837,9 @@ function exportToCSV() {
     if (!txs.length) { alert("Tidak ada data!"); return; }
     let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
     let rows = [["ID", "Tanggal", "Kategori", "Deskripsi", "Jenis", "Jumlah", "Lampiran"].join(',')];
-    txs.forEach(t => { 
-        rows.push([t.id, t.date, t.category || '', `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.attachment ? 'Ya' : 'Tidak'].join(',')); 
-    });
+    txs.forEach(t => { rows.push([t.id, t.date, t.category || '', `"${t.desc.replace(/"/g, '""')}"`, t.type, t.amount, t.attachment ? 'Ya' : 'Tidak'].join(',')); });
     let blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `ArtaFlow_${bName}_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ArtaFlow_${bName}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     showToast('CSV berhasil!', 'success');
 }
 
@@ -1697,10 +1848,7 @@ function exportToJSON() {
     let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
     let data = { transactions: txs, budgets: budgets, exportDate: new Date().toISOString() };
     let blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `ArtaFlow_${bName}_Backup_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
+    let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ArtaFlow_${bName}_Backup_${new Date().toISOString().slice(0, 10)}.json`; a.click();
     showToast('JSON berhasil!', 'success');
 }
 
@@ -1719,10 +1867,8 @@ function handleJsonImport(e) {
                 await createBackup();
                 txs = imported;
                 if (data.budgets) budgets = data.budgets;
-                saveLocal();
-                saveBudgets();
-                render();
-                renderBudget();
+                saveLocal(); saveBudgets();
+                render(); renderBudget();
                 showToast('Impor berhasil!', 'success');
                 closeModal('bookManagerModal');
             }
@@ -1758,10 +1904,7 @@ function resetDateFilter() {
 }
 function updateTime() {
     let c = document.getElementById('liveClock');
-    if (c) {
-        let n = new Date();
-        c.innerText = `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}:${String(n.getSeconds()).padStart(2, '0')}`;
-    }
+    if (c) { let n = new Date(); c.innerText = `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}:${String(n.getSeconds()).padStart(2, '0')}`; }
 }
 function copyScriptToClipboard() {
     let el = document.getElementById('scriptCodeArea');
@@ -1854,16 +1997,8 @@ document.querySelectorAll('.modal').forEach(m => {
 
 const budgetModalMonth = document.getElementById('budgetModalMonth');
 const budgetModalYear = document.getElementById('budgetModalYear');
-if (budgetModalMonth) {
-    budgetModalMonth.addEventListener('change', function() {
-        renderBudgetModalContent();
-    });
-}
-if (budgetModalYear) {
-    budgetModalYear.addEventListener('input', function() {
-        renderBudgetModalContent();
-    });
-}
+if (budgetModalMonth) { budgetModalMonth.addEventListener('change', () => renderBudgetModalContent()); }
+if (budgetModalYear) { budgetModalYear.addEventListener('input', () => renderBudgetModalContent()); }
 
 deviceId = getDeviceId();
 document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-8).toUpperCase();
@@ -1923,6 +2058,9 @@ window.saveBudget = saveBudget;
 window.generatePDFReport = generatePDFReport;
 window.renderBudget = renderBudget;
 window.testAddLog = testAddLog;
+window.openMonthlyReport = openMonthlyReport;
+window.generateMonthlyReport = generateMonthlyReport;
+window.exportReportAsPDF = exportReportAsPDF;
 window.toggleCategoryField = toggleCategoryField;
 window.toggleEditCategoryField = toggleEditCategoryField;
 window.updateBudgetSummary = updateBudgetSummary;

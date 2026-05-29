@@ -278,17 +278,6 @@
             font-size: .7rem;
             color: #666;
             padding-top: 8px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .footer-actions {
-            display: flex;
-            gap: 8px;
         }
         
         .modal {
@@ -400,27 +389,16 @@
             .controls { flex-direction: column; align-items: stretch; }
             .filters { width: 100%; }
             .search-input { flex-grow: 1; }
-            .footer { flex-direction: column; align-items: flex-start; }
-            .footer-actions { width: 100%; justify-content: flex-start; }
         }
         
-        /* DESAIN BARU DEVICE ID YANG LEBIH BAGUS DAN PROFESIONAL */
         .device-id {
             font-size: .65rem;
-            font-weight: 600;
-            color: #4a5568;
-            background: #e2e8f0;
-            border: 1.5px solid #1a1a1a;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-family: inherit; /* Menggunakan font Inter agar serasi */
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
         }
-        
-        /* JIKA ANDA INGIN MENYEMBUNYIKANNYA TOTAL, HAPUS tanda komentar (/*) di bawah ini */
-        /* .device-id { display: none !important; } */
     </style>
 </head>
 <body>
@@ -471,6 +449,9 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
+            <button class="btn btn-secondary" onclick="openModal('syncLogModal'); refreshLogsFromCloud();">Lihat Log Audit</button>
+            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
+            <button class="btn btn-secondary" onclick="syncWithCloud()">Sinkronisasi Manual</button>
         </div>
     </div>
 
@@ -492,14 +473,8 @@
     </div>
 
     <div class="footer">
-        <div class="footer-left">
-            <div id="transactionCount">0 transaksi</div>
-            <div id="liveClock">00:00:00</div>
-        </div>
-        <div class="footer-actions">
-            <button class="btn btn-secondary" onclick="openModal('syncLogModal')">Lihat Log Audit</button>
-            <button class="btn btn-secondary" onclick="exportToCSV()">Ekspor CSV</button>
-        </div>
+        <div id="transactionCount">0 transaksi</div>
+        <div id="liveClock">00:00:00</div>
     </div>
 </div>
 
@@ -708,36 +683,6 @@ function formatDateTime(dtStr, createdStr) {
 }
 
 // ==================== LOG TERPUSAT KE CLOUD ====================
-async function addLogToCloud(bookName, type, message, transactionId = null) {
-    let url = getCloudUrl();
-    if (!url) return false;
-    
-    let logEntry = {
-        action: 'add_log',
-        book: bookName,
-        data: {
-            timestamp: new Date().toISOString(),
-            type: type,
-            message: message,
-            device_id: deviceId,
-            transaction_id: transactionId,
-            book_name: bookName
-        }
-    };
-    
-    try {
-        await fetch(url, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(logEntry)
-        });
-        return true;
-    } catch(e) {
-        console.log('Gagal kirim log:', e);
-        return false;
-    }
-}
-
 async function loadLogsFromCloud() {
     let url = getCloudUrl();
     if (!url) {
@@ -820,23 +765,60 @@ function updateSyncStatusIndicator() {
     }
 }
 
-async function saveLocalAndSync() {
+// SINKRONISASI SEKALIGUS: Mengirim data kas + log audit dalam 1 request (Anti Tabrakan)
+async function saveLocalAndSync(logType = null, logMessage = null, txId = null) {
     saveLocal();
+    
     let url = getCloudUrl();
-    if (url) {
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-        try {
-            await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                body: JSON.stringify({ 
-                    action: 'full_sync', 
-                    book: bName, 
-                    data: { transactions: txs, device_id: deviceId } 
-                })
-            });
-        } catch(e) {}
+    if (!url) return;
+    
+    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
+    
+    let payload = {
+        action: 'full_sync_with_log',
+        book: bName,
+        data: {
+            transactions: txs,
+            device_id: deviceId,
+            sync_time: new Date().toISOString()
+        }
+    };
+    
+    if (logType && logMessage) {
+        payload.logData = {
+            timestamp: new Date().toISOString(),
+            type: logType,
+            message: logMessage,
+            device_id: deviceId,
+            transaction_id: txId,
+            book_name: bName
+        };
     }
+    
+    try {
+        let res = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(payload)
+        });
+        let d = await res.json();
+        if(!d.success) {
+            console.error('Gagal sinkronisasi otomatis ke cloud:', d.error);
+        }
+    } catch(e) {
+        console.error('Koneksi sinkronisasi cloud terputus:', e);
+    }
+}
+
+async function syncWithCloud() {
+    let url = getCloudUrl();
+    if (!url) { 
+        alert("Masukkan URL Web App terlebih dahulu di menu Kelola Buku!"); 
+        return; 
+    }
+    await saveLocalAndSync('SISTEM', 'Melakukan sinkronisasi data manual dari perangkat.', null);
+    alert("✅ Sinkronisasi kas dan audit log berhasil!");
+    render();
 }
 
 async function loadFromCloud() {
@@ -887,6 +869,7 @@ function renderStats() {
     document.getElementById('statExpense').innerText = rp(exp);
 }
 
+// ==================== FILTER & RENDER DATA ====================
 function getDisplayData() {
     let q = document.getElementById('searchInput').value.toLowerCase().trim();
     return txs.filter(t => {
@@ -943,10 +926,9 @@ async function handleSubmit(e) {
     };
     
     txs.unshift(newTransaction);
-    await saveLocalAndSync();
     
-    let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-    await addLogToCloud(bName, 'TAMBAH', `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`, newTransaction.id);
+    let msg = `Menambah transaksi: ${newTransaction.type === 'income' ? 'MASUK' : 'KELUAR'} ${rp(newTransaction.amount)} - "${newTransaction.desc}"`;
+    await saveLocalAndSync('TAMBAH', msg, newTransaction.id);
     
     render();
     closeModal('addModal');
@@ -970,10 +952,8 @@ async function handleEditSubmit(e) {
         t.desc = document.getElementById('editTxDesc').value.trim();
         t.amount = amt;
         
-        await saveLocalAndSync();
-        
-        let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-        await addLogToCloud(bName, 'UBAH', `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`, id);
+        let msg = `Mengubah transaksi ID:${id} dari [${oldType==='income'?'MASUK':'KELUAR'} ${rp(oldAmt)} "${oldDesc}"] menjadi [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)} "${t.desc}"]`;
+        await saveLocalAndSync('UBAH', msg, id);
         
         render();
     }
@@ -985,10 +965,9 @@ async function deleteTransaction(id) {
         let t = txs.find(x => x.id === id);
         if(t) {
             txs = txs.filter(t => t.id !== id);
-            await saveLocalAndSync();
             
-            let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
-            await addLogToCloud(bName, 'HAPUS', `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"`, id);
+            let msg = `Menghapus transaksi: [${t.type==='income'?'MASUK':'KELUAR'} ${rp(t.amount)}] "${t.desc}"`;
+            await saveLocalAndSync('HAPUS', msg, id);
             
             render();
         }
@@ -1032,6 +1011,7 @@ async function switchBook(id) {
     render();
 }
 
+// ==================== MODAL KELOLA BUKU LOKAL ====================
 function openBookManager() {
     let container = document.getElementById('bookListContainer');
     container.innerHTML = books.map(b => {
@@ -1126,6 +1106,13 @@ function copyScriptToClipboard() {
 
 // ==================== GOOGLE APPS SCRIPT BACKEND CODE ====================
 const BACKEND_SCRIPT = `// ==================== ARTAFLOW BACKEND - GOOGLE APPS SCRIPT ====================
+// Cara Setup / Update Deployment:
+// 1. Buka Google Spreadsheet -> Extensions -> Apps Script
+// 2. Ganti seluruh isi kode dengan kode ini
+// 3. Wajib klik Deploy -> New deployment
+// 4. Pilih Web app, set Execute as: "Me", Who has access: "Anyone"
+// 5. Salin URL Web App yang dihasilkan ke aplikasi ArtaFlow
+
 function doPost(e) {
   const res = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
   try {
@@ -1135,18 +1122,21 @@ function doPost(e) {
     const bookName = req.book || "default_book";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
+    // Sheet untuk transaksi
     let txSheet = ss.getSheetByName(bookName + "_transactions");
     if (!txSheet) {
       txSheet = ss.insertSheet(bookName + "_transactions");
       txSheet.appendRow(["id", "date", "desc", "type", "amount", "created_at"]);
     }
     
+    // Sheet untuk log audit terpusat
     let logSheet = ss.getSheetByName(bookName + "_logs");
     if (!logSheet) {
       logSheet = ss.insertSheet(bookName + "_logs");
       logSheet.appendRow(["timestamp", "type", "message", "device_id", "transaction_id", "book_name"]);
     }
     
+    // ACTION: LOAD DATA
     if (action === "load_data") {
       const rows = txSheet.getDataRange().getValues();
       const transactions = [];
@@ -1164,7 +1154,8 @@ function doPost(e) {
       return res.setContent(JSON.stringify({ success: true, transactions: transactions }));
     }
     
-    if (action === "full_sync") {
+    // ACTION GABUNGAN: SYNC TRANSAKSI DAN LOG AUDIT TERPADU (ANTI TABRAKAN DATA)
+    if (action === "full_sync_with_log" || action === "full_sync") {
       const newData = req.data.transactions;
       if (newData && Array.isArray(newData)) {
         txSheet.clear();
@@ -1176,9 +1167,23 @@ function doPost(e) {
           txSheet.getRange(2, 1, values.length, 6).setValues(values);
         }
       }
-      return res.setContent(JSON.stringify({ success: true, message: "Sync berhasil" }));
+      
+      // Catat log audit jika dikirim bersamaan dalam paket request
+      const logData = req.logData;
+      if (logData) {
+        logSheet.appendRow([
+          logData.timestamp || new Date().toISOString(),
+          logData.type,
+          logData.message,
+          logData.device_id || "unknown",
+          logData.transaction_id || "",
+          logData.book_name || bookName
+        ]);
+      }
+      return res.setContent(JSON.stringify({ success: true, message: "Sync kas dan log audit berhasil disimpan bersamaan" }));
     }
     
+    // ACTION: ADD LOG ONLY
     if (action === "add_log") {
       const logData = req.data;
       logSheet.appendRow([
@@ -1192,6 +1197,7 @@ function doPost(e) {
       return res.setContent(JSON.stringify({ success: true }));
     }
     
+    // ACTION: GET LOGS
     if (action === "get_logs") {
       const rows = logSheet.getDataRange().getValues();
       const logs = [];
@@ -1206,7 +1212,7 @@ function doPost(e) {
           book_name: rows[i][5]
         });
       }
-      logs.reverse();
+      logs.reverse(); // Mengurutkan log dari yang terbaru
       return res.setContent(JSON.stringify({ success: true, logs: logs }));
     }
     
@@ -1242,8 +1248,7 @@ document.querySelectorAll('.modal').forEach(m => {
 });
 
 deviceId = getDeviceId();
-// Menampilkan teks ID dengan format modifikasi yang lebih bersih
-document.getElementById('deviceIdDisplay').innerText = '💻 ID: ' + deviceId.slice(-12);
+document.getElementById('deviceIdDisplay').innerText = deviceId.slice(-12);
 
 (async function init() {
     loadBooks();
@@ -1258,12 +1263,13 @@ document.getElementById('deviceIdDisplay').innerText = '💻 ID: ' + deviceId.sl
     setInterval(updateTime, 1000);
 })();
 
-// Export fungsi ke global
+// Export fungsi ke global window
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.handleSubmit = handleSubmit;
 window.handleEditSubmit = handleEditSubmit;
 window.saveCloudUrl = saveCloudUrl;
+window.syncWithCloud = syncWithCloud;
 window.exportToCSV = exportToCSV;
 window.setFilter = setFilter;
 window.applyDateFilter = applyDateFilter;

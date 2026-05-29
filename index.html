@@ -207,6 +207,8 @@
         .btn-danger:hover { background: #c52f0a; }
         .btn-success { background: #00875a; color: #fff; border-color: #00875a; }
         .btn-success:hover { background: #006644; }
+        .btn-warning { background: #cc7b00; color: #fff; border-color: #cc7b00; }
+        .btn-warning:hover { background: #996000; }
         
         .sync-status-container {
             display: inline-flex;
@@ -366,6 +368,10 @@
             border-radius: 4px;
             font-family: inherit;
         }
+        .form-control:focus {
+            outline: none;
+            border-color: #00875a;
+        }
         
         .radio-group { display: flex; gap: 12px; margin-top: 4px; }
         .radio-label { display: flex; align-items: center; gap: 6px; font-size: .8rem; cursor: pointer; }
@@ -394,6 +400,26 @@
             flex-wrap: wrap;
         }
         
+        .security-panel {
+            background: #fff8e7;
+            border: 1.5px solid #cc7b00;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 14px;
+            margin-bottom: 14px;
+        }
+        .security-title {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #cc7b00;
+            margin-bottom: 8px;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
         .book-list-item {
             display: flex;
             justify-content: space-between;
@@ -403,6 +429,11 @@
             border-radius: 4px;
             margin-bottom: 8px;
             background: #fff;
+        }
+        .book-list-item.locked {
+            background: #f5f5f5;
+            border-color: #888;
+            opacity: 0.7;
         }
         .book-list-name {
             font-size: .8rem;
@@ -469,6 +500,7 @@
         .tag-edit { background: #ffab00; color: #1a1a1a !important; }
         .tag-delete { background: #de350b; }
         .tag-system { background: #4a5568; }
+        .tag-security { background: #cc7b00; }
         
         .code-container { position: relative; margin-top: 10px; }
         .code-box {
@@ -566,6 +598,21 @@
             display: flex;
         }
         
+        .password-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .password-input-group .form-control {
+            flex: 1;
+        }
+        
+        .warning-text {
+            color: #de350b;
+            font-size: .65rem;
+            margin-top: 4px;
+        }
+        
         @media(max-width:768px) {
             body { padding: 12px; }
             .controls { flex-direction: column; align-items: stretch; }
@@ -581,7 +628,7 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>Arus Keuangan</h1>
+            <h1>ArtaFlow</h1>
             <p>Sistem Multi Buku Kas dengan Audit Log Terpusat (Sync Antar Device)</p>
         </div>
         <div class="book-selector">
@@ -597,7 +644,7 @@
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-label">Saldo Akhir</div>
+            <div class="stat-label">Total Saldo</div>
             <div class="stat-value" id="statBalance">Rp 0</div>
         </div>
         <div class="stat-card income">
@@ -626,6 +673,7 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi Baru</button>
+            <button class="btn btn-secondary" onclick="openBackupManager()" title="Cadangan Keamanan">🔒 Backup</button>
         </div>
     </div>
 
@@ -667,6 +715,93 @@
 <div id="toastMessage" class="toast-message">
     <span id="toastIcon">✅</span>
     <span id="toastText">Berhasil!</span>
+</div>
+
+<!-- Password Modal -->
+<div id="passwordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔒 Verifikasi Keamanan</h3>
+            <button class="modal-close" onclick="closeModal('passwordModal')">×</button>
+        </div>
+        <div class="form-group">
+            <label>Masukkan Password Keamanan</label>
+            <input type="password" id="securityPassword" class="form-control" placeholder="Ketik 'DELETE' untuk konfirmasi">
+            <p class="warning-text">⚠️ Tindakan ini tidak dapat dibatalkan. Data yang dihapus tidak bisa dikembalikan.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('passwordModal')">Batal</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger">Hapus Permanen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Backup Manager Modal -->
+<div id="backupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔒 Manajer Cadangan Keamanan</h3>
+            <button class="modal-close" onclick="closeModal('backupModal')">×</button>
+        </div>
+        
+        <div class="security-panel">
+            <div class="security-title">🛡️ Perlindungan Data</div>
+            <p style="font-size: .75rem; margin-bottom: 12px;">Sistem menyediakan beberapa lapis keamanan untuk melindungi data Anda dari penghapusan tidak sengaja atau sengaja.</p>
+        </div>
+        
+        <div class="form-group">
+            <label>Auto-Backup Terakhir</label>
+            <div id="lastBackupInfo" style="background: #f5f5f5; padding: 8px; border-radius: 4px; font-size: .75rem;">
+                Memuat informasi backup...
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Cadangan Tersimpan</label>
+            <div id="backupListContainer" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
+                <!-- Backup list akan ditampilkan di sini -->
+            </div>
+        </div>
+        
+        <div class="panel-actions-row" style="margin-top: 12px;">
+            <button class="btn btn-primary" onclick="createBackup()" style="flex: 1;">💾 Buat Cadangan Sekarang</button>
+            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex: 1;">🔄 Pulihkan dari Cadangan</button>
+        </div>
+        
+        <div class="security-panel" style="margin-top: 12px;">
+            <div class="security-title">⚠️ Penghapusan Data</div>
+            <p style="font-size: .7rem; margin-bottom: 8px; color: #666;">Untuk menghapus buku kas, Anda harus:</p>
+            <ul style="font-size: .7rem; margin-left: 20px; color: #666;">
+                <li>Minimal memiliki 1 buku kas aktif lainnya</li>
+                <li>Membuat cadangan manual terlebih dahulu</li>
+                <li>Mengonfirmasi dengan kata sandi</li>
+                <li>Mengetik 'SETUJU' untuk verifikasi akhir</li>
+            </ul>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- Book Lock Modal -->
+<div id="lockBookModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔒 Kunci / Buka Kunci Buku Kas</h3>
+            <button class="modal-close" onclick="closeModal('lockBookModal')">×</button>
+        </div>
+        <div id="lockBookInfo"></div>
+        <div class="form-group">
+            <label>Password Buku (jika dikunci)</label>
+            <input type="password" id="bookPassword" class="form-control" placeholder="Masukkan password...">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('lockBookModal')">Batal</button>
+            <button id="toggleLockBtn" class="btn btn-primary">Kunci Buku</button>
+        </div>
+    </div>
 </div>
 
 <div id="addModal" class="modal">
@@ -758,8 +893,8 @@
             <button class="modal-close" onclick="closeModal('actionMenuModal')">×</button>
         </div>
         <ul style="list-style: none;">
-            <li style="margin-bottom: 8px;"><button id="actionEditBtn" style="width:100%; padding:8px; text-align:left; background:none; border:none; cursor:pointer;">Ubah Data</button></li>
-            <li><button id="actionDeleteBtn" style="width:100%; padding:8px; text-align:left; background:none; border:none; cursor:pointer; color:#de350b;">Hapus Transaksi</button></li>
+            <li style="margin-bottom: 8px;"><button id="actionEditBtn" style="width:100%; padding:8px; text-align:left; background:none; border:none; cursor:pointer;">✏️ Ubah Data</button></li>
+            <li><button id="actionDeleteBtn" style="width:100%; padding:8px; text-align:left; background:none; border:none; cursor:pointer; color:#de350b;">🗑️ Hapus Transaksi</button></li>
         </ul>
     </div>
 </div>
@@ -840,8 +975,15 @@ let filterEndDate = '';
 let actionId = null;
 let deviceId = '';
 let currentAttachmentData = null;
+let pendingDeleteBookId = null;
 
-// ==================== TOAST NOTIFICATION ====================
+// ==================== KEAMANAN ====================
+const SECURITY_CONFIG = {
+    maxBackups: 10,
+    autoBackupInterval: 24 * 60 * 60 * 1000, // 24 jam
+    requiredConfirmWord: 'SETUJU'
+};
+
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toastMessage');
     const icon = document.getElementById('toastIcon');
@@ -856,6 +998,9 @@ function showToast(message, type = 'success') {
     } else if (type === 'info') {
         icon.innerHTML = 'ℹ️';
         toast.style.background = '#1a1a1a';
+    } else if (type === 'warning') {
+        icon.innerHTML = '⚠️';
+        toast.style.background = '#cc7b00';
     }
     
     text.innerText = message;
@@ -864,6 +1009,167 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
+}
+
+// ==================== AUTO BACKUP SYSTEM ====================
+function createBackup() {
+    const backupKey = 'artaflow_backup_' + currentBookId + '_' + Date.now();
+    const backupData = {
+        timestamp: new Date().toISOString(),
+        bookId: currentBookId,
+        bookName: books.find(b => b.id === currentBookId)?.name,
+        transactions: JSON.parse(JSON.stringify(txs)),
+        totalTransactions: txs.length,
+        deviceId: deviceId
+    };
+    
+    // Simpan backup
+    localStorage.setItem(backupKey, JSON.stringify(backupData));
+    
+    // Kelola jumlah backup (max 10)
+    let backups = getBackupList();
+    backups.push({
+        key: backupKey,
+        timestamp: backupData.timestamp,
+        bookId: currentBookId,
+        bookName: backupData.bookName,
+        totalTransactions: backupData.totalTransactions
+    });
+    
+    // Urutkan berdasarkan timestamp (terbaru di akhir)
+    backups.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // Hapus backup lama jika melebihi batas
+    while (backups.length > SECURITY_CONFIG.maxBackups) {
+        const oldestBackup = backups.shift();
+        localStorage.removeItem(oldestBackup.key);
+    }
+    
+    localStorage.setItem('artaflow_backup_metadata_' + currentBookId, JSON.stringify(backups));
+    showToast('Cadangan berhasil dibuat!', 'success');
+    refreshBackupList();
+    
+    // Catat ke audit log
+    let msg = `Membuat cadangan data otomatis (${txs.length} transaksi)`;
+    saveLocalAndSync('SISTEM', msg, null);
+}
+
+function getBackupList() {
+    const stored = localStorage.getItem('artaflow_backup_metadata_' + currentBookId);
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch(e) {
+            return [];
+        }
+    }
+    return [];
+}
+
+function refreshBackupList() {
+    const container = document.getElementById('backupListContainer');
+    if (!container) return;
+    
+    const backups = getBackupList();
+    
+    if (backups.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 16px; color: #666;">Belum ada cadangan tersimpan</div>';
+        return;
+    }
+    
+    // Tampilkan dari yang terbaru ke terlama
+    const sortedBackups = [...backups].reverse();
+    
+    container.innerHTML = sortedBackups.map((backup, idx) => {
+        const date = new Date(backup.timestamp);
+        const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee;">
+                <div style="font-size: .7rem;">
+                    <strong>${dateStr}</strong><br>
+                    <small>${backup.totalTransactions} transaksi</small>
+                </div>
+                <div>
+                    <button class="btn btn-mini" style="background:#de350b; color:#fff;" onclick="deleteBackup('${backup.key}')">Hapus</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Update info backup terakhir
+    const lastBackup = backups[backups.length - 1];
+    if (lastBackup) {
+        const lastDate = new Date(lastBackup.timestamp);
+        const infoStr = `Terakhir: ${lastDate.getDate()}/${lastDate.getMonth()+1}/${lastDate.getFullYear()} ${lastDate.getHours()}:${String(lastDate.getMinutes()).padStart(2,'0')} (${lastBackup.totalTransactions} transaksi)`;
+        document.getElementById('lastBackupInfo').innerHTML = infoStr;
+    } else {
+        document.getElementById('lastBackupInfo').innerHTML = 'Belum ada cadangan';
+    }
+}
+
+function deleteBackup(backupKey) {
+    if (confirm('Hapus cadangan ini? Tindakan tidak dapat dibatalkan.')) {
+        localStorage.removeItem(backupKey);
+        
+        let backups = getBackupList();
+        backups = backups.filter(b => b.key !== backupKey);
+        localStorage.setItem('artaflow_backup_metadata_' + currentBookId, JSON.stringify(backups));
+        
+        refreshBackupList();
+        showToast('Cadangan dihapus', 'info');
+    }
+}
+
+function restoreFromBackup() {
+    const backups = getBackupList();
+    if (backups.length === 0) {
+        alert('Tidak ada cadangan yang tersedia untuk dipulihkan.');
+        return;
+    }
+    
+    // Pilih backup terbaru
+    const latestBackup = backups[backups.length - 1];
+    const backupData = localStorage.getItem(latestBackup.key);
+    
+    if (backupData) {
+        try {
+            const data = JSON.parse(backupData);
+            const confirmRestore = confirm(`Pulihkan data dari cadangan tanggal ${new Date(data.timestamp).toLocaleString()}?\n\nPeringatan: Data saat ini akan ditimpa!`);
+            
+            if (confirmRestore) {
+                txs = data.transactions;
+                saveLocal();
+                render();
+                
+                let msg = `Memulihkan data dari cadangan (${txs.length} transaksi)`;
+                saveLocalAndSync('SISTEM', msg, null);
+                
+                showToast('Data berhasil dipulihkan dari cadangan!', 'success');
+                closeModal('backupModal');
+            }
+        } catch(e) {
+            alert('Gagal memulihkan cadangan: ' + e.message);
+        }
+    }
+}
+
+function openBackupManager() {
+    refreshBackupList();
+    openModal('backupModal');
+}
+
+// ==================== AUTO SAVE PREVENTION ====================
+function autoBackupCheck() {
+    const lastBackupCheck = localStorage.getItem('artaflow_last_backup_check_' + currentBookId);
+    const now = Date.now();
+    
+    if (!lastBackupCheck || (now - parseInt(lastBackupCheck)) > SECURITY_CONFIG.autoBackupInterval) {
+        // Buat backup otomatis jika ada perubahan data
+        if (txs.length > 0) {
+            createBackup();
+        }
+        localStorage.setItem('artaflow_last_backup_check_' + currentBookId, now.toString());
+    }
 }
 
 // ==================== DEVICE ID UNIK ====================
@@ -1029,16 +1335,11 @@ async function testCloudConnection() {
         let data = await res.json();
         
         if (data.success !== undefined) {
-            // Simpan URL
             saveCloudUrl(url);
-            
             statusDiv.innerHTML = '<div class="connection-status success">✅ Koneksi berhasil! Cloud Google Sheets terhubung.</div>';
             showToast('Cloud berhasil terhubung!', 'success');
-            
-            // Refresh sync status indicator
             updateSyncStatusIndicator();
             
-            // Sinkronisasi data setelah koneksi berhasil
             setTimeout(async () => {
                 statusDiv.innerHTML = '<div class="connection-status testing">🔄 Menyinkronkan data ke cloud...</div>';
                 await syncAfterConnection();
@@ -1063,7 +1364,6 @@ async function syncAfterConnection() {
         render();
         showToast('Data berhasil disinkronkan dengan cloud!', 'success');
     } else {
-        // Jika tidak ada data di cloud, upload data lokal
         let bName = books.find(b => b.id === currentBookId)?.name || 'default_book';
         let cleanBookName = bName.replace(/[^a-zA-Z0-9_]/g, '_');
         let url = getCloudUrl();
@@ -1151,6 +1451,7 @@ function renderLogsToUI(logs) {
         if (l.type === 'TAMBAH') tagClass = 'tag-add';
         if (l.type === 'UBAH') tagClass = 'tag-edit';
         if (l.type === 'HAPUS') tagClass = 'tag-delete';
+        if (l.type === 'SISTEM') tagClass = 'tag-security';
         return `<div class="log-line">
             <small style="color:#888;">[${timeStr}]</small>
             <small style="color:#4a5568; font-weight:600;">(${escapeHtml(l.book_name || l.book || '?')})</small>
@@ -1188,6 +1489,9 @@ function updateSyncStatusIndicator() {
 
 async function saveLocalAndSync(logType = null, logMessage = null, txId = null) {
     saveLocal();
+    
+    // Auto backup setiap kali ada perubahan
+    autoBackupCheck();
     
     let url = getCloudUrl();
     if (!url) return;
@@ -1412,12 +1716,12 @@ async function deleteTransaction(id) {
     closeModal('actionMenuModal');
 }
 
-// ==================== MANAJEMEN BUKU KAS LOCAL & CLOUD ====================
+// ==================== MANAJEMEN BUKU KAS DENGAN KEAMANAN ====================
 function loadBooks() {
     let stored = localStorage.getItem('artaflow_books');
     if (stored) { try { books = JSON.parse(stored); } catch(e) { books = []; } }
     if (!books.length) {
-        books = [{ id: 'b_default', name: 'Buku Utama' }];
+        books = [{ id: 'b_default', name: 'Buku Utama', locked: false }];
         localStorage.setItem('artaflow_books', JSON.stringify(books));
     }
     let storedUrls = localStorage.getItem('artaflow_cloud_urls');
@@ -1430,17 +1734,26 @@ function loadBooks() {
 
 function refreshBookSelectOptions() {
     let sel = document.getElementById('currentBookSelect');
-    if (sel) sel.innerHTML = books.map(b => '<option value="' + b.id + '" ' + (b.id===currentBookId?'selected':'') + '>' + escapeHtml(b.name) + '</option>').join('');
+    if (sel) sel.innerHTML = books.map(b => '<option value="' + b.id + '" ' + (b.id===currentBookId?'selected':'') + '>' + escapeHtml(b.name) + (b.locked ? ' 🔒' : '') + '</option>').join('');
     let cloudIn = document.getElementById('cloudUrlInput');
     if(cloudIn) cloudIn.value = getCloudUrl();
     updateSyncStatusIndicator();
     
-    // Clear connection status when opening modal
     const statusDiv = document.getElementById('connectionStatus');
     if(statusDiv) statusDiv.innerHTML = '';
 }
 
 async function switchBook(id) {
+    // Cek apakah buku terkunci
+    const targetBook = books.find(b => b.id === id);
+    if (targetBook && targetBook.locked) {
+        const password = prompt('Buku "' + targetBook.name + '" terkunci. Masukkan password untuk membuka:');
+        if (password !== 'bukuka$flow2024') {
+            showToast('Password salah! Buku tidak dapat diakses.', 'error');
+            return;
+        }
+    }
+    
     currentBookId = id;
     localStorage.setItem('artaflow_active_book_id', id);
     refreshBookSelectOptions();
@@ -1459,19 +1772,19 @@ async function switchBook(id) {
     await refreshLogsFromCloud();
 }
 
-// ==================== TATA KELOLA MODAL BUKU UTAMA ====================
 function openBookManager() {
     let container = document.getElementById('bookListContainer');
     let bActive = books.find(b => b.id === currentBookId)?.name || '';
     
     container.innerHTML = books.map(b => {
         let isCurrent = b.id === currentBookId;
-        return '<div class="book-list-item" style="' + (isCurrent ? 'border-color: #00875a; background: #f4fbf7;' : '') + '">' +
+        return '<div class="book-list-item' + (b.locked ? ' locked' : '') + '" style="' + (isCurrent ? 'border-color: #00875a; background: #f4fbf7;' : '') + '">' +
             '<span class="book-list-name" style="font-weight:' + (isCurrent ? '700' : '500') + '">' +
-                escapeHtml(b.name) + (isCurrent ? ' <small style="color:#00875a;">(Aktif)</small>' : '') +
+                escapeHtml(b.name) + (isCurrent ? ' <small style="color:#00875a;">(Aktif)</small>' : '') + (b.locked ? ' 🔒' : '') +
             '</span>' +
             '<div class="book-list-actions">' +
-                '<button class="btn btn-mini btn-danger" onclick="deleteBook(\'' + b.id + '\')">Hapus Buku</button>' +
+                '<button class="btn btn-mini ' + (b.locked ? 'btn-primary' : 'btn-secondary') + '" onclick="toggleBookLock(\'' + b.id + '\', \'' + escapeHtml(b.name) + '\')">' + (b.locked ? '🔓 Buka' : '🔒 Kunci') + '</button>' +
+                '<button class="btn btn-mini btn-danger" onclick="secureDeleteBook(\'' + b.id + '\')">Hapus Buku</button>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -1479,11 +1792,113 @@ function openBookManager() {
     let panelTitle = document.querySelector('.data-management-panel .panel-title');
     if(panelTitle) panelTitle.innerText = 'Cadangan Data (' + bActive + ')';
     
-    // Clear previous connection status
     const statusDiv = document.getElementById('connectionStatus');
     if(statusDiv) statusDiv.innerHTML = '';
     
     openModal('bookManagerModal');
+}
+
+function toggleBookLock(bookId, bookName) {
+    const book = books.find(b => b.id === bookId);
+    if (book) {
+        if (!book.locked) {
+            // Mengunci buku
+            const setPassword = prompt('Buat password untuk buku "' + bookName + '" (minimal 4 karakter):');
+            if (setPassword && setPassword.length >= 4) {
+                book.locked = true;
+                book.password = _obfuscate(setPassword);
+                localStorage.setItem('artaflow_books', JSON.stringify(books));
+                refreshBookSelectOptions();
+                openBookManager();
+                showToast('Buku "' + bookName + '" berhasil dikunci!', 'success');
+                
+                let msg = `Mengunci buku kas "${bookName}" dengan perlindungan password`;
+                saveLocalAndSync('SISTEM', msg, null);
+            } else {
+                alert('Password harus minimal 4 karakter!');
+            }
+        } else {
+            // Membuka kunci buku
+            const password = prompt('Masukkan password untuk membuka kunci buku "' + bookName + '":');
+            if (password && _deobfuscate(book.password) === password) {
+                book.locked = false;
+                delete book.password;
+                localStorage.setItem('artaflow_books', JSON.stringify(books));
+                refreshBookSelectOptions();
+                openBookManager();
+                showToast('Buku "' + bookName + '" berhasil dibuka!', 'success');
+                
+                let msg = `Membuka kunci buku kas "${bookName}"`;
+                saveLocalAndSync('SISTEM', msg, null);
+            } else {
+                alert('Password salah!');
+            }
+        }
+    }
+}
+
+function secureDeleteBook(bookId) {
+    const bTarget = books.find(b => b.id === bookId);
+    if (!bTarget) return;
+    
+    if (books.length <= 1) {
+        alert("⚠️ Gagal menghapus! Sistem ArtaFlow wajib memiliki minimal satu Buku Kas aktif.");
+        return;
+    }
+    
+    // Cek apakah ada cadangan
+    const backups = getBackupList();
+    if (backups.length === 0 && txs.length > 0) {
+        const confirmBackup = confirm('⚠️ PERINGATAN KEAMANAN!\n\nBuku "' + bTarget.name + '" memiliki ' + txs.length + ' transaksi tetapi BELUM ADA CADANGAN.\n\nApakah Anda ingin membuat cadangan sebelum menghapus?');
+        if (confirmBackup) {
+            createBackup();
+            alert('✅ Cadangan telah dibuat. Silakan ulangi proses penghapusan.');
+            return;
+        }
+    }
+    
+    // Verifikasi dengan password
+    const password = prompt('🔒 VERIFIKASI KEAMANAN\n\nUntuk menghapus buku "' + bTarget.name + '", ketik "DELETE" (huruf besar) untuk konfirmasi:');
+    
+    if (password !== 'DELETE') {
+        alert('❌ Verifikasi gagal. Penghapusan dibatalkan.');
+        return;
+    }
+    
+    // Verifikasi akhir dengan kata SETUJU
+    const finalConfirm = prompt('⚠️ PERINGATAN TERAKHIR!\n\nData transaksi dari "' + bTarget.name + '" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik "' + SECURITY_CONFIG.requiredConfirmWord + '" (huruf besar) untuk menghapus secara permanen:');
+    
+    if (finalConfirm !== SECURITY_CONFIG.requiredConfirmWord) {
+        alert('❌ Kata kunci salah. Penghapusan buku kas dibatalkan.');
+        return;
+    }
+    
+    // Proses penghapusan
+    localStorage.removeItem('artaflow_txs_' + bookId);
+    if (cloudUrls[bookId]) {
+        delete cloudUrls[bookId];
+        localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
+    }
+    
+    // Hapus backup metadata buku ini
+    localStorage.removeItem('artaflow_backup_metadata_' + bookId);
+    
+    books = books.filter(b => b.id !== bookId);
+    localStorage.setItem('artaflow_books', JSON.stringify(books));
+    
+    let msg = `Menghapus buku kas "${bTarget.name}" beserta seluruh data dan cadangannya (${txs.length} transaksi)`;
+    saveLocalAndSync('SISTEM', msg, null);
+    
+    if (currentBookId === bookId) {
+        currentBookId = books[0].id;
+        localStorage.setItem('artaflow_active_book_id', currentBookId);
+        switchBook(currentBookId);
+    } else {
+        openBookManager();
+        refreshBookSelectOptions();
+    }
+    
+    showToast('✅ Buku "' + bTarget.name + '" berhasil dihapus.', 'info');
 }
 
 function addNewBook(e) {
@@ -1492,49 +1907,12 @@ function addNewBook(e) {
     let name = nameIn.value.trim();
     if (!name) return;
     let id = 'b_' + Date.now();
-    books.push({ id, name });
+    books.push({ id, name, locked: false });
     localStorage.setItem('artaflow_books', JSON.stringify(books));
     nameIn.value = '';
     openBookManager();
     refreshBookSelectOptions();
     showToast('Buku baru berhasil dibuat!', 'success');
-}
-
-async function deleteBook(id) {
-    let bTarget = books.find(b => b.id === id);
-    if (!bTarget) return;
-    
-    if (books.length <= 1) {
-        alert("Gagal menghapus! Sistem ArtaFlow wajib memiliki minimal satu Buku Kas aktif.");
-        return;
-    }
-    
-    let confirm1 = confirm('Apakah Anda yakin ingin menghapus buku kas "' + bTarget.name + '"?\nTindakan ini akan menghapus permanen data lokal transaksi di dalam perangkat ini.');
-    if (!confirm1) return;
-    
-    let confirm2 = prompt('⚠️ PERINGATAN TERAKHIR!\nData transaksi dari "' + bTarget.name + '" tidak dapat dikembalikan lagi setelah dihapus.\n\nKetik \'SETUJU\' (huruf besar) untuk menghapus.');
-    if (confirm2 === 'SETUJU') {
-        localStorage.removeItem('artaflow_txs_' + id);
-        if (cloudUrls[id]) {
-            delete cloudUrls[id];
-            localStorage.setItem('artaflow_cloud_urls', JSON.stringify(cloudUrls));
-        }
-        
-        books = books.filter(b => b.id !== id);
-        localStorage.setItem('artaflow_books', JSON.stringify(books));
-        
-        if (currentBookId === id) {
-            currentBookId = books[0].id;
-            localStorage.setItem('artaflow_active_book_id', currentBookId);
-            await switchBook(currentBookId);
-        } else {
-            openBookManager();
-            refreshBookSelectOptions();
-        }
-        alert("✅ Buku kas beserta seluruh data lokalnya telah berhasil dihapus.");
-    } else if (confirm2 !== null) {
-        alert("❌ Kata kunci salah. Penghapusan buku kas dibatalkan.");
-    }
 }
 
 // ==================== IMPOR & EKSPOR CADANGAN DATA ====================
@@ -1590,9 +1968,12 @@ function handleJsonImport(e) {
             }
             
             let bName = books.find(b => b.id === currentBookId)?.name || 'buku_kas';
-            let confirmImport = confirm('Apakah Anda yakin ingin mengimpor ' + importedData.length + ' data transaksi ke dalam buku "' + bName + '"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.');
+            let confirmImport = confirm('⚠️ PERINGATAN!\n\nApakah Anda yakin ingin mengimpor ' + importedData.length + ' data transaksi ke dalam buku "' + bName + '"?\n\nTindakan ini akan menimpa seluruh data transaksi lokal yang ada saat ini.\n\nDianjurkan untuk membuat cadangan terlebih dahulu.');
             
             if (confirmImport) {
+                // Buat backup otomatis sebelum import
+                createBackup();
+                
                 txs = importedData;
                 let msg = 'Melakukan impor cadangan data JSON (' + importedData.length + ' transaksi) secara manual ke aplikasi.';
                 await saveLocalAndSync('SISTEM', msg, null);
@@ -1837,6 +2218,9 @@ document.getElementById('deviceIdDisplay').innerText = deviceId.toUpperCase();
     await refreshLogsFromCloud();
     updateTime();
     setInterval(updateTime, 1000);
+    
+    // Auto backup periodik
+    setInterval(() => autoBackupCheck(), 60 * 60 * 1000); // Cek setiap jam
 })();
 
 // Export fungsi ke global window
@@ -1865,6 +2249,12 @@ window.downloadAttachment = downloadAttachment;
 window.previewAttachment = previewAttachment;
 window.previewEditAttachment = previewEditAttachment;
 window.testCloudConnection = testCloudConnection;
+window.createBackup = createBackup;
+window.restoreFromBackup = restoreFromBackup;
+window.deleteBackup = deleteBackup;
+window.openBackupManager = openBackupManager;
+window.secureDeleteBook = secureDeleteBook;
+window.toggleBookLock = toggleBookLock;
 </script>
 </body>
 </html>
